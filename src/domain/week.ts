@@ -1,6 +1,7 @@
 import { DAYS } from '@/data/catalog';
 import { colors, plate } from '@/theme/tokens';
 
+import { dateInWeek } from './dates';
 import type { Plan, RoutineKey } from './types';
 
 /** Week-strip day labels from the prototype: M T W Th F Sa Su. */
@@ -45,6 +46,18 @@ export function weekCells(plan: Plan, done: number[], today: number | null): Wee
       ring,
     };
   });
+}
+
+/**
+ * Home "This week": same colors and rings as `weekCells`, but the circle shows
+ * the day (M, T, W…) and the label above it shows the date of the month.
+ */
+export function homeWeekCells(plan: Plan, done: number[], today: number, weekStart: string): WeekCell[] {
+  return weekCells(plan, done, today).map((c, i) => ({
+    ...c,
+    day: String(dateInWeek(weekStart, i).getDate()),
+    letter: DAY_LETTERS[i],
+  }));
 }
 
 /**

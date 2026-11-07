@@ -133,3 +133,14 @@ test('exercise stats from history', async () => {
   });
   assert.equal(exerciseStats(EX.treadmill, { ...none, lastCardio: { minutes: 20, value: 0 }, bestCardio: 0 })?.length, 2);
 });
+
+test('home week strip: day inside the circle, date above it', async () => {
+  const { homeWeekCells } = await import('@/domain/week');
+  const cells = homeWeekCells(mkPlan(5), [0, 1, 4], 4, '2026-11-02');
+  assert.deepEqual(cells.map((c) => c.letter), ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']);
+  assert.deepEqual(cells.map((c) => c.day), ['2', '3', '4', '5', '6', '7', '8']);
+  assert.equal(cells[0].fill, '#ff5a3c', 'routine color kept');
+  assert.equal(cells[3].text, colors.muted, 'rest day muted');
+  assert.equal(cells[4].dayColor, colors.accent, 'today highlighted');
+  assert.equal(homeWeekCells(mkPlan(3), [], 0, '2026-12-28')[6].day, '3', 'crosses into the next month');
+});

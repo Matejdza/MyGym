@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Mono, UI } from '@/components/Txt';
 import { Ring } from '@/components/ui';
@@ -23,7 +23,10 @@ export function DayCircle({ cell, size, fontSize }: { cell: WeekCell; size: numb
   );
 }
 
-/** Seven equal columns: day label, then circle. */
+/**
+ * Seven equal columns: label, then circle. With `onPress` each column is a
+ * button; `accessibilityLabels` names each day for screen readers.
+ */
 export function WeekStrip({
   cells,
   size,
@@ -32,6 +35,8 @@ export function WeekStrip({
   labelWeight = 600,
   gap = 6,
   innerGap = 8,
+  onPress,
+  accessibilityLabels,
 }: {
   cells: WeekCell[];
   size: number;
@@ -40,17 +45,38 @@ export function WeekStrip({
   labelWeight?: 400 | 600;
   gap?: number;
   innerGap?: number;
+  onPress?: (dayIndex: number) => void;
+  accessibilityLabels?: string[];
 }) {
   return (
     <View style={[styles.row, { gap }]}>
-      {cells.map((c, i) => (
-        <View key={i} style={[styles.col, { gap: innerGap }]}>
-          <UI size={labelSize} weight={labelWeight} color={c.dayColor}>
-            {c.day}
-          </UI>
-          <DayCircle cell={c} size={size} fontSize={fontSize} />
-        </View>
-      ))}
+      {cells.map((c, i) => {
+        const content = (
+          <>
+            <UI size={labelSize} weight={labelWeight} color={c.dayColor}>
+              {c.day}
+            </UI>
+            <DayCircle cell={c} size={size} fontSize={fontSize} />
+          </>
+        );
+        if (!onPress) {
+          return (
+            <View key={i} style={[styles.col, { gap: innerGap }]}>
+              {content}
+            </View>
+          );
+        }
+        return (
+          <Pressable
+            key={i}
+            onPress={() => onPress(i)}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabels?.[i]}
+            style={({ pressed }) => [styles.col, { gap: innerGap, opacity: pressed ? 0.6 : 1 }]}>
+            {content}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

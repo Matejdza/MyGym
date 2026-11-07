@@ -9,11 +9,11 @@ import { PrimaryButton } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
 import { IMAGES, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
-import { addDays, dayIndex, fullDate, isoDate, shortDate, weekStartOf } from '@/domain/dates';
+import { addDays, dateInWeek, dayIndex, fullDate, isoDate, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt, r2 } from '@/domain/format';
 import { routineMeta } from '@/domain/plan';
 import { canStart } from '@/domain/session';
-import { weekCells } from '@/domain/week';
+import { homeWeekCells } from '@/domain/week';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
@@ -138,7 +138,13 @@ export default function Home() {
           <Mono size={15} color={colors.muted}>{`${doneCount} of ${plan.weekly} done`}</Mono>
         </View>
         <View style={{ marginTop: 14 }}>
-          <WeekStrip cells={weekCells(plan, done, today)} size={42} fontSize={15} />
+          <WeekStrip
+            cells={homeWeekCells(plan, done, today, weekStart)}
+            size={42}
+            fontSize={15}
+            onPress={(i) => router.push(`/day/${i}`)}
+            accessibilityLabels={DAYS_FULL.map((d, i) => `${d}, ${shortDate(dateInWeek(weekStart, i))}`)}
+          />
         </View>
       </View>
 
