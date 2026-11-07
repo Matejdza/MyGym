@@ -3,12 +3,15 @@ import { StyleSheet, View } from 'react-native';
 import { Mono, UI } from '@/components/Txt';
 import { Ring } from '@/components/ui';
 import type { WeekCell } from '@/domain/week';
+import { useScale } from '@/theme/layout';
 
 /** One day of a week strip: label above a lettered circle. */
 export function DayCircle({ cell, size, fontSize }: { cell: WeekCell; size: number; fontSize: number }) {
-  const r = size / 2;
+  // Never wider than its column: on narrow phones seven design-size circles don't fit.
+  const d = useScale().sz(size);
+  const r = 999;
   return (
-    <View style={[styles.circle, { width: size, height: size, borderRadius: r, backgroundColor: cell.fill }]}>
+    <View style={[styles.circle, { width: d, maxWidth: '100%', aspectRatio: 1, borderRadius: r, backgroundColor: cell.fill }]}>
       {cell.ring.kind === 'inset' && <Ring width={cell.ring.width} color={cell.ring.color} radius={r} />}
       {cell.ring.kind === 'outer' && (
         <Ring width={cell.ring.width} color={cell.ring.color} radius={r} offset={cell.ring.gap + cell.ring.width} />

@@ -21,7 +21,11 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "LiftLog",
+      "shortName": "LiftLog",
+      "themeColor": "#0d0d0c",
+      "backgroundColor": "#0d0d0c"
     },
     "plugins": [
       "expo-router",
@@ -37,7 +41,8 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/MyGym"
     },
     "backgroundColor": "#0d0d0c"
   }

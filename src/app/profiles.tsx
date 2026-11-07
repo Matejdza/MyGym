@@ -19,7 +19,10 @@ export default function Profiles() {
   const top = useTop();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const cell = [styles.cell, { width: (width - SIDE * 2 - COL_GAP) / 2 }];
+  const cellWidth = (width - SIDE * 2 - COL_GAP) / 2;
+  const cell = [styles.cell, { width: cellWidth }];
+  const avatar = Math.min(AVATAR, cellWidth);
+  const avatarStyle = { width: avatar, height: avatar, borderRadius: avatar / 2 };
 
   return (
     <ScrollView
@@ -38,10 +41,10 @@ export default function Profiles() {
           const goal = GOALS.find((g) => g.key === p.goal)?.label.toLowerCase() ?? '';
           return (
             <Pressable key={id} onPress={() => selectProfile(id)} accessibilityRole="button" style={cell}>
-              <View style={[styles.avatar, { backgroundColor: p.color }]}>
+              <View style={[styles.avatar, avatarStyle, { backgroundColor: p.color }]}>
                 {/* inset 0 0 0 15px rgba(0,0,0,.28) under inset 0 0 0 14px rgba(0,0,0,.16) */}
-                <Ring width={15} color="rgba(0,0,0,0.28)" radius={AVATAR / 2} />
-                <Ring width={14} color="rgba(0,0,0,0.16)" radius={AVATAR / 2} />
+                <Ring width={15} color="rgba(0,0,0,0.28)" radius={avatar / 2} />
+                <Ring width={14} color="rgba(0,0,0,0.16)" radius={avatar / 2} />
                 <Display size={72} weight={900} color={colors.bg}>
                   {(p.name[0] || '?').toUpperCase()}
                 </Display>
@@ -59,7 +62,7 @@ export default function Profiles() {
           onPress={() => router.push('/onboarding')}
           accessibilityRole="button"
           style={cell}>
-          <View style={[styles.avatar, styles.add]}>
+          <View style={[styles.avatar, avatarStyle, styles.add]}>
             <Mono size={44} color={colors.muted}>
               +
             </Mono>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>html,body{margin:0;min-height:100%;background:#1c1c1b;-webkit-font-smoothing:antialiased} a{color:#ffc531} a:hover{color:#e6ad1c}</style>
+</helmet>
+<section id="start" style="padding:56px 56px 24px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">1. Start and profiles</div>
+<p style="font-size:17px;max-width:760px;margin:10px 0 0;line-height:1.5;color:#9c9890">On first launch you see the welcome screen and create a profile in four steps. After that the app opens on the profile picker. Every phone is clickable.</p>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">First launch</span><dc-import name="LiftLog" screen="welcome" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Profile picker</span><dc-import name="LiftLog" screen="profiles" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">New profile, step 1</span><dc-import name="LiftLog" screen="onboard1" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Step 2</span><dc-import name="LiftLog" screen="onboard2" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Step 3</span><dc-import name="LiftLog" screen="onboard3" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Step 4</span><dc-import name="LiftLog" screen="onboard4" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+<section id="train" style="padding:40px 56px 24px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">2. Training</div>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Home</span><dc-import name="LiftLog" screen="home" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Workout: pick a day</span><dc-import name="LiftLog" screen="workout" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">The day's workout</span><dc-import name="LiftLog" screen="day" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Monday: Chest &amp; triceps</span><dc-import name="LiftLog" screen="dayA" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Tuesday: Back &amp; biceps</span><dc-import name="LiftLog" screen="dayB" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Thursday: Legs</span><dc-import name="LiftLog" screen="dayC" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Workout done</span><dc-import name="LiftLog" screen="summary" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+<section id="cardio" style="padding:40px 56px 24px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">Cardio</div>
+<p style="font-size:17px;max-width:760px;margin:10px 0 0;line-height:1.5;color:#9c9890">A routine can be strength or cardio. Cardio routines list activities with minutes and a heart-rate zone instead of sets and reps. Marko's Saturday is a cardio day.</p>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Saturday: Cardio</span><dc-import name="LiftLog" screen="dayCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Cardio log: timer, minutes, distance</span><dc-import name="LiftLog" screen="logCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Cardio done</span><dc-import name="LiftLog" screen="summaryCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Cardio activities</span><dc-import name="LiftLog" screen="groupCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Activity page</span><dc-import name="LiftLog" screen="exerciseCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Cardio routine editor</span><dc-import name="LiftLog" screen="routineCardio" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Progress: cardio</span><dc-import name="LiftLog" screen="progressCardio" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+<section id="entry" style="padding:40px 56px 24px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">3. Set entry, three options</div>
+<p style="font-size:17px;max-width:760px;margin:10px 0 0;line-height:1.5;color:#9c9890">You can switch between them in the app under Profile, Settings.</p>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div id="3a" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Martian Mono',monospace;font-size:13px;font-weight:500;background:#ffc531;color:#0d0d0c;padding:4px 9px;border-radius:12px">3a</span><span style="font-size:16px;font-weight:600">Buttons</span></div><dc-import name="LiftLog" screen="log" input-variant="stepper" hint-size="414px,868px"></dc-import></div>
+<div id="3b" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Martian Mono',monospace;font-size:13px;font-weight:500;background:#ffc531;color:#0d0d0c;padding:4px 9px;border-radius:12px">3b</span><span style="font-size:16px;font-weight:600">Keypad</span></div><dc-import name="LiftLog" screen="log" input-variant="keypad" hint-size="414px,868px"></dc-import></div>
+<div id="3c" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Martian Mono',monospace;font-size:13px;font-weight:500;background:#ffc531;color:#0d0d0c;padding:4px 9px;border-radius:12px">3c</span><span style="font-size:16px;font-weight:600">Scale, drag to change</span></div><dc-import name="LiftLog" screen="log" input-variant="scale" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+<section id="library" style="padding:40px 56px 24px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">4. Exercises</div>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Muscle groups</span><dc-import name="LiftLog" screen="library" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Group</span><dc-import name="LiftLog" screen="group" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Exercise page, 3 photos</span><dc-import name="LiftLog" screen="exerciseDeadlift" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Exercise page, no photos yet</span><dc-import name="LiftLog" screen="exercise" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Exercise page, 2 photos</span><dc-import name="LiftLog" screen="exerciseBench" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+<section id="progress" style="padding:40px 56px 72px;font-family:'Archivo',system-ui,sans-serif;color:#f2f0ea">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:1;text-transform:uppercase">5. Progress, profile and plan</div>
+<div style="display:flex;flex-wrap:wrap;gap:40px 28px;margin-top:30px">
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Progress: lifts</span><dc-import name="LiftLog" screen="progress" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Progress: body weight</span><dc-import name="LiftLog" screen="body" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Profile</span><dc-import name="LiftLog" screen="profile" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Training plan</span><dc-import name="LiftLog" screen="plan" hint-size="414px,868px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:16px;font-weight:600">Edit routine</span><dc-import name="LiftLog" screen="routine" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+</x-dc>
+</body>
+</html>

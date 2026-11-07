@@ -80,7 +80,7 @@ export default function Plan() {
                 {d}
               </UI>
               <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
-                {!k && <Ring width={1} color={colors.line} radius={22} />}
+                {!k && <Ring width={1} color={colors.line} radius={999} />}
                 <Mono size={16} weight={500} color={colors.bg}>
                   {k ?? '·'}
                 </Mono>
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   days: { flexDirection: 'row', gap: 5, marginTop: 10 },
   day: { flex: 1, alignItems: 'center', gap: 8 },
-  dayCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  dayCircle: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   list: { gap: 8, marginTop: 12 },
   routine: {
     flexDirection: 'row',

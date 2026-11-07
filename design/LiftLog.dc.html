@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=Martian+Mono:wght@400;500&display=swap">
+<script src="./image-slot.js"></script>
+<style>
+[data-app="liftlog"]{--bg:#0d0d0c;--surface:#181817;--surface2:#232321;--ink:#f2f0ea;--muted:#9c9890;--line:rgba(242,240,234,.13);--accent:#ffc531;--accent-ink:#0d0d0c;--press:#e6ad1c;--red:#ff5a3c;--green:#3ddc84}
+body{margin:0;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+a{color:#ffc531}a:hover{color:#e6ad1c}
+::-webkit-scrollbar{display:none}
+:focus-visible{outline:2px solid #ffc531;outline-offset:2px}
+input::placeholder{color:#6b6863}
+</style>
+</helmet>
+<div data-app="liftlog" style="padding:12px;display:flex;justify-content:center">
+<div style="width:390px;height:844px;flex-shrink:0;border-radius:52px;box-shadow:0 0 0 11px #050505, 0 0 0 12px #3a3a38, 0 30px 70px rgba(0,0,0,.45);background:var(--bg);color:var(--ink);overflow:hidden;position:relative;display:flex;flex-direction:column;font-family:'Archivo',system-ui,sans-serif">
+
+<div style="position:absolute;top:0;left:0;right:0;z-index:20;height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 8px 38px;font-weight:600;font-size:16px;pointer-events:none">
+<span>9:41</span>
+<div style="display:flex;align-items:center;gap:2px"><div style="width:25px;height:12px;border:1.5px solid var(--ink);border-radius:4px;padding:1.5px"><div style="width:72%;height:100%;background:var(--ink);border-radius:1.5px"></div></div><div style="width:2px;height:4px;background:var(--ink);opacity:.5"></div></div>
+</div>
+
+<sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;position:relative;display:flex;flex-direction:column">
+<div style="position:absolute;inset:0;color:var(--muted)"><image-slot id="welcome-hero" shape="rect" src="images/hero.jpg" placeholder="Welcome photo, full screen"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.55) 0%,rgba(13,13,12,0) 22%,rgba(13,13,12,0) 38%,#0d0d0c 72%)"></div>
+<div style="position:relative;margin-top:auto;padding:0 24px 20px;display:flex;flex-direction:column;gap:14px">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:22px;letter-spacing:.14em;color:var(--accent)">LIFTLOG</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:70px;line-height:.88;text-transform:uppercase">Every set counts.</div>
+<div style="font-size:17px;line-height:1.45;color:var(--muted);max-width:310px">Plan your week, log each set and watch your lifts go up.</div>
+<button onClick="{{ wel.create }}" style="margin-top:10px;height:64px;border:0;border-radius:32px;background:var(--accent);color:var(--accent-ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em" style-active="background:var(--press)">CREATE PROFILE</button>
+<button onClick="{{ wel.have }}" style="height:48px;border:0;background:none;font-size:16px;font-weight:600;color:var(--ink)">I already have a profile</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isProfiles }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:74px 24px 20px;display:flex;flex-direction:column">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:18px;letter-spacing:.14em;color:var(--accent);text-align:center">LIFTLOG</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.92;text-transform:uppercase;text-align:center;margin-top:18px">Who's lifting today?</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 18px;margin-top:44px">
+<sc-for list="{{ pf.list }}" as="p" hint-placeholder-count="2">
+<button onClick="{{ p.pick }}" style="border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:12px">
+<span style="width:132px;height:132px;border-radius:50%;background:{{ p.color }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:72px;box-shadow:inset 0 0 0 14px rgba(0,0,0,.16), inset 0 0 0 15px rgba(0,0,0,.28)">{{ p.initial }}</span>
+<span style="font-size:20px;font-weight:600">{{ p.name }}</span>
+<span style="font-size:14px;color:var(--muted);margin-top:-8px">{{ p.meta }}</span>
+</button>
+</sc-for>
+<button onClick="{{ pf.add }}" style="border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:12px">
+<span style="width:132px;height:132px;border-radius:50%;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:44px;color:var(--muted)">+</span>
+<span style="font-size:20px;font-weight:600">Add profile</span>
+<span style="font-size:14px;color:var(--muted);margin-top:-8px">Takes a minute</span>
+</button>
+</div>
+<div style="margin-top:auto;padding-top:28px;text-align:center;font-size:14px;color:var(--muted)">Profiles are stored only on this phone.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding-top:50px">
+<div style="display:flex;align-items:center;gap:12px;padding:8px 20px 0;flex-shrink:0">
+<button onClick="{{ ob.back }}" style="width:44px;height:44px;border-radius:22px;border:0;background:var(--surface);font-size:22px">‹</button>
+<div style="flex:1;display:flex;gap:6px"><sc-for list="{{ ob.segs }}" as="s" hint-placeholder-count="4"><div style="flex:1;height:5px;border-radius:3px;background:{{ s.bg }}"></div></sc-for></div>
+<div style="font-family:'Martian Mono',monospace;font-size:13px;color:var(--muted)">{{ ob.stepText }}</div>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:28px 24px 20px">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.92;text-transform:uppercase">{{ ob.title }}</div>
+<div style="font-size:16px;color:var(--muted);margin-top:12px;line-height:1.45">{{ ob.sub }}</div>
+
+<sc-if value="{{ ob.s1 }}" hint-placeholder-val="{{ false }}">
+<input value="{{ ob.name }}" onChange="{{ ob.setName }}" placeholder="Your name" style="width:100%;margin-top:30px;border:0;border-bottom:2px solid var(--accent);background:none;color:var(--ink);font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:44px;padding:4px 0 8px;outline:none;border-radius:0"></input>
+<div style="font-size:15px;color:var(--muted);margin-top:30px">Profile color</div>
+<div style="display:flex;gap:12px;margin-top:12px">
+<sc-for list="{{ ob.colors }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.pick }}" style="width:52px;height:52px;border-radius:50%;border:0;background:{{ c.color }};box-shadow:{{ c.ring }}"></button></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:16px;margin-top:34px">
+<span style="width:84px;height:84px;border-radius:50%;background:{{ ob.color }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:46px;box-shadow:inset 0 0 0 9px rgba(0,0,0,.16)">{{ ob.initial }}</span>
+<span style="font-size:15px;color:var(--muted);line-height:1.4">You can add a photo later on your profile.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ ob.s2 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:30px">
+<sc-for list="{{ ob.body }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:20px;padding:14px 14px 14px 18px">
+<div style="flex:1"><div style="font-size:15px;color:var(--muted)">{{ r.label }}</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span style="font-family:'Martian Mono',monospace;font-size:40px;font-weight:500;letter-spacing:-0.05em">{{ r.val }}</span><span style="font-size:16px;color:var(--muted)">{{ r.unit }}</span></div></div>
+<button onClick="{{ r.dec }}" style="width:58px;height:58px;border-radius:29px;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:24px">−</button>
+<button onClick="{{ r.inc }}" style="width:58px;height:58px;border-radius:29px;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:24px">+</button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ ob.s3 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:26px">
+<sc-for list="{{ ob.goals }}" as="g" hint-placeholder-count="3">
+<button onClick="{{ g.pick }}" style="border:0;border-radius:20px;background:var(--surface);box-shadow:{{ g.ring }};padding:16px 18px;display:flex;align-items:center;gap:14px;text-align:left">
+<span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;background:{{ g.color }}"></span>
+<span style="flex:1"><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:26px;text-transform:uppercase">{{ g.label }}</span><span style="display:block;font-size:14px;color:var(--muted);margin-top:2px">{{ g.desc }}</span></span>
+</button>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:20px;padding:14px 14px 14px 18px;margin-top:18px">
+<div style="flex:1"><div style="font-size:15px;color:var(--muted)">Target weight</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span style="font-family:'Martian Mono',monospace;font-size:36px;font-weight:500;letter-spacing:-0.05em">{{ ob.target }}</span><span style="font-size:16px;color:var(--muted)">kg</span></div></div>
+<button onClick="{{ ob.tDec }}" style="width:58px;height:58px;border-radius:29px;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:24px">−</button>
+<button onClick="{{ ob.tInc }}" style="width:58px;height:58px;border-radius:29px;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:24px">+</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ ob.s4 }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:30px">
+<sc-for list="{{ ob.weeklyOpts }}" as="o" hint-placeholder-count="5"><button onClick="{{ o.pick }}" style="aspect-ratio:1;border-radius:50%;border:0;background:{{ o.bg }};color:{{ o.color }};font-family:'Martian Mono',monospace;font-size:26px;font-weight:500">{{ o.label }}</button></sc-for>
+</div>
+<div style="font-size:15px;color:var(--muted);margin-top:28px">Your starting schedule</div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px">
+<sc-for list="{{ ob.week }}" as="c" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+<span style="font-size:13px;font-weight:600;color:var(--muted)">{{ c.day }}</span>
+<span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ c.fill }};color:#0d0d0c;box-shadow:{{ c.ring }};font-family:'Martian Mono',monospace;font-size:15px;font-weight:500">{{ c.letter }}</span>
+</div>
+</sc-for>
+</div>
+<div style="font-size:15px;color:var(--muted);margin-top:22px;line-height:1.45">You can change days and routines any time from your profile.</div>
+</sc-if>
+</div>
+<div style="padding:12px 20px 14px;flex-shrink:0">
+<button onClick="{{ ob.next }}" style="width:100%;height:64px;border:0;border-radius:32px;background:var(--accent);color:var(--accent-ink);opacity:{{ ob.nextOpacity }};font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em" style-active="background:var(--press)">{{ ob.nextLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;height:500px">
+<div style="position:absolute;inset:0;color:transparent;background:var(--surface)"><image-slot id="home-hero" shape="rect" src="images/hero.jpg" placeholder="Home photo"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.7) 0%,rgba(13,13,12,0) 24%,rgba(13,13,12,0) 42%,#0d0d0c 88%)"></div>
+<div style="position:absolute;top:54px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between">
+<button onClick="{{ home.openProfile }}" style="width:40px;height:40px;border-radius:50%;border:0;background:{{ home.color }};color:#0d0d0c;font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:22px">{{ home.initial }}</button>
+<span style="font-size:17px;font-weight:600">Home</span>
+<span style="width:40px"></span>
+</div>
+<div style="position:absolute;left:20px;right:20px;bottom:6px;pointer-events:none">
+<div style="font-size:15px;font-weight:600;color:var(--accent)">{{ home.date }}</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:64px;line-height:.88;text-transform:uppercase;margin-top:8px;text-wrap:balance">{{ home.title }}</div>
+<div style="font-size:16px;margin-top:10px;color:var(--ink);opacity:.8">{{ home.meta }}</div>
+<div style="display:flex;gap:10px;margin-top:18px;pointer-events:auto">
+<button onClick="{{ home.ctaGo }}" style="flex:1;height:58px;border:0;border-radius:29px;background:var(--accent);color:var(--accent-ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:23px;letter-spacing:.02em" style-active="background:var(--press)">{{ home.ctaLabel }}</button>
+<button onClick="{{ home.viewGo }}" style="height:58px;padding:0 24px;border:0;border-radius:29px;background:var(--ink);color:var(--bg);font-size:16px;font-weight:600">{{ home.viewLabel }}</button>
+</div>
+</div>
+</div>
+
+<div style="padding:30px 20px 0">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase">This week</span><span style="font-family:'Martian Mono',monospace;font-size:15px;color:var(--muted)">{{ home.weekCount }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:14px">
+<sc-for list="{{ home.week }}" as="c" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+<span style="font-size:13px;font-weight:600;color:{{ c.dayColor }}">{{ c.day }}</span>
+<span style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ c.fill }};color:{{ c.txt }};box-shadow:{{ c.ring }};font-family:'Martian Mono',monospace;font-size:15px;font-weight:500">{{ c.letter }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ home.hasRecords }}" hint-placeholder-val="{{ true }}">
+<div style="padding:34px 0 0">
+<div style="padding:0 20px;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase">Recent records</div>
+<div style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:14px 20px 0">
+<sc-for list="{{ home.records }}" as="r" hint-placeholder-count="4">
+<button onClick="{{ r.open }}" style="flex-shrink:0;width:156px;border:0;background:none;padding:0;text-align:left">
+<div style="position:relative;height:112px;border-radius:16px;overflow:hidden;background:var(--surface);color:transparent;pointer-events:none"><image-slot id="{{ r.img }}" src="{{ r.src }}" shape="rect" placeholder="Exercise photo"></image-slot></div>
+<div style="font-size:15px;font-weight:600;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+<div style="font-family:'Martian Mono',monospace;font-size:14px;color:var(--accent);margin-top:4px">{{ r.v }}</div>
+<div style="font-size:13px;color:var(--muted);margin-top:2px">{{ r.d }}</div>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<div style="padding:34px 20px 28px">
+<button onClick="{{ home.openBody }}" style="width:100%;border:0;border-radius:22px;background:var(--surface);padding:18px;display:flex;align-items:center;gap:14px;text-align:left">
+<span style="flex:1"><span style="display:block;font-size:15px;color:var(--muted)">Body weight</span><span style="display:flex;align-items:baseline;gap:6px;margin-top:6px"><span style="font-family:'Martian Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-0.05em">{{ home.bw }}</span><span style="font-size:15px;color:var(--muted)">kg</span></span><span style="display:block;font-size:14px;color:var(--green);margin-top:6px;font-weight:600">{{ home.bwDelta }}</span></span>
+<svg width="120" height="56" style="flex-shrink:0;overflow:visible"><path d="{{ home.spark }}" style="fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round"></path></svg>
+</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:66px 16px 20px">
+<div style="padding:0 4px">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.9;text-transform:uppercase">Workout</div>
+<div style="font-size:16px;color:var(--muted);margin-top:10px">{{ wk.sub }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:22px">
+<sc-for list="{{ wk.days }}" as="d" hint-placeholder-count="7">
+<sc-if value="{{ d.isTrain }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ d.open }}" style="border:0;border-radius:22px;background:var(--surface);box-shadow:{{ d.ring }};padding:10px 14px 10px 10px;display:flex;align-items:center;gap:14px;text-align:left">
+<span style="position:relative;width:72px;height:72px;flex-shrink:0;border-radius:15px;overflow:hidden;background:var(--surface2);color:transparent;pointer-events:none"><image-slot id="{{ d.cover }}" src="{{ d.coverSrc }}" shape="rect" placeholder="Cover"></image-slot><span style="position:absolute;left:6px;bottom:6px;width:24px;height:24px;border-radius:50%;background:{{ d.plate }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:12px;font-weight:500">{{ d.key }}</span></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:14px;color:var(--muted);font-weight:600">{{ d.dayName }}, {{ d.date }}</span><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:25px;line-height:.95;text-transform:uppercase;margin-top:3px;text-wrap:balance">{{ d.name }}</span><span style="display:block;font-size:14px;color:var(--muted);margin-top:3px">{{ d.meta }}</span></span>
+<span style="flex-shrink:0;height:30px;padding:0 12px;border-radius:15px;display:flex;align-items:center;font-size:13px;font-weight:700;background:{{ d.statusBg }};color:{{ d.statusColor }}">{{ d.status }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ d.isRest }}" hint-placeholder-val="{{ false }}">
+<div style="height:48px;border-radius:22px;border:1px dashed var(--line);padding:0 18px;display:flex;align-items:center;justify-content:space-between">
+<span style="font-size:14px;color:var(--muted);font-weight:600">{{ d.dayName }}, {{ d.date }}</span><span style="font-size:14px;color:var(--muted)">Rest</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDay }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;height:330px">
+<div style="position:absolute;inset:0;color:var(--muted)"><image-slot id="{{ day.cover }}" src="{{ day.coverSrc }}" shape="rect" placeholder="Routine cover photo"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.7) 0%,rgba(13,13,12,0) 30%,rgba(13,13,12,0) 45%,#0d0d0c 96%)"></div>
+<button onClick="{{ back }}" style="position:absolute;top:54px;left:16px;height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(13,13,12,.72);font-size:15px;font-weight:600">‹ Back</button>
+<div style="position:absolute;left:20px;right:20px;bottom:4px;pointer-events:none">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:{{ day.plate }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:13px;font-weight:500">{{ day.key }}</span><span style="font-size:15px;font-weight:600">{{ day.dayName }}</span></div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:56px;line-height:.9;text-transform:uppercase;margin-top:10px">{{ day.name }}</div>
+<div style="font-size:16px;opacity:.8;margin-top:8px">{{ day.meta }}</div>
+</div>
+</div>
+<div style="padding:18px 20px 20px">
+<sc-for list="{{ day.items }}" as="it" hint-placeholder-count="5">
+<button onClick="{{ it.open }}" style="width:100%;border:0;background:none;padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;text-align:left">
+<span style="position:relative;width:54px;height:54px;flex-shrink:0;border-radius:12px;overflow:hidden;background:var(--surface);color:transparent;pointer-events:none"><image-slot id="{{ it.img }}" src="{{ it.src }}" shape="rect" placeholder=" "></image-slot></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:17px;font-weight:600">{{ it.name }}</span><span style="display:block;font-size:14px;color:var(--muted);margin-top:3px">{{ it.last }}</span></span>
+<span style="font-family:'Martian Mono',monospace;font-size:16px;font-weight:500;white-space:nowrap">{{ it.scheme }}</span>
+</button>
+</sc-for>
+<button onClick="{{ day.edit }}" style="height:48px;margin-top:8px;border:0;background:none;padding:0;font-size:16px;font-weight:600;color:var(--accent)">Edit this routine</button>
+</div>
+</div>
+<div style="padding:12px 20px 14px;flex-shrink:0">
+<button onClick="{{ day.start }}" style="width:100%;height:64px;border:0;border-radius:32px;background:var(--accent);color:var(--accent-ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em" style-active="background:var(--press)">{{ day.startLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLog }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding-top:50px">
+<div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+<button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600">‹ Back</button>
+<div style="font-family:'Martian Mono',monospace;font-size:17px;font-weight:500">{{ log.elapsed }}</div>
+<button onClick="{{ log.finish }}" style="height:40px;padding:0 16px;border-radius:20px;border:0;background:var(--ink);color:var(--bg);font-size:15px;font-weight:700">Finish</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;padding:10px 16px 0;flex-shrink:0">
+<button onClick="{{ log.prev }}" style="width:46px;height:46px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface);font-size:22px;color:{{ log.prevColor }}">‹</button>
+<button onClick="{{ log.openEx }}" style="flex:1;min-width:0;border:0;background:none;padding:0;display:flex;align-items:center;gap:12px;text-align:left">
+<span style="position:relative;width:52px;height:52px;flex-shrink:0;border-radius:12px;overflow:hidden;background:var(--surface);color:transparent;pointer-events:none"><image-slot id="{{ log.img }}" src="{{ log.src }}" shape="rect" placeholder=" "></image-slot></span>
+<span style="min-width:0"><span style="display:block;font-size:13px;color:var(--muted)">{{ log.position }}</span><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:25px;line-height:1.02;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ log.name }}</span></span>
+</button>
+<button onClick="{{ log.next }}" style="width:46px;height:46px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface);font-size:22px;color:{{ log.nextColor }}">›</button>
+</div>
+<div style="display:flex;gap:4px;padding:12px 16px 0;flex-shrink:0">
+<sc-for list="{{ log.segs }}" as="sg" hint-placeholder-count="5"><div style="flex:1;height:4px;border-radius:2px;background:{{ sg.bg }}"></div></sc-for>
+</div>
+<div style="padding:10px 16px 0;font-size:14px;color:var(--muted);flex-shrink:0">{{ log.prevText }}</div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:8px 16px 6px">
+<sc-for list="{{ log.rows }}" as="r" hint-placeholder-count="4">
+<button onClick="{{ r.select }}" style="width:100%;height:48px;border:0;border-radius:14px;margin-bottom:5px;background:{{ r.bg }};box-shadow:{{ r.ring }};color:{{ r.color }};display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:0 14px;text-align:left">
+<span style="font-family:'Martian Mono',monospace;font-size:13px;color:var(--muted)">{{ r.no }}</span>
+<span style="font-family:'Martian Mono',monospace;font-size:18px;font-weight:500">{{ r.w }} kg × {{ r.r }}</span>
+<span style="font-size:13px;font-weight:700;color:{{ r.statusColor }}">{{ r.status }}</span>
+</button>
+</sc-for>
+<div style="display:flex;justify-content:space-between;gap:8px">
+<button onClick="{{ log.addSet }}" style="height:44px;border:0;background:none;padding:0 4px;font-size:15px;font-weight:600;color:var(--accent)">Add set</button>
+<button onClick="{{ log.cancel }}" style="height:44px;border:0;background:none;padding:0 4px;font-size:14px;color:{{ log.cancelColor }}">{{ log.cancelLabel }}</button>
+</div>
+</div>
+
+<div style="flex-shrink:0;padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border-radius:28px 28px 0 0">
+<sc-if value="{{ log.hasRest }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;height:46px;display:flex;align-items:center;gap:8px;padding:0 4px 0 6px;overflow:hidden">
+<span style="font-size:14px;color:var(--muted)">Rest</span>
+<span style="font-family:'Martian Mono',monospace;font-size:22px;font-weight:500;flex:1;color:var(--accent)">{{ log.restLeft }}</span>
+<button onClick="{{ log.restAdd }}" style="height:38px;padding:0 14px;flex-shrink:0;white-space:nowrap;border-radius:19px;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:13px">+30 s</button>
+<button onClick="{{ log.restSkip }}" style="height:38px;padding:0 10px;flex-shrink:0;white-space:nowrap;border:0;background:none;font-size:15px;font-weight:600">Skip</button>
+<div style="position:absolute;left:6px;right:6px;bottom:0;height:3px;border-radius:2px;background:var(--surface2)"><div style="height:100%;width:{{ log.restPct }};border-radius:2px;background:var(--accent)"></div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ log.showStepper }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;height:74px;align-items:center;flex-direction:{{ log.rowDir }}">
+<button onClick="{{ log.wDec }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--line)">−</button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center"><div style="font-family:'Martian Mono',monospace;font-size:42px;font-weight:500;line-height:1;letter-spacing:-0.05em">{{ log.wVal }}</div><div style="font-size:13px;color:var(--muted);margin-top:6px;white-space:nowrap">kg, step {{ log.stepText }}</div></div>
+<button onClick="{{ log.wInc }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--muted)">+</button>
+</div>
+<div style="display:flex;gap:8px;height:74px;align-items:center;flex-direction:{{ log.rowDir }}">
+<button onClick="{{ log.rDec }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--line)">−</button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center"><div style="font-family:'Martian Mono',monospace;font-size:42px;font-weight:500;line-height:1;letter-spacing:-0.05em">{{ log.rVal }}</div><div style="font-size:13px;color:var(--muted);margin-top:6px">reps</div></div>
+<button onClick="{{ log.rInc }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--muted)">+</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ log.showKeypad }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+<button onClick="{{ log.focusW }}" style="height:64px;border:0;border-radius:16px;background:var(--bg);box-shadow:{{ log.ringW }};display:flex;align-items:baseline;justify-content:space-between;padding:0 14px;padding-top:14px"><span style="font-family:'Martian Mono',monospace;font-size:30px;font-weight:500;letter-spacing:-0.05em">{{ log.wShown }}</span><span style="font-size:13px;color:var(--muted)">kg</span></button>
+<button onClick="{{ log.focusR }}" style="height:64px;border:0;border-radius:16px;background:var(--bg);box-shadow:{{ log.ringR }};display:flex;align-items:baseline;justify-content:space-between;padding:0 14px;padding-top:14px"><span style="font-family:'Martian Mono',monospace;font-size:30px;font-weight:500;letter-spacing:-0.05em">{{ log.rShown }}</span><span style="font-size:13px;color:var(--muted)">reps</span></button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+<sc-for list="{{ log.keys }}" as="k" hint-placeholder-count="12"><button onClick="{{ k.press }}" style="height:46px;border:0;border-radius:12px;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:{{ k.size }};font-weight:500" style-active="background:var(--line)">{{ k.label }}</button></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ log.showScale }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 4px"><span style="font-size:14px;color:var(--muted)">kg</span><span style="font-family:'Martian Mono',monospace;font-size:32px;font-weight:500;letter-spacing:-0.05em">{{ log.wVal }}</span></div>
+<div onPointerDown="{{ log.rwDown }}" onPointerMove="{{ log.rMove }}" onPointerUp="{{ log.rUp }}" onPointerCancel="{{ log.rUp }}" style="position:relative;height:60px;overflow:hidden;touch-action:none;cursor:ew-resize;border-radius:14px;background:var(--bg);user-select:none">
+<sc-for list="{{ log.ticksW }}" as="t" hint-placeholder-count="20"><div style="position:absolute;left:{{ t.x }}px;top:0;bottom:0;width:0"><div style="position:absolute;left:0;bottom:0;width:1px;height:{{ t.h }}px;background:{{ t.c }}"></div><div style="position:absolute;left:0;top:7px;transform:translateX(-50%);font-family:'Martian Mono',monospace;font-size:11px;color:var(--muted)">{{ t.label }}</div></div></sc-for>
+<div style="position:absolute;left:178px;top:0;bottom:0;width:3px;background:var(--accent)"></div>
+</div>
+</div>
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 4px"><span style="font-size:14px;color:var(--muted)">reps</span><span style="font-family:'Martian Mono',monospace;font-size:32px;font-weight:500;letter-spacing:-0.05em">{{ log.rVal }}</span></div>
+<div onPointerDown="{{ log.rrDown }}" onPointerMove="{{ log.rMove }}" onPointerUp="{{ log.rUp }}" onPointerCancel="{{ log.rUp }}" style="position:relative;height:60px;overflow:hidden;touch-action:none;cursor:ew-resize;border-radius:14px;background:var(--bg);user-select:none">
+<sc-for list="{{ log.ticksR }}" as="t" hint-placeholder-count="14"><div style="position:absolute;left:{{ t.x }}px;top:0;bottom:0;width:0"><div style="position:absolute;left:0;bottom:0;width:1px;height:{{ t.h }}px;background:{{ t.c }}"></div><div style="position:absolute;left:0;top:7px;transform:translateX(-50%);font-family:'Martian Mono',monospace;font-size:11px;color:var(--muted)">{{ t.label }}</div></div></sc-for>
+<div style="position:absolute;left:178px;top:0;bottom:0;width:3px;background:var(--accent)"></div>
+</div>
+</div>
+</sc-if>
+
+<button onClick="{{ log.main }}" style="width:100%;height:66px;border:0;border-radius:33px;background:var(--accent);color:var(--accent-ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em;text-transform:uppercase" style-active="background:var(--press)">{{ log.mainLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCLog }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding-top:50px">
+<div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+<button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600">‹ Back</button>
+<div style="font-family:'Martian Mono',monospace;font-size:17px;font-weight:500">{{ cl.elapsed }}</div>
+<button onClick="{{ cl.finish }}" style="height:40px;padding:0 16px;border-radius:20px;border:0;background:var(--ink);color:var(--bg);font-size:15px;font-weight:700">Finish</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;padding:10px 16px 0;flex-shrink:0">
+<button onClick="{{ cl.prev }}" style="width:46px;height:46px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface);font-size:22px;color:{{ cl.prevColor }}">‹</button>
+<button onClick="{{ cl.openEx }}" style="flex:1;min-width:0;border:0;background:none;padding:0;display:flex;align-items:center;gap:12px;text-align:left">
+<span style="position:relative;width:52px;height:52px;flex-shrink:0;border-radius:12px;overflow:hidden;background:var(--surface);color:transparent;pointer-events:none"><image-slot id="{{ cl.img }}" src="{{ cl.src }}" shape="rect" placeholder=" "></image-slot></span>
+<span style="min-width:0"><span style="display:block;font-size:13px;color:var(--muted)">{{ cl.position }}</span><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:25px;line-height:1.02;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ cl.name }}</span></span>
+</button>
+<button onClick="{{ cl.next }}" style="width:46px;height:46px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface);font-size:22px;color:{{ cl.nextColor }}">›</button>
+</div>
+<div style="display:flex;gap:4px;padding:12px 16px 0;flex-shrink:0">
+<sc-for list="{{ cl.segs }}" as="sg" hint-placeholder-count="3"><div style="flex:1;height:4px;border-radius:2px;background:{{ sg.bg }}"></div></sc-for>
+</div>
+<div style="padding:10px 16px 0;font-size:14px;color:var(--muted);flex-shrink:0">{{ cl.prevText }}</div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:10px 16px 6px">
+<div style="background:var(--surface);border-radius:24px;padding:16px 18px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font-size:14px;color:var(--muted)">Activity timer</span><span style="height:28px;padding:0 12px;border-radius:14px;display:flex;align-items:center;font-size:13px;font-weight:700;background:{{ cl.zoneBg }};color:#0d0d0c">{{ cl.zone }}</span></div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:8px"><span style="font-family:'Martian Mono',monospace;font-size:58px;font-weight:500;line-height:1;letter-spacing:-0.06em;color:{{ cl.timerColor }}">{{ cl.timer }}</span><span style="font-family:'Martian Mono',monospace;font-size:15px;color:var(--muted);white-space:nowrap">/ {{ cl.target }}</span></div>
+<div style="height:6px;border-radius:3px;background:var(--surface2);margin-top:14px"><div style="height:100%;width:{{ cl.pct }};border-radius:3px;background:var(--accent)"></div></div>
+<div style="font-size:14px;color:var(--muted);margin-top:10px">{{ cl.zoneText }}</div>
+<div style="display:flex;gap:8px;margin-top:14px"><button onClick="{{ cl.toggle }}" style="flex:1;height:48px;border-radius:24px;border:0;background:var(--ink);color:var(--bg);font-size:16px;font-weight:700">{{ cl.runLabel }}</button><button onClick="{{ cl.reset }}" style="height:48px;padding:0 20px;border-radius:24px;border:0;background:var(--surface2);font-size:15px;font-weight:600">Reset</button></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:5px;margin-top:10px">
+<sc-for list="{{ cl.rows }}" as="r" hint-placeholder-count="3">
+<button onClick="{{ r.select }}" style="width:100%;height:48px;border:0;border-radius:14px;background:{{ r.bg }};box-shadow:{{ r.ring }};color:{{ r.color }};display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:0 14px;text-align:left">
+<span style="font-family:'Martian Mono',monospace;font-size:13px;color:var(--muted)">{{ r.no }}</span>
+<span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+<span style="font-family:'Martian Mono',monospace;font-size:14px;font-weight:500;white-space:nowrap">{{ r.val }}</span>
+<span style="font-size:13px;font-weight:700;color:{{ r.statusColor }};min-width:34px;text-align:right">{{ r.status }}</span>
+</button>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:flex-end"><button onClick="{{ cl.cancel }}" style="height:44px;border:0;background:none;padding:0 4px;font-size:14px;color:{{ cl.cancelColor }}">{{ cl.cancelLabel }}</button></div>
+</div>
+<div style="flex-shrink:0;padding:12px 16px 12px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border-radius:28px 28px 0 0">
+<div style="display:flex;gap:8px;height:74px;align-items:center;flex-direction:{{ cl.rowDir }}">
+<button onClick="{{ cl.minDec }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--line)">−</button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center"><div style="font-family:'Martian Mono',monospace;font-size:42px;font-weight:500;line-height:1;letter-spacing:-0.05em">{{ cl.minVal }}</div><div style="font-size:13px;color:var(--muted);margin-top:6px">minutes</div></div>
+<button onClick="{{ cl.minInc }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--muted)">+</button>
+</div>
+<div style="display:flex;gap:8px;height:74px;align-items:center;flex-direction:{{ cl.rowDir }}">
+<button onClick="{{ cl.vDec }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--line)">−</button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center"><div style="font-family:'Martian Mono',monospace;font-size:42px;font-weight:500;line-height:1;letter-spacing:-0.05em">{{ cl.vVal }}</div><div style="font-size:13px;color:var(--muted);margin-top:6px">{{ cl.vLabel }}</div></div>
+<button onClick="{{ cl.vInc }}" style="width:74px;height:74px;flex-shrink:0;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:28px" style-active="background:var(--muted)">+</button>
+</div>
+<button onClick="{{ cl.main }}" style="width:100%;height:66px;border:0;border-radius:33px;background:var(--accent);color:var(--accent-ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em;text-transform:uppercase" style-active="background:var(--press)">{{ cl.mainLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSum }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;height:300px">
+<div style="position:absolute;inset:0;color:var(--muted)"><image-slot id="{{ sum.cover }}" src="{{ sum.coverSrc }}" shape="rect" placeholder="Routine cover photo"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.6) 0%,rgba(13,13,12,0) 30%,#0d0d0c 96%)"></div>
+<div style="position:absolute;left:20px;right:20px;bottom:0;pointer-events:none">
+<div style="font-size:15px;font-weight:600;color:var(--accent)">{{ sum.name }}</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:68px;line-height:.88;text-transform:uppercase;margin-top:8px">Workout done</div>
+</div>
+</div>
+<div style="padding:20px 20px 20px">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{ sum.rows }}" as="r" hint-placeholder-count="3">
+<div style="background:var(--surface);border-radius:18px;padding:14px 12px"><div style="font-size:13px;color:var(--muted)">{{ r.k }}</div><div style="font-family:'Martian Mono',monospace;font-size:19px;font-weight:500;letter-spacing:-0.04em;margin-top:8px;white-space:nowrap">{{ r.v }}</div></div>
+</sc-for>
+</div>
+<sc-if value="{{ sum.hasPrs }}" hint-placeholder-val="{{ true }}">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:28px">{{ sum.listTitle }}</div>
+<sc-for list="{{ sum.prs }}" as="p" hint-placeholder-count="1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">
+<div style="font-size:17px;font-weight:600">{{ p.n }}</div>
+<div style="font-family:'Martian Mono',monospace;font-size:15px;font-weight:500;color:var(--accent-ink);background:var(--accent);padding:6px 10px;border-radius:12px">{{ p.v }}</div>
+</div>
+</sc-for>
+</sc-if>
+</div>
+</div>
+<div style="padding:12px 20px 14px;flex-shrink:0">
+<button onClick="{{ sum.done }}" style="width:100%;height:64px;border:0;border-radius:32px;background:var(--ink);color:var(--bg);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:26px;letter-spacing:.02em">BACK TO HOME</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLib }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:58px 16px 20px">
+<sc-if value="{{ lib.pick }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600;margin-bottom:12px">‹ Routine {{ lib.rid }}</button>
+</sc-if>
+<div style="padding:8px 4px 0;display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.9;text-transform:uppercase">{{ lib.title }}</div>
+<div style="font-family:'Martian Mono',monospace;font-size:13px;color:var(--muted)">{{ lib.count }}</div>
+</div>
+<div style="font-size:16px;color:var(--muted);margin:10px 4px 0">{{ lib.sub }}</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px">
+<sc-for list="{{ lib.groups }}" as="g" hint-placeholder-count="6">
+<button onClick="{{ g.open }}" style="position:relative;height:168px;border:0;border-radius:22px;overflow:hidden;background:var(--surface);padding:0;text-align:left">
+<span style="position:absolute;inset:0;color:transparent;pointer-events:none"><image-slot id="{{ g.img }}" src="{{ g.src }}" shape="rect" placeholder="Muscle group photo"></image-slot></span>
+<span style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,0) 40%,rgba(13,13,12,.85) 100%)"></span>
+<span style="position:absolute;left:14px;right:14px;bottom:12px;pointer-events:none"><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:30px;line-height:1;text-transform:uppercase">{{ g.label }}</span><span style="display:block;font-size:13px;color:var(--ink);opacity:.75;margin-top:4px">{{ g.count }}</span></span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ lib.showCardio }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ lib.cardio.open }}" style="position:relative;width:100%;height:150px;margin-top:10px;border:0;border-radius:22px;overflow:hidden;background:var(--surface);padding:0;text-align:left">
+<span style="position:absolute;inset:0;color:var(--muted);pointer-events:none"><image-slot id="{{ lib.cardio.img }}" src="{{ lib.cardio.src }}" shape="rect" placeholder="Cardio photo, wide"></image-slot></span>
+<span style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(13,13,12,.85) 0%,rgba(13,13,12,0) 70%)"></span>
+<span style="position:absolute;left:16px;bottom:14px;pointer-events:none"><span style="display:block;font-size:13px;font-weight:700;color:var(--accent)">Conditioning</span><span style="display:block;font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:38px;line-height:1;text-transform:uppercase;margin-top:4px">Cardio</span><span style="display:block;font-size:13px;color:var(--ink);opacity:.75;margin-top:4px">{{ lib.cardio.count }}</span></span>
+</button>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isGroup }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;height:250px">
+<div style="position:absolute;inset:0;color:var(--muted)"><image-slot id="{{ grp.img }}" src="{{ grp.src }}" shape="rect" placeholder="Muscle group photo"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.7) 0%,rgba(13,13,12,0) 35%,#0d0d0c 96%)"></div>
+<button onClick="{{ back }}" style="position:absolute;top:54px;left:16px;height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(13,13,12,.72);font-size:15px;font-weight:600">‹ Back</button>
+<div style="position:absolute;left:20px;bottom:2px;pointer-events:none"><div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:60px;line-height:.9;text-transform:uppercase">{{ grp.label }}</div><div style="font-size:15px;opacity:.8;margin-top:6px">{{ grp.count }}</div></div>
+</div>
+<div style="padding:14px 20px 24px">
+<sc-for list="{{ grp.items }}" as="ex" hint-placeholder-count="4">
+<button onClick="{{ ex.open }}" style="width:100%;border:0;background:none;padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;text-align:left">
+<span style="position:relative;width:60px;height:60px;flex-shrink:0;border-radius:14px;overflow:hidden;background:var(--surface);color:transparent;pointer-events:none"><image-slot id="{{ ex.img }}" src="{{ ex.src }}" shape="rect" placeholder=" "></image-slot></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:17px;font-weight:600">{{ ex.name }}</span><span style="display:block;font-size:14px;color:var(--muted);margin-top:3px">{{ ex.eq }}</span></span>
+<span style="flex-shrink:0;height:34px;padding:0 14px;border-radius:17px;display:flex;align-items:center;font-size:14px;font-weight:700;background:{{ ex.actBg }};color:{{ ex.actColor }}">{{ ex.action }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEx }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;height:340px">
+<div style="position:absolute;inset:0;color:var(--muted)"><image-slot id="{{ ex.img1 }}" src="{{ ex.src1 }}" shape="rect" placeholder="{{ ex.p1 }}"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,13,12,.7) 0%,rgba(13,13,12,0) 28%,rgba(13,13,12,0) 50%,#0d0d0c 97%)"></div>
+<button onClick="{{ back }}" style="position:absolute;top:54px;left:16px;height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(13,13,12,.72);font-size:15px;font-weight:600">‹ Back</button>
+<div style="position:absolute;left:20px;right:20px;bottom:0;pointer-events:none">
+<div style="font-size:15px;font-weight:600;color:var(--accent)">{{ ex.group }}, {{ ex.eq }}</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:54px;line-height:.9;text-transform:uppercase;margin-top:8px;text-wrap:balance">{{ ex.name }}</div>
+</div>
+</div>
+<div style="padding:20px 20px 28px">
+<sc-if value="{{ ex.two }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+<div><div style="position:relative;height:190px;border-radius:18px;overflow:hidden;background:var(--surface);color:var(--muted)"><image-slot id="{{ ex.img1 }}-a" src="{{ ex.src1 }}" shape="rect" placeholder="{{ ex.ph1 }}"></image-slot></div><div style="font-size:14px;color:var(--muted);margin-top:8px">{{ ex.l1 }}</div></div>
+<div><div style="position:relative;height:190px;border-radius:18px;overflow:hidden;background:var(--surface);color:var(--muted)"><image-slot id="{{ ex.img2 }}" src="{{ ex.src2 }}" shape="rect" placeholder="{{ ex.ph2 }}"></image-slot></div><div style="font-size:14px;color:var(--muted);margin-top:8px">{{ ex.l2 }}</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ ex.three }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+<div><div style="position:relative;height:150px;border-radius:18px;overflow:hidden;background:var(--surface);color:var(--muted)"><image-slot id="{{ ex.img2 }}" src="{{ ex.src2 }}" shape="rect" placeholder="Photo 2: mid-rep"></image-slot></div><div style="font-size:14px;color:var(--muted);margin-top:8px">2. Mid-rep</div></div>
+<div><div style="position:relative;height:150px;border-radius:18px;overflow:hidden;background:var(--surface);color:var(--muted)"><image-slot id="{{ ex.img3 }}" src="{{ ex.src3 }}" shape="rect" placeholder="Photo 3: end position"></image-slot></div><div style="font-size:14px;color:var(--muted);margin-top:8px">3. End position</div></div>
+</div>
+</sc-if>
+<p style="font-size:17px;line-height:1.5;margin:22px 0 0;text-wrap:pretty">{{ ex.d }}</p>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:28px">How to do it</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+<sc-for list="{{ ex.steps }}" as="s" hint-placeholder-count="3">
+<div style="display:flex;gap:14px;background:var(--surface);border-radius:18px;padding:14px 16px">
+<span style="width:30px;height:30px;flex-shrink:0;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:14px;font-weight:500">{{ s.no }}</span>
+<span style="font-size:16px;line-height:1.45;text-wrap:pretty;padding-top:4px">{{ s.t }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ ex.hasStats }}" hint-placeholder-val="{{ true }}">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:28px">Your numbers</div>
+<sc-for list="{{ ex.stats }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-size:16px;color:var(--muted)">{{ r.k }}</div><div style="font-family:'Martian Mono',monospace;font-size:17px;font-weight:500">{{ r.v }}</div></div>
+</sc-for>
+<button onClick="{{ ex.toProgress }}" style="width:100%;height:56px;margin-top:18px;border:0;border-radius:28px;background:var(--ink);color:var(--bg);font-size:16px;font-weight:700">View progress</button>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isProg }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:66px 20px 24px">
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.9;text-transform:uppercase">Progress</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:18px;padding:4px;border-radius:26px;background:var(--surface)">
+<sc-for list="{{ progModes }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.pick }}" style="height:44px;border:0;border-radius:22px;background:{{ m.bg }};color:{{ m.color }};font-size:15px;font-weight:700">{{ m.label }}</button></sc-for>
+</div>
+<sc-if value="{{ isLift }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:14px -20px 0;padding:0 20px">
+<sc-for list="{{ liftChips }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="flex-shrink:0;height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--line);background:{{ c.bg }};color:{{ c.color }};font-size:14px;font-weight:600;white-space:nowrap">{{ c.label }}</button></sc-for>
+</div>
+</sc-if>
+<div style="margin-top:24px;font-size:15px;color:var(--muted)">{{ pg.title }}</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:6px"><span style="font-family:'Martian Mono',monospace;font-size:60px;font-weight:500;line-height:1;letter-spacing:-0.06em">{{ pg.big }}</span><span style="font-size:20px;font-weight:600;color:var(--muted)">{{ pg.unit }}</span></div>
+<div style="font-size:15px;margin-top:8px;color:var(--green);font-weight:600">{{ pg.delta }}</div>
+<div style="background:var(--surface);border-radius:22px;padding:18px 14px 12px;margin-top:20px">
+<div style="position:relative;width:322px;height:190px">
+<sc-for list="{{ pg.ch.grid }}" as="g" hint-placeholder-count="3"><div style="position:absolute;right:0;top:{{ g.lt }}px;font-family:'Martian Mono',monospace;font-size:11px;line-height:14px;color:var(--muted)">{{ g.label }}</div></sc-for>
+<sc-if value="{{ pg.hasTarget }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;right:0;top:{{ pg.ch.tlt }}px;font-family:'Martian Mono',monospace;font-size:11px;line-height:14px;color:var(--green)">{{ pg.ch.tlabel }}</div></sc-if>
+<sc-for list="{{ pg.ch.xl }}" as="x" hint-placeholder-count="3"><div style="position:absolute;bottom:0;left:{{ x.x }}px;transform:{{ x.tf }};font-family:'Martian Mono',monospace;font-size:11px;line-height:14px;color:var(--muted);white-space:nowrap">{{ x.label }}</div></sc-for>
+<svg width="322" height="190" style="position:absolute;inset:0;display:block;overflow:visible">
+<sc-for list="{{ pg.ch.grid }}" as="g" hint-placeholder-count="3"><line x1="0" x2="280" y1="{{ g.y }}" y2="{{ g.y }}" style="stroke:var(--line);stroke-width:1"></line></sc-for>
+<sc-if value="{{ pg.hasTarget }}" hint-placeholder-val="{{ false }}"><line x1="0" x2="280" y1="{{ pg.ch.ty }}" y2="{{ pg.ch.ty }}" style="stroke:var(--green);stroke-width:1.5;stroke-dasharray:4 5"></line></sc-if>
+<path d="{{ pg.ch.d }}" style="fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round"></path>
+<sc-for list="{{ pg.ch.pts }}" as="p" hint-placeholder-count="12"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="3" style="fill:var(--surface);stroke:var(--accent);stroke-width:1.5"></circle></sc-for>
+<circle cx="{{ pg.ch.lx }}" cy="{{ pg.ch.ly }}" r="6" style="fill:var(--accent)"></circle>
+</svg>
+</div>
+</div>
+<sc-if value="{{ isBody }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:22px;padding:12px;margin-top:12px">
+<button onClick="{{ bw.dec }}" style="width:56px;height:56px;border-radius:28px;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:24px">−</button>
+<div style="flex:1;text-align:center"><div style="font-size:13px;color:var(--muted)">Today</div><div style="font-family:'Martian Mono',monospace;font-size:26px;font-weight:500;letter-spacing:-0.04em">{{ bw.val }}</div></div>
+<button onClick="{{ bw.inc }}" style="width:56px;height:56px;border-radius:28px;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:24px">+</button>
+</div>
+<button onClick="{{ bw.save }}" style="width:100%;height:56px;margin-top:10px;border:0;border-radius:28px;background:var(--accent);color:var(--accent-ink);font-size:16px;font-weight:700" style-active="background:var(--press)">{{ bw.saveLabel }}</button>
+</sc-if>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:28px">History</div>
+<sc-for list="{{ pg.rows }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-size:15px;color:var(--muted)">{{ r.k }}</div><div style="font-family:'Martian Mono',monospace;font-size:15px;font-weight:500">{{ r.v }}</div></div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isProf }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:58px 20px 28px">
+<div style="display:flex;justify-content:space-between;align-items:center"><button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600">‹ Back</button><button onClick="{{ prof.switchP }}" style="height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--line);background:none;font-size:15px;font-weight:600;white-space:nowrap">Switch profile</button></div>
+<div style="display:flex;align-items:center;gap:18px;margin-top:22px">
+<div style="position:relative;width:104px;height:104px;flex-shrink:0;border-radius:50%;background:{{ prof.color }};padding:4px"><div style="width:96px;height:96px;border-radius:50%;overflow:hidden;background:var(--surface);color:var(--muted)"><image-slot id="{{ prof.avatar }}" shape="circle" placeholder="Photo"></image-slot></div></div>
+<div style="min-width:0"><div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:48px;line-height:.9;text-transform:uppercase">{{ prof.name }}</div><div style="font-size:15px;color:var(--muted);margin-top:8px">{{ prof.meta }}</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:26px">
+<sc-for list="{{ prof.rows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:20px;padding:10px 10px 10px 18px">
+<div style="flex:1;min-width:0"><div style="font-size:14px;color:var(--muted)">{{ r.label }}</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:2px"><span style="font-family:'Martian Mono',monospace;font-size:26px;font-weight:500;letter-spacing:-0.05em">{{ r.val }}</span><span style="font-size:14px;color:var(--muted)">{{ r.unit }}</span></div></div>
+<button onClick="{{ r.dec }}" style="width:52px;height:52px;border-radius:26px;border:0;background:var(--surface2);font-family:'Martian Mono',monospace;font-size:22px">−</button>
+<button onClick="{{ r.inc }}" style="width:52px;height:52px;border-radius:26px;border:0;background:var(--ink);color:var(--bg);font-family:'Martian Mono',monospace;font-size:22px">+</button>
+</div>
+</sc-for>
+</div>
+<div style="font-size:15px;color:var(--muted);margin-top:22px">Goal</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px;padding:4px;border-radius:26px;background:var(--surface)">
+<sc-for list="{{ prof.goals }}" as="g" hint-placeholder-count="3"><button onClick="{{ g.pick }}" style="height:44px;border:0;border-radius:22px;background:{{ g.bg }};color:{{ g.color }};font-size:14px;font-weight:700">{{ g.label }}</button></sc-for>
+</div>
+<div style="background:var(--surface);border-radius:24px;padding:20px;margin-top:26px">
+<div style="font-size:15px;color:var(--muted)">Training plan</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:36px;line-height:.95;text-transform:uppercase;margin-top:6px">{{ prof.planTitle }}</div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:16px">
+<sc-for list="{{ prof.week }}" as="c" hint-placeholder-count="7"><div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:12px;color:var(--muted)">{{ c.day }}</span><span style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ c.fill }};color:#0d0d0c;box-shadow:{{ c.ring }};font-family:'Martian Mono',monospace;font-size:13px;font-weight:500">{{ c.letter }}</span></div></sc-for>
+</div>
+<button onClick="{{ prof.openPlan }}" style="width:100%;height:54px;margin-top:18px;border:0;border-radius:27px;background:var(--ink);color:var(--bg);font-size:16px;font-weight:700">Edit plan and routines</button>
+</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:30px">Settings</div>
+<div style="font-size:15px;color:var(--muted);margin-top:12px">Set entry</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px;padding:4px;border-radius:26px;background:var(--surface)">
+<sc-for list="{{ prof.variants }}" as="g" hint-placeholder-count="3"><button onClick="{{ g.pick }}" style="height:44px;border:0;border-radius:22px;background:{{ g.bg }};color:{{ g.color }};font-size:14px;font-weight:700">{{ g.label }}</button></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlan }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:58px 20px 28px">
+<button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600">‹ Back</button>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:52px;line-height:.9;text-transform:uppercase;margin-top:18px">Training plan</div>
+<div style="font-size:15px;color:var(--muted);margin-top:22px">Workouts per week</div>
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px">
+<sc-for list="{{ plan.weeklyOpts }}" as="o" hint-placeholder-count="5"><button onClick="{{ o.pick }}" style="aspect-ratio:1;border-radius:50%;border:0;background:{{ o.bg }};color:{{ o.color }};font-family:'Martian Mono',monospace;font-size:24px;font-weight:500">{{ o.label }}</button></sc-for>
+</div>
+<div style="font-size:15px;color:var(--muted);margin-top:26px">Schedule</div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:10px">
+<sc-for list="{{ plan.days }}" as="d" hint-placeholder-count="7">
+<button onClick="{{ d.toggle }}" style="border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:8px">
+<span style="font-size:13px;font-weight:600;color:var(--muted)">{{ d.name }}</span>
+<span style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ d.fill }};color:#0d0d0c;box-shadow:{{ d.ring }};font-family:'Martian Mono',monospace;font-size:16px;font-weight:500">{{ d.letter }}</span>
+</button>
+</sc-for>
+</div>
+<div style="font-size:14px;margin-top:12px;color:{{ plan.noteColor }}">{{ plan.note }}</div>
+<div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;margin-top:30px">Routines</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+<sc-for list="{{ plan.routines }}" as="r" hint-placeholder-count="4">
+<button onClick="{{ r.open }}" style="border:0;border-radius:20px;background:var(--surface);padding:10px 16px 10px 10px;display:flex;align-items:center;gap:14px;text-align:left">
+<span style="position:relative;width:58px;height:58px;flex-shrink:0;border-radius:13px;overflow:hidden;background:var(--surface2);color:transparent;pointer-events:none"><image-slot id="{{ r.cover }}" src="{{ r.coverSrc }}" shape="rect" placeholder=" "></image-slot><span style="position:absolute;left:5px;bottom:5px;width:22px;height:22px;border-radius:50%;background:{{ r.plate }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:11px;font-weight:500">{{ r.key }}</span></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:17px;font-weight:600">{{ r.name }}</span><span style="display:block;font-size:14px;color:var(--muted);margin-top:3px">{{ r.meta }}</span></span>
+<span style="font-size:22px;color:var(--muted)">›</span>
+</button>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px">
+<button onClick="{{ plan.addStrength }}" style="height:56px;border:1.5px dashed var(--line);border-radius:28px;background:none;font-size:16px;font-weight:700">New strength</button>
+<button onClick="{{ plan.addCardio }}" style="height:56px;border:1.5px dashed var(--line);border-radius:28px;background:none;font-size:16px;font-weight:700">New cardio</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRoutine }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:58px 20px 28px">
+<button onClick="{{ back }}" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--surface);font-size:15px;font-weight:600">‹ Back</button>
+<div style="position:relative;height:150px;border-radius:22px;overflow:hidden;background:var(--surface);color:var(--muted);margin-top:16px"><image-slot id="{{ rt.cover }}" src="{{ rt.coverSrc }}" shape="rect" placeholder="Routine cover photo"></image-slot></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:18px"><span style="width:28px;height:28px;border-radius:50%;background:{{ rt.plate }};color:#0d0d0c;display:flex;align-items:center;justify-content:center;font-family:'Martian Mono',monospace;font-size:13px;font-weight:500">{{ rt.key }}</span><span style="font-size:15px;color:var(--muted)">{{ rt.meta }}</span></div>
+<input value="{{ rt.name }}" onChange="{{ rt.rename }}" style="width:100%;margin-top:8px;border:0;border-bottom:2px solid var(--line);background:none;color:var(--ink);font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:44px;text-transform:uppercase;padding:2px 0 6px;outline:none;border-radius:0"></input>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
+<sc-for list="{{ rt.items }}" as="it" hint-placeholder-count="4">
+<div style="background:var(--surface);border-radius:20px;padding:12px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="position:relative;width:44px;height:44px;flex-shrink:0;border-radius:11px;overflow:hidden;background:var(--surface2);color:transparent;pointer-events:none"><image-slot id="{{ it.img }}" src="{{ it.src }}" shape="rect" placeholder=" "></image-slot></span>
+<span style="flex:1;min-width:0;font-size:16px;font-weight:600">{{ it.name }}</span>
+<button onClick="{{ it.remove }}" style="height:36px;border:0;background:none;padding:0 4px;font-size:14px;color:var(--muted)">Remove</button>
+</div>
+<sc-if value="{{ it.strength }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:10px">
+<div style="display:flex;align-items:center;height:50px;border-radius:25px;background:var(--surface2)"><button onClick="{{ it.sDec }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">−</button><div style="flex:1;text-align:center;line-height:1.1"><div style="font-size:11px;color:var(--muted)">sets</div><div style="font-family:'Martian Mono',monospace;font-size:18px;font-weight:500">{{ it.sets }}</div></div><button onClick="{{ it.sInc }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">+</button></div>
+<div style="display:flex;align-items:center;height:50px;border-radius:25px;background:var(--surface2)"><button onClick="{{ it.rDec }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">−</button><div style="flex:1;text-align:center;line-height:1.1"><div style="font-size:11px;color:var(--muted)">reps</div><div style="font-family:'Martian Mono',monospace;font-size:18px;font-weight:500">{{ it.reps }}</div></div><button onClick="{{ it.rInc }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">+</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ it.cardio }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:10px">
+<div style="display:flex;align-items:center;height:50px;border-radius:25px;background:var(--surface2)"><button onClick="{{ it.mDec }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">−</button><div style="flex:1;text-align:center;line-height:1.1"><div style="font-size:11px;color:var(--muted)">minutes</div><div style="font-family:'Martian Mono',monospace;font-size:18px;font-weight:500">{{ it.min }}</div></div><button onClick="{{ it.mInc }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">+</button></div>
+<div style="display:flex;align-items:center;height:50px;border-radius:25px;background:var(--surface2)"><button onClick="{{ it.zDec }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">−</button><div style="flex:1;text-align:center;line-height:1.1"><div style="font-size:11px;color:var(--muted)">zone</div><div style="font-family:'Martian Mono',monospace;font-size:18px;font-weight:500">{{ it.zoneN }}</div></div><button onClick="{{ it.zInc }}" style="width:46px;height:50px;border:0;background:none;font-family:'Martian Mono',monospace;font-size:20px">+</button></div>
+</div>
+<div style="font-size:13px;color:var(--muted);margin-top:8px;padding-left:4px">{{ it.zoneText }}</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<button onClick="{{ rt.add }}" style="width:100%;height:56px;margin-top:12px;border:1.5px dashed var(--line);border-radius:28px;background:none;font-size:16px;font-weight:700">{{ rt.addLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ showTabs }}" hint-placeholder-val="{{ false }}">
+<div style="flex-shrink:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--bg);border-top:1px solid var(--line)">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+<button onClick="{{ t.go }}" style="height:58px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;color:{{ t.color }}">
+<span style="width:{{ t.dot }};height:6px;border-radius:3px;background:{{ t.bar }}"></span>{{ t.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg)"><div style="width:134px;height:5px;border-radius:3px;background:var(--ink)"></div></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:414,&quot;height&quot;:868},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;welcome&quot;,&quot;profiles&quot;,&quot;onboard1&quot;,&quot;onboard2&quot;,&quot;onboard3&quot;,&quot;onboard4&quot;,&quot;home&quot;,&quot;workout&quot;,&quot;day&quot;,&quot;log&quot;,&quot;summary&quot;,&quot;library&quot;,&quot;group&quot;,&quot;exercise&quot;,&quot;progress&quot;,&quot;body&quot;,&quot;profile&quot;,&quot;plan&quot;,&quot;routine&quot;,&quot;dayCardio&quot;,&quot;logCardio&quot;,&quot;summaryCardio&quot;,&quot;groupCardio&quot;,&quot;exerciseCardio&quot;,&quot;progressCardio&quot;,&quot;routineCardio&quot;],&quot;default&quot;:&quot;profiles&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;inputVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;stepper&quot;,&quot;keypad&quot;,&quot;scale&quot;],&quot;default&quot;:&quot;stepper&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Set entry&quot;},&quot;weightStep&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[1.25,2.5,5],&quot;default&quot;:2.5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Set entry&quot;},&quot;restSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:30,&quot;max&quot;:300,&quot;step&quot;:15,&quot;default&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Set entry&quot;},&quot;handedness&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;right&quot;,&quot;left&quot;],&quot;default&quot;:&quot;right&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Set entry&quot;}}">
+const PLATES=['#ff5a3c','#3ddc84','#ffc531','#e9e6df','#ff9f43','#b8e04a','#ff7aa8','#c7c2b8'];
+const plate=k=>PLATES[(k.charCodeAt(0)-65)%PLATES.length];
+const GROUPS=[['chest','Chest'],['back','Back'],['legs','Legs'],['shoulders','Shoulders'],['arms','Arms'],['core','Core']];
+const EX={
+bench:{n:'Bench press',g:'chest',eq:'Barbell',cur:90,d:'The main chest builder. It also works the front delts and triceps. Lower the bar under control to the lower chest.',s:['Lie on the bench, feet planted, shoulder blades pulled back and down.','Grip slightly wider than your shoulders. Lower the bar to the lower chest, elbows at about 45°.','Press back up over the shoulders. Keep your hips on the bench.']},
+incline:{n:'Incline dumbbell press',g:'chest',eq:'Dumbbells, incline bench',cur:30,d:'Targets the upper chest. Set the bench between 30 and 45 degrees.',s:['Set the bench to 30–45°, dumbbells over your chest.','Lower the dumbbells out to the sides until you feel a stretch.','Press up and slightly in without clashing the dumbbells.']},
+fly:{n:'Cable fly',g:'chest',eq:'Cable',cur:17.5,d:'Chest isolation with constant tension through the whole range.',s:['Stand between the cables, one step forward, elbows slightly bent.','Bring your hands together in front of the chest in an arc.','Return slowly to a stretch, keeping the elbow angle fixed.']},
+dips:{n:'Dips',g:'chest',eq:'Parallel bars, added weight',cur:10,d:'Chest and triceps with your own body weight. Leaning forward shifts the work to the chest.',s:['Grip the bars, arms straight, shoulders down.','Lower until your upper arms are parallel to the floor.','Press back up under control.']},
+deadlift:{n:'Deadlift',g:'back',eq:'Barbell',cur:140,d:'Works the whole back of the body: back, glutes and hamstrings.',s:['Feet hip-width apart, bar over mid-foot.','Grip the bar, flatten your back and brace before you pull.','Push the floor away and extend your hips. Keep the bar close to your legs.']},
+row:{n:'Barbell row',g:'back',eq:'Barbell',cur:70,d:'Builds back thickness. Keep the torso still through the whole set.',s:['Hinge to about 45°, back flat, knees soft.','Pull the bar to your belly button, elbows close to the body.','Lower under control to full arm extension.']},
+pullup:{n:'Pull-up',g:'back',eq:'Bar, added weight',cur:10,d:'Back width and biceps. Use a band if you cannot finish the set.',s:['Grip the bar overhand, slightly wider than your shoulders.','Pull until your chin clears the bar.','Lower to straight arms without swinging.']},
+lat:{n:'Lat pulldown',g:'back',eq:'Machine',cur:65,d:'A pull-up alternative with adjustable load.',s:['Sit with your thighs under the pad, wide grip.','Pull the bar to your upper chest, shoulder blades down.','Return slowly until your arms are straight.']},
+squat:{n:'Back squat',g:'legs',eq:'Barbell',cur:110,d:'The main leg and core lift. Go as deep as your mobility allows with a flat back.',s:['Bar on the upper back, feet shoulder-width apart.','Sit your hips back and down, knees tracking over the toes.','Drive up through the whole foot, chest up.']},
+rdl:{n:'Romanian deadlift',g:'legs',eq:'Barbell',cur:90,d:'Hamstrings and glutes. The movement comes from the hips while the knees stay almost still.',s:['Stand holding the bar, knees slightly bent.','Push your hips back as the bar slides down your thighs.','When you feel the hamstring stretch, drive the hips forward to stand up.']},
+press:{n:'Leg press',g:'legs',eq:'Machine',cur:180,d:'Quads and glutes without loading the spine.',s:['Feet shoulder-width apart in the middle of the platform.','Lower until your knees reach about 90°.','Press through your heels. Do not lock the knees at the top.']},
+lunge:{n:'Dumbbell lunge',g:'legs',eq:'Dumbbells',cur:20,d:'Single-leg strength and balance.',s:['Dumbbells at your sides, take a long step forward.','Lower the back knee almost to the floor, torso upright.','Push off the front foot back to the start.']},
+ohp:{n:'Overhead press',g:'shoulders',eq:'Barbell',cur:55,d:'Shoulders and triceps from a standing position. Brace your torso and do not lean back.',s:['Bar on the upper chest, grip slightly wider than your shoulders.','Press straight up, moving your head back and then through.','Finish with the bar over mid-foot. Lower under control.']},
+lateral:{n:'Lateral raise',g:'shoulders',eq:'Dumbbells',cur:12,d:'Isolates the side delts. Light weight, clean form.',s:['Dumbbells at your sides, elbows slightly bent.','Raise your arms out to shoulder height.','Lower slower than you lift.']},
+facepull:{n:'Face pull',g:'shoulders',eq:'Cable, rope',cur:25,d:'Rear delts and upper back. Good for posture.',s:['Set the cable at face height, overhand grip on the rope.','Pull toward your face, hands splitting past your ears.','Hold for a second, then return under control.']},
+curl:{n:'Barbell curl',g:'arms',eq:'Barbell',cur:35,d:'The basic biceps exercise.',s:['Stand tall, underhand grip at shoulder width.','Curl the bar without letting the elbows drift forward.','Lower to full extension without swinging.']},
+hammer:{n:'Hammer curl',g:'arms',eq:'Dumbbells',cur:16,d:'Biceps and forearms with a neutral grip.',s:['Dumbbells at your sides, palms facing each other.','Curl up, leading with the thumb.','Lower slowly, elbows tucked in.']},
+skull:{n:'Skull crusher',g:'arms',eq:'EZ bar',cur:30,d:'Triceps, especially the long head.',s:['Lie on a bench, bar over your forehead, arms straight.','Bend only at the elbows and lower the bar toward your forehead.','Extend back up. Your upper arms stay still.']},
+pushdown:{n:'Triceps pushdown',g:'arms',eq:'Cable',cur:30,d:'Triceps under constant cable tension.',s:['Face the cable, elbows pinned to your sides.','Push the handle down to full extension.','Return to about 90° at the elbow.']},
+legraise:{n:'Hanging leg raise',g:'core',eq:'Bar',cur:0,d:'Lower abs and hip flexors.',s:['Hang from the bar, shoulders engaged.','Raise your legs to horizontal or higher without swinging.','Lower slowly to a full hang.']},
+abwheel:{n:'Ab wheel rollout',g:'core',eq:'Ab wheel',cur:0,d:'Full core strength through controlled extension.',s:['Kneel with the wheel under your shoulders.','Roll forward while keeping your back flat.','Pull back by bracing your abs, not your hips.']},
+treadmill:{n:'Treadmill run',g:'cardio',kind:'cardio',eq:'Treadmill',cur:0,unit:'km',step:0.1,last:{min:20,v:3.4},best:4.6,d:'Steady running for the heart and lungs. A 1% incline matches running outside.',s:['Start walking, then raise the speed to your target pace.','Run tall with short steps, landing under your hips.','Slow to a walk for the last two minutes to cool down.']},
+bike:{n:'Stationary bike',g:'cardio',kind:'cardio',eq:'Bike',cur:0,unit:'km',step:0.1,last:{min:15,v:6.2},best:8.0,d:'Low-impact cardio that is easy on the knees. Good after leg day.',s:['Set the seat so the knee stays slightly bent at the bottom.','Hold a steady cadence of 80 to 90 rpm.','Add resistance instead of pedalling faster.']},
+rower:{n:'Rowing machine',g:'cardio',kind:'cardio',eq:'Rower',cur:0,unit:'km',step:0.1,last:{min:10,v:2.1},best:2.4,d:'Full-body cardio. The power comes from the legs, not the arms.',s:['Strap in, arms straight, shins vertical.','Push with the legs, then lean back and pull the handle to your ribs.','Return arms first, then body, then legs.']},
+stairs:{n:'Stair climber',g:'cardio',kind:'cardio',eq:'Machine',cur:0,unit:'floors',step:1,last:{min:15,v:48},best:62,d:'Hard on the lungs and works the glutes and quads.',s:['Stand tall and hold the rails lightly, not for support.','Take full steps through the whole foot.','Keep a pace you can hold for the full time.']},
+elliptical:{n:'Elliptical',g:'cardio',kind:'cardio',eq:'Machine',cur:0,unit:'km',step:0.1,last:{min:20,v:3.0},best:3.8,d:'Smooth, joint-friendly cardio for longer sessions.',s:['Step on and grip the moving handles.','Push and pull with the arms as the legs drive.','Keep the heels down and the torso upright.']}
+};
+const ALLG=[...GROUPS,['cardio','Cardio']];
+const GSRC={cardio:'images/cardio-hero.png'};
+const gSrc=k=>k in GSRC?GSRC[k]:'images/group-'+k+'.jpg';
+const ZONES=['','Recovery, very easy','Easy, you can hold a conversation','Steady, short sentences only','Hard, a few words at a time','All out'];
+const zoneColor=z=>[null,'#c7c2b8','#3ddc84','#ffc531','#ff9f43','#ff5a3c'][z];
+const CARDIO_WK=[30,45,40,45,55,50,60,45,65,70,70,80];
+const CARDIO_KM=[5.1,7.4,6.8,7.6,9.2,8.5,10.1,7.7,11.0,11.8,12.0,13.4];
+const TABS=[['home','Home'],['workout','Workout'],['library','Exercises'],['progress','Progress']];
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TODAY=4;
+const PATTERNS={2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]};
+const CURVE=[0,.1,.1,.25,.3,.3,.45,.55,.6,.75,.85,1];
+const BW=[87.2,87.0,86.6,86.4,86.5,86.0,85.7,85.6,85.2,85.0,84.9,84.6];
+const DATES=(()=>{const a=[];for(let i=0;i<12;i++){const d=new Date(2026,9,30-7*(11-i));a.push(MON[d.getMonth()]+' '+d.getDate());}return a;})();
+const GOALS=[['muscle','Build muscle','More size, steady weight gain',PLATES[0]],['strength','Get stronger','Heavier lifts on the main exercises',PLATES[2]],['fat','Lose fat','Keep strength while the scale goes down',PLATES[1]]];
+const fmt=n=>String(Math.round(n*100)/100);
+const thou=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const s_=(n,w)=>n+' '+w+(n===1?'':'s');
+const mmss=ms=>{const t=Math.max(0,Math.round(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
+const r2=v=>Math.round(v*100)/100;
+const img1=id=>'ll-ex-'+id+'-1';
+const PHOTOS={bench:['images/bench-1.jpg','images/bench-2.jpg'],incline:['images/incline-1.jpg','images/incline-2.jpg'],fly:['images/cable-fly-1.jpg','images/cable-fly-2.jpg'],pushdown:['images/pushdown-1.jpg','images/pushdown-2.jpg'],deadlift:['images/deadlift-1.jpg','images/deadlift-2.jpg','images/deadlift-3.jpg'],curl:['images/curl-1.jpg','images/curl-2.jpg','images/curl-3.jpg'],row:['images/row-1.jpg','images/row-2.jpg'],lat:['images/lat-1.jpg','images/lat-2.jpg'],squat:['images/squat-1.jpg','images/squat-2.jpg','images/squat-3.jpg'],press:['images/legpress-1.jpg','images/legpress-2.jpg'],legraise:['images/legraise-1.jpg','images/legraise-2.jpg'],rdl:['images/rdl-1.jpg','images/rdl-2.jpg','images/rdl-3.jpg'],ohp:['images/ohp-1.jpg','images/ohp-2.jpg'],dips:['images/dips-1.jpg','images/dips-2.jpg'],pullup:['images/pullup-1.jpg','images/pullup-2.jpg'],lunge:['images/lunge-1.jpg','images/lunge-2.jpg'],abwheel:['images/abwheel-1.jpg','images/abwheel-2.jpg'],lateral:['images/lateral-1.jpg','images/lateral-2.jpg','images/lateral-3.jpg'],facepull:['images/facepull-1.jpg','images/facepull-2.jpg'],hammer:['images/hammer-1.jpg','images/hammer-2.jpg','images/hammer-3.jpg'],skull:['images/skull-1.jpg','images/skull-2.jpg','images/skull-3.jpg'],treadmill:['images/treadmill-1.jpg','images/treadmill-2.jpg'],bike:['images/bike-1.jpg','images/bike-2.jpg'],rower:['images/rower-1.jpg','images/rower-2.jpg'],elliptical:['images/elliptical-1.jpg','images/elliptical-2.jpg'],stairs:['images/stairs-1.jpg','images/stairs-2.jpg']};
+const COVERS={'Chest & triceps':'images/routine-chest-triceps.jpg','Back & biceps':'images/routine-back-biceps.jpg','Legs':'images/routine-legs.jpg','Shoulders & arms':'images/routine-shoulders-arms.jpg'};
+const exSrc=(id,n)=>(PHOTOS[id]&&PHOTOS[id][n])||'';
+const CARDIO_HERO='images/cardio-hero.png',CARDIO_WIDE='images/cardio-banner.png';
+const coverSrc=(r,wide)=>!r?'':r.type==='cardio'?(wide?CARDIO_WIDE:CARDIO_HERO):(COVERS[r.name]||'');
+function series(id){const c=EX[id].cur;if(!c)return null;const st=c>=20?2.5:0.5;const s=c*0.88;return CURVE.map(f=>Math.round((s+(c-s)*f)/st)*st);}
+function routinesDefault(){return {A:{name:'Chest & triceps',items:[{ex:'bench',sets:4,reps:6},{ex:'incline',sets:3,reps:10},{ex:'fly',sets:3,reps:12},{ex:'pushdown',sets:3,reps:12}]},
+B:{name:'Back & biceps',items:[{ex:'deadlift',sets:3,reps:5},{ex:'row',sets:4,reps:8},{ex:'lat',sets:3,reps:10},{ex:'curl',sets:3,reps:10}]},
+C:{name:'Legs',items:[{ex:'squat',sets:4,reps:6},{ex:'rdl',sets:3,reps:8},{ex:'press',sets:3,reps:12},{ex:'legraise',sets:3,reps:12}]},
+D:{name:'Shoulders & arms',items:[{ex:'ohp',sets:4,reps:6},{ex:'lateral',sets:3,reps:15},{ex:'facepull',sets:3,reps:15},{ex:'hammer',sets:3,reps:12},{ex:'skull',sets:3,reps:10}]},
+E:{name:'Cardio',type:'cardio',items:[{ex:'treadmill',min:20,zone:2},{ex:'bike',min:15,zone:3},{ex:'rower',min:10,zone:4}]}};}
+function schedule(n,keys){const d=[null,null,null,null,null,null,null];if(keys.length)PATTERNS[n].forEach((x,i)=>{d[x]=keys[i%keys.length];});return d;}
+function mkPlan(n){const routines=routinesDefault();const keys=n<=3?['A','B','C']:n===4?['A','B','C','D']:['A','B','C','D','E'];if(n<=3)delete routines.D;return {weekly:n,days:schedule(n,keys),routines};}
+function defaultProfiles(){return {p1:{id:'p1',name:'Marko',color:PLATES[2],height:182,weight:84.6,goal:'strength',target:80,plan:(()=>{const pl=mkPlan(4);pl.days[5]='E';pl.weekly=5;return pl;})(),done:[0,1,3],bodyLog:[]},
+p2:{id:'p2',name:'Ana',color:PLATES[1],height:168,weight:61.2,goal:'muscle',target:64,plan:mkPlan(3),done:[0,2],bodyLog:[]}};}
+function makeSession(plan,day,demo){const rid=plan.days[day];const r=plan.routines[rid];
+if(r.type==='cardio'){const ex=r.items.map(it=>({id:it.ex,target:it.min,zone:it.zone,min:it.min,v:EX[it.ex].last.v,done:false}));
+  const s={type:'cardio',rid,day,start:Date.now()-(demo?21*60000+40000:0),cur:0,ex,acc:0,runAt:null};
+  if(demo&&ex.length>1){ex[0].done=true;ex[0].v=r2(ex[0].v+0.2);s.cur=1;s.runAt=Date.now()-(6*60000+14000);}
+  return s;}const ex=r.items.map(it=>{const w=EX[it.ex].cur;return {id:it.ex,target:it.sets,reps:it.reps,sets:Array.from({length:it.sets},()=>({w,r:it.reps,done:false,pr:false}))};});
+const s={rid,day,start:Date.now()-(demo?14*60000+12000:0),cur:0,sel:ex.length&&ex[0].sets.length?0:-1,ex};
+if(demo&&ex[0]&&ex[0].sets.length>2){const e=ex[0];e.sets[0].done=true;e.sets.forEach((x,i)=>{if(i>0)x.w=r2(x.w+2.5);});e.sets[1].done=true;e.sets[1].pr=true;s.sel=2;}
+return s;}
+function seg(opts,cur,on,act){return opts.map(([k,l])=>({label:l,pick:()=>on(k),bg:k===cur?(act||'var(--ink)'):'transparent',color:k===cur?'var(--bg)':'var(--ink)'}));}
+function weekCells(plan,done,opts){opts=opts||{};return DAYS.map((d,i)=>{const k=plan.days[i];const isDone=!!k&&done.includes(i);const today=opts.today&&i===TODAY;
+  return {day:d[0]+(d==='Thu'||d==='Sun'||d==='Sat'?d[1]:''),letter:k||'·',fill:isDone?plate(k):'transparent',txt:isDone?'#0d0d0c':(k?'var(--ink)':'var(--muted)'),dayColor:today?'var(--accent)':'var(--muted)',
+   ring:today?(isDone?'0 0 0 2px var(--bg), 0 0 0 4px var(--accent)':'inset 0 0 0 2px var(--accent)'):(k&&!isDone?'inset 0 0 0 1.5px '+plate(k):'none')};});}
+
+class Component extends DCLogic {
+  state = this.initState();
+  initState(){const p=this.props||{};const profiles=defaultProfiles();
+    const st={mode:'app',ob:null,profiles,pid:'p1',tab:'home',stack:[],variant:p.inputVariant||'stepper',session:null,summary:null,progMode:'lift',progEx:'bench',bwInput:84.6,rest:null,now:Date.now(),confirmCancel:false,field:'w',padText:null};
+    const sc=p.screen||'profiles';
+    const obNew=step=>({step,from:'profiles',name:step>1?'Luka':'',color:PLATES[0],height:178,weight:80,goal:'muscle',target:78,weekly:3});
+    switch(sc){
+      case 'welcome':st.mode='welcome';break;
+      case 'profiles':st.mode='profiles';break;
+      case 'onboard1':st.mode='onboard';st.ob=obNew(1);break;
+      case 'onboard2':st.mode='onboard';st.ob=obNew(2);break;
+      case 'onboard3':st.mode='onboard';st.ob=obNew(3);break;
+      case 'onboard4':st.mode='onboard';st.ob=obNew(4);break;
+      case 'workout':st.tab='workout';break;
+      case 'day':st.tab='workout';st.stack=[{s:'day',d:TODAY}];break;
+      case 'dayA':st.tab='workout';st.stack=[{s:'day',d:0}];break;
+      case 'dayB':st.tab='workout';st.stack=[{s:'day',d:1}];break;
+      case 'dayC':st.tab='workout';st.stack=[{s:'day',d:3}];break;
+      case 'dayCardio':st.tab='workout';st.stack=[{s:'day',d:5}];break;
+      case 'logCardio':st.session=makeSession(profiles.p1.plan,5,true);st.tab='workout';st.stack=[{s:'day',d:5},{s:'log'}];break;
+      case 'summaryCardio':st.summary={type:'cardio',rid:'E',name:'Cardio',rows:[{k:'Time',v:'45 min'},{k:'Distance',v:'12.1 km'},{k:'Activities',v:'3 of 3'}],list:[{n:'Treadmill run',v:'20 min, 3.6 km'},{n:'Stationary bike',v:'15 min, 6.4 km'},{n:'Rowing machine',v:'10 min, 2.1 km'}]};st.stack=[{s:'summary'}];break;
+      case 'groupCardio':st.tab='library';st.stack=[{s:'group',k:'cardio'}];break;
+      case 'exerciseCardio':st.tab='library';st.stack=[{s:'group',k:'cardio'},{s:'exercise',id:'treadmill'}];break;
+      case 'progressCardio':st.tab='progress';st.progMode='cardio';break;
+      case 'routineCardio':st.stack=[{s:'profile'},{s:'plan'},{s:'routine',id:'E'}];break;
+      case 'exerciseDeadlift':st.tab='library';st.stack=[{s:'group',k:'back'},{s:'exercise',id:'deadlift'}];break;
+      case 'exerciseBench':st.tab='library';st.stack=[{s:'group',k:'chest'},{s:'exercise',id:'bench'}];break;
+      case 'log':st.session=makeSession(profiles.p1.plan,TODAY,true);st.rest={end:Date.now()+87000,total:120000};st.tab='workout';st.stack=[{s:'day',d:TODAY},{s:'log'}];break;
+      case 'summary':st.summary={rid:'D',name:'Shoulders & arms',dur:'58:12',sets:16,vol:'6,885 kg',prs:[{n:'Overhead press',v:'57.5 kg × 6'}]};st.stack=[{s:'summary'}];break;
+      case 'library':st.tab='library';break;
+      case 'group':st.tab='library';st.stack=[{s:'group',k:'shoulders'}];break;
+      case 'exercise':st.tab='library';st.stack=[{s:'group',k:'shoulders'},{s:'exercise',id:'ohp'}];break;
+      case 'progress':st.tab='progress';break;
+      case 'body':st.tab='progress';st.progMode='body';break;
+      case 'profile':st.stack=[{s:'profile'}];break;
+      case 'plan':st.stack=[{s:'profile'},{s:'plan'}];break;
+      case 'routine':st.stack=[{s:'profile'},{s:'plan'},{s:'routine',id:'D'}];break;
+    }
+    return st;}
+  componentDidMount(){this.iv=setInterval(()=>{const st=this.state;if(!st.session&&!st.rest)return;const now=Date.now();const u={now};if(st.rest&&now>=st.rest.end)u.rest=null;this.setState(u);},500);}
+  componentWillUnmount(){clearInterval(this.iv);clearTimeout(this.ct);}
+  componentDidUpdate(prev){if(prev.inputVariant!==this.props.inputVariant&&this.props.inputVariant)this.setState({variant:this.props.inputVariant});}
+  P(){return this.state.profiles[this.state.pid];}
+  updP(fn){const p=JSON.parse(JSON.stringify(this.P()));fn(p);this.setState(st=>({profiles:Object.assign({},st.profiles,{[p.id]:p})}));}
+  wStep(){return Number(this.props.weightStep??2.5)||2.5;}
+  push(o){this.setState(st=>({stack:[...st.stack,o]}));}
+  pop(n){this.setState(st=>({stack:st.stack.slice(0,-(n||1)),confirmCancel:false}));}
+  setTab(t){this.setState({tab:t,stack:[]});}
+  upd(fn,extra){const s=JSON.parse(JSON.stringify(this.state.session));fn(s);this.setState(Object.assign({session:s},extra||{}));}
+  curSet(){const s=this.state.session;return s&&s.sel>=0?s.ex[s.cur].sets[s.sel]:null;}
+  setVal(f,v,extra){this.upd(s=>{const e=s.ex[s.cur];const set=e.sets[s.sel];if(!set)return;set[f]=v;if(f==='w')e.sets.forEach((x,i)=>{if(i>s.sel&&!x.done)x.w=v;});},extra);}
+  adj(f,d){const set=this.curSet();if(!set)return;let v=set[f]+d;v=f==='r'?Math.max(1,v):Math.max(0,r2(v));this.setVal(f,v,{padText:null});}
+  logSet(){const now=Date.now();const rs=(Number(this.props.restSeconds)||120)*1000;
+    this.upd(s=>{const e=s.ex[s.cur];const set=e.sets[s.sel];if(!set)return;const prev=Math.max(EX[e.id].cur,...e.sets.filter(x=>x.done&&x!==set).map(x=>x.w));set.pr=EX[e.id].cur>0&&set.w>prev;set.done=true;s.sel=e.sets.findIndex(x=>!x.done);},{rest:{end:now+rs,total:rs},now,padText:null,field:'w'});}
+  goEx(d){this.upd(s=>{s.cur=Math.max(0,Math.min(s.ex.length-1,s.cur+d));s.sel=s.ex[s.cur].sets.findIndex(x=>!x.done);},{padText:null,field:'w'});}
+  startTraining(day){const st=this.state;if(st.session&&st.session.day===day){this.push({s:'log'});return;}
+    this.setState({session:makeSession(this.P().plan,day,false),rest:null,now:Date.now(),stack:[...st.stack.filter(x=>x.s!=='log'),{s:'log'}]});}
+  cElapsed(){const s=this.state.session;return s.acc+(s.runAt?this.state.now-s.runAt:0);}
+  cToggle(){const now=Date.now();this.upd(s=>{if(s.runAt){s.acc+=now-s.runAt;s.runAt=null;}else s.runAt=now;},{now});}
+  cGo(i){const s=this.state.session;if(i<0||i>=s.ex.length||i===s.cur)return;this.upd(x=>{x.cur=i;x.acc=0;x.runAt=null;});}
+  cAdj(f,d){this.upd(s=>{const a=s.ex[s.cur];a[f]=f==='min'?Math.max(1,a[f]+d):Math.max(0,r2(a[f]+d));});}
+  cLog(){this.upd(s=>{s.ex[s.cur].done=true;const n=s.ex.findIndex(x=>!x.done);if(n>=0){s.cur=n;s.acc=0;s.runAt=null;}});}
+  finish(){const st=this.state,s=st.session;let sets=0,vol=0;const prs=[];
+    if(s.type==='cardio'){const d=s.ex.filter(x=>x.done);const mins=d.reduce((a,x)=>a+x.min,0);const km=d.filter(x=>EX[x.id].unit==='km').reduce((a,x)=>a+x.v,0);
+      this.updP(p=>{if(!p.done.includes(s.day))p.done.push(s.day);});
+      this.setState({session:null,rest:null,summary:{type:'cardio',rid:s.rid,name:this.P().plan.routines[s.rid].name,rows:[{k:'Time',v:mins+' min'},{k:'Distance',v:fmt(r2(km))+' km'},{k:'Activities',v:d.length+' of '+s.ex.length}],list:d.map(x=>({n:EX[x.id].n,v:x.min+' min, '+fmt(x.v)+' '+EX[x.id].unit}))},stack:[{s:'summary'}]});return;}
+    s.ex.forEach(e=>e.sets.forEach(x=>{if(x.done){sets++;vol+=x.w*x.r;if(x.pr)prs.push({n:EX[e.id].n,v:fmt(x.w)+' kg × '+x.r});}}));
+    this.updP(p=>{if(!p.done.includes(s.day))p.done.push(s.day);});
+    this.setState({session:null,rest:null,summary:{rid:s.rid,name:this.P().plan.routines[s.rid].name,dur:mmss(Date.now()-s.start),sets,vol:thou(vol)+' kg',prs},stack:[{s:'summary'}]});}
+  cancel(){if(!this.state.confirmCancel){this.setState({confirmCancel:true});clearTimeout(this.ct);this.ct=setTimeout(()=>this.setState({confirmCancel:false}),3000);return;}
+    this.setState({session:null,rest:null,confirmCancel:false,stack:[],tab:'workout'});}
+  press(k){const set=this.curSet();if(!set)return;const f=this.state.field;let t=this.state.padText==null?'':this.state.padText;
+    if(k==='del')t=t.slice(0,-1);else if(k==='.'){if(f==='r'||t.includes('.'))return;t=(t||'0')+'.';}else{if(t.replace('.','').length>=4)return;t=t==='0'?k:t+k;}
+    const v=parseFloat(t||'0')||0;this.setVal(f,f==='r'?Math.round(v):v,{padText:t});}
+  rconf(f){return f==='w'?{st:this.wStep(),sp:12,min:0}:{st:1,sp:28,min:1};}
+  rDown(e,f){const set=this.curSet();if(!set)return;this.drag={f,x:e.clientX,v:set[f]};try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}}
+  rMove(e){const g=this.drag;if(!g)return;const c=this.rconf(g.f);let v=g.v-(e.clientX-g.x)/c.sp*c.st;v=r2(Math.max(c.min,Math.round(v/c.st)*c.st));const set=this.curSet();if(set&&set[g.f]!==v)this.setVal(g.f,v);}
+  ticks(f,val){const c=this.rconf(f);const C=179;const out=[];const base=Math.round(val/c.st)*c.st;
+    for(let k=-18;k<=18;k++){const v=r2(base+k*c.st);if(v<c.min)continue;const x=C+(v-val)/c.st*c.sp;if(x<-20||x>378)continue;
+      if(f==='w'){const major=Math.abs(v%10)<1e-6,mid=Math.abs(v%5)<1e-6;out.push({x:x.toFixed(1),h:major?30:mid?20:10,c:major?'var(--ink)':'var(--muted)',label:major?String(v):''});}
+      else{const major=v%5===0;out.push({x:x.toFixed(1),h:major?30:16,c:major?'var(--ink)':'var(--muted)',label:String(v)});}}
+    return out;}
+  clonePlan(fn){this.updP(p=>fn(p.plan));}
+  setWeekly(n){this.clonePlan(p=>{p.weekly=n;p.days=schedule(n,Object.keys(p.routines).sort());});}
+  toggleDay(i){this.clonePlan(p=>{const keys=[...Object.keys(p.routines).sort(),null];p.days[i]=keys[(keys.indexOf(p.days[i])+1)%keys.length];});}
+  addRoutine(type){const keys=Object.keys(this.P().plan.routines);let k=null;for(let i=0;i<8;i++){const c=String.fromCharCode(65+i);if(!keys.includes(c)){k=c;break;}}if(!k)return;
+    this.clonePlan(p=>{p.routines[k]=type==='cardio'?{name:'New cardio',type:'cardio',items:[]}:{name:'New routine',items:[]};});this.push({s:'routine',id:k});}
+  chart(vals,labels,target){const W=280,top=14,bot=160;let lo=Math.min(...vals),hi=Math.max(...vals);if(target!=null){lo=Math.min(lo,target);hi=Math.max(hi,target);}
+    const rg=(hi-lo)||1,a=lo-rg*.12,b=hi+rg*.12,n=vals.length;const X=i=>n<2?W/2:i*(W/(n-1));const Y=v=>bot-(v-a)/(b-a)*(bot-top);
+    const pts=vals.map((v,i)=>({x:+X(i).toFixed(1),y:+Y(v).toFixed(1)}));const mn=Math.min(...vals),mx=Math.max(...vals);
+    const grid=[mn,(mn+mx)/2,mx].map(v=>({y:+Y(v).toFixed(1),lt:+(Y(v)-7).toFixed(1),label:fmt(Math.round(v*10)/10)}));
+    const xi=[0,Math.floor((n-1)/2),n-1];const xl=xi.map((i,k)=>({x:+X(i).toFixed(1),label:labels[i],tf:k===0?'none':k===2?'translateX(-100%)':'translateX(-50%)'}));
+    const L=pts[n-1];const o={d:'M'+pts.map(p=>p.x+' '+p.y).join(' L'),pts,grid,xl,lx:L.x,ly:L.y};
+    if(target!=null){o.ty=+Y(target).toFixed(1);o.tlt=+(Y(target)-17).toFixed(1);o.tlabel='goal '+fmt(target);}
+    return o;}
+  spark(vals){const lo=Math.min(...vals),hi=Math.max(...vals),n=vals.length;return 'M'+vals.map((v,i)=>(i*120/(n-1)).toFixed(1)+' '+(50-(v-lo)/((hi-lo)||1)*44).toFixed(1)).join(' L');}
+  routineMeta(r){const n=r.items.length;if(r.type==='cardio'){const t=r.items.reduce((a,b)=>a+b.min,0);const text=n+' '+(n===1?'activity':'activities')+', '+t+' min';const pre=/cardio/i.test(r.name)?'':'Cardio, ';return {n,text,min:t,long:pre+text,list:pre+text};}
+    const s=r.items.reduce((a,b)=>a+b.sets,0);const text=s_(n,'exercise')+', '+s_(s,'set');const min=Math.max(10,Math.round(s*3.6/5)*5);return {n,s,text,min,long:text+', about '+min+' min',list:text};}
+  bodyVals(){const p=this.P();const base=p.id==='p1'?BW:BW.map(v=>r2(v-25.4+(p.weight-59.2)));return [...base,...p.bodyLog.map(b=>b.v)];}
+  dateOf(i){return 'Nov '+(2+i);}
+
+  welVals(){return {create:()=>this.setState({mode:'onboard',ob:{step:1,from:'welcome',name:'',color:PLATES[0],height:178,weight:80,goal:'muscle',target:78,weekly:3}}),have:()=>this.setState({mode:'profiles'})};}
+  pfVals(){const st=this.state;return {list:Object.values(st.profiles).map(p=>({name:p.name,initial:(p.name[0]||'?').toUpperCase(),color:p.color,meta:p.plan.weekly+'× a week, '+GOALS.find(g=>g[0]===p.goal)[1].toLowerCase(),pick:()=>this.setState({pid:p.id,mode:'app',tab:'home',stack:[],session:null,rest:null,bwInput:p.weight})})),
+    add:()=>this.setState({mode:'onboard',ob:{step:1,from:'profiles',name:'',color:PLATES[0],height:178,weight:80,goal:'muscle',target:78,weekly:3}})};}
+  obVals(){const ob=this.state.ob;const set=o=>this.setState(st=>({ob:Object.assign({},st.ob,o)}));const T=['What should we call you?','Your body','Your goal','How often will you train?'];
+    const S=['Your name shows on the profile screen.','We use this to track progress against your goal.','This shapes your progress screen and suggestions.','Pick workouts per week. We build a schedule from it.'];
+    const can=ob.step!==1||ob.name.trim().length>0;
+    const v={segs:[1,2,3,4].map(i=>({bg:i<=ob.step?'var(--accent)':'var(--surface2)'})),stepText:ob.step+'/4',title:T[ob.step-1],sub:S[ob.step-1],s1:ob.step===1,s2:ob.step===2,s3:ob.step===3,s4:ob.step===4,
+      back:()=>{if(ob.step>1)set({step:ob.step-1});else this.setState({mode:ob.from,ob:null});},nextLabel:ob.step===4?'CREATE PROFILE':'NEXT',nextOpacity:can?'1':'.35',
+      next:()=>{if(!can)return;if(ob.step<4){set({step:ob.step+1});return;}const id='p'+Date.now();const p={id,fresh:true,name:ob.name.trim(),color:ob.color,height:ob.height,weight:ob.weight,goal:ob.goal,target:ob.target,plan:mkPlan(ob.weekly),done:[],bodyLog:[]};
+        this.setState(st=>({profiles:Object.assign({},st.profiles,{[id]:p}),pid:id,mode:'app',tab:'home',stack:[],ob:null,session:null,bwInput:ob.weight}));}};
+    if(ob.step===1)Object.assign(v,{name:ob.name,setName:e=>set({name:e.target.value}),color:ob.color,initial:(ob.name.trim()[0]||'?').toUpperCase(),colors:PLATES.slice(0,5).map(c=>({color:c,pick:()=>set({color:c}),ring:c===ob.color?'0 0 0 3px var(--bg), 0 0 0 5px var(--ink)':'none'}))});
+    if(ob.step===2)v.body=[{label:'Height',val:String(ob.height),unit:'cm',dec:()=>set({height:ob.height-1}),inc:()=>set({height:ob.height+1})},{label:'Weight',val:fmt(ob.weight),unit:'kg',dec:()=>set({weight:r2(ob.weight-0.5)}),inc:()=>set({weight:r2(ob.weight+0.5)})}];
+    if(ob.step===3)Object.assign(v,{goals:GOALS.map(([k,l,d,c])=>({label:l,desc:d,color:c,pick:()=>set({goal:k}),ring:k===ob.goal?'inset 0 0 0 2px var(--accent)':'none'})),target:fmt(ob.target),tDec:()=>set({target:r2(ob.target-0.5)}),tInc:()=>set({target:r2(ob.target+0.5)})});
+    if(ob.step===4){const pl=mkPlan(ob.weekly);Object.assign(v,{weeklyOpts:[2,3,4,5,6].map(n=>({label:String(n),pick:()=>set({weekly:n}),bg:n===ob.weekly?'var(--accent)':'var(--surface)',color:n===ob.weekly?'var(--accent-ink)':'var(--ink)'})),week:weekCells(pl,[]).map(c=>Object.assign(c,{fill:c.letter!=='·'?plate(c.letter):'transparent',ring:c.letter!=='·'?'none':'inset 0 0 0 1px var(--line)'}))});}
+    return v;}
+
+  homeVals(){const st=this.state,p=this.P(),plan=p.plan;const rid=plan.days[TODAY];const r=rid?plan.routines[rid]:null;const doneToday=p.done.includes(TODAY);
+    const done=plan.days.filter((k,i)=>k&&p.done.includes(i)).length;const bwv=this.bodyVals();
+    const v={initial:(p.name[0]||'?').toUpperCase(),color:p.color,openProfile:()=>this.push({s:'profile'}),date:'Friday, November 6',week:weekCells(plan,p.done,{today:true}),weekCount:done+' of '+plan.weekly+' done',
+      hasRecords:!p.fresh,records:[['bench','90 kg × 6','Oct 30'],['squat','110 kg × 6','Oct 29'],['deadlift','140 kg × 5','Oct 27'],['ohp','55 kg × 6','Oct 23']].map(([id,val,d])=>({name:EX[id].n,v:val,d,img:img1(id),src:exSrc(id,0),open:()=>this.push({s:'exercise',id})})),
+      bw:fmt(bwv[bwv.length-1]),bwDelta:(bwv[bwv.length-1]-bwv[0]<=0?'−':'+')+fmt(Math.abs(r2(bwv[bwv.length-1]-bwv[0])))+' kg in 12 weeks',spark:this.spark(bwv),openBody:()=>this.setState({tab:'progress',progMode:'body',stack:[]})};
+    if(r){const m=this.routineMeta(r);Object.assign(v,{title:r.name,meta:m.long,ctaLabel:st.session?'CONTINUE':doneToday?'DONE TODAY':'START WORKOUT',ctaGo:()=>{if(doneToday&&!st.session)this.push({s:'day',d:TODAY});else this.startTraining(TODAY);},viewLabel:'Details',viewGo:()=>this.push({s:'day',d:TODAY})});}
+    else{let nx=-1;for(let i=TODAY+1;i<7;i++)if(plan.days[i]){nx=i;break;}
+      Object.assign(v,{title:'Rest day',meta:nx<0?'No more workouts this week.':'Next: '+DAYS_FULL[nx]+', '+plan.routines[plan.days[nx]].name,ctaLabel:'PICK A WORKOUT',ctaGo:()=>this.setTab('workout'),viewLabel:'Plan',viewGo:()=>this.push({s:'plan'})});}
+    return v;}
+
+  wkVals(){const st=this.state,p=this.P(),plan=p.plan;
+    return {sub:'Week of November 2. Pick a day to open its workout.',days:DAYS_FULL.map((dn,i)=>{const k=plan.days[i];const base={dayName:dn,date:this.dateOf(i),isTrain:!!k,isRest:!k};if(!k)return base;const r=plan.routines[k];const done=p.done.includes(i);
+      let status='',sb='transparent',sc='var(--muted)';if(done){status='Done';sb=plate(k);sc='#0d0d0c';}else if(i===TODAY){status=st.session&&st.session.day===i?'In progress':'Today';sb='var(--accent)';sc='var(--accent-ink)';}else if(i<TODAY){status='Missed';sb='var(--surface2)';sc='var(--muted)';}else{status='Upcoming';sb='var(--surface2)';sc='var(--ink)';}
+      return Object.assign(base,{key:k,name:r.name,meta:this.routineMeta(r).list,cover:'ll-cover-'+k,coverSrc:coverSrc(r),plate:plate(k),status,statusBg:sb,statusColor:sc,ring:i===TODAY?'inset 0 0 0 2px var(--accent)':'none',open:()=>this.push({s:'day',d:i})});})};}
+
+  dayVals(d){const st=this.state,p=this.P(),plan=p.plan;const k=plan.days[d];const r=k?plan.routines[k]:null;if(!r)return {cover:'',key:'',plate:'transparent',dayName:DAYS_FULL[d],name:'Rest day',meta:'',items:[],startLabel:'BACK',start:()=>this.pop(),edit:()=>this.push({s:'plan'})};
+    const m=this.routineMeta(r);const done=p.done.includes(d);const inProg=st.session&&st.session.day===d;
+    return {cover:'ll-cover-'+k,coverSrc:coverSrc(r),key:k,plate:plate(k),dayName:DAYS_FULL[d]+', '+this.dateOf(d),name:r.name,meta:m.long,
+      items:r.items.map(it=>{const e=EX[it.ex];if(r.type==='cardio')return {name:e.n,img:img1(it.ex),src:exSrc(it.ex,0),scheme:it.min+' min',last:'Zone '+it.zone+', last time '+fmt(e.last.v)+' '+e.unit,open:()=>this.push({s:'exercise',id:it.ex})};return {name:e.n,img:img1(it.ex),src:exSrc(it.ex,0),scheme:it.sets+' × '+it.reps,last:e.cur?'Last time '+fmt(e.cur)+' kg':'Body weight',open:()=>this.push({s:'exercise',id:it.ex})};}),
+      startLabel:inProg?'CONTINUE WORKOUT':done?'LOG AGAIN':'START WORKOUT',start:()=>this.startTraining(d),edit:()=>this.push({s:'routine',id:k})};}
+
+  libVals(pick){const st=this.state;const prevR=pick?st.stack[st.stack.length-2]:null;const total=Object.keys(EX).length;
+    return {pick,rid:prevR?prevR.id:'',title:pick?'Add exercise':'Exercises',count:String(total),sub:pick?'Pick a muscle group, then tap an exercise.':'Browse by muscle group.',
+      showCardio:!pick,cardio:{count:Object.keys(EX).filter(id=>EX[id].g==='cardio').length+' activities',img:'ll-group-cardio',src:'images/cardio-wide.png',open:()=>this.push({s:'group',k:'cardio'})},
+      groups:GROUPS.map(([k,l])=>{const n=Object.keys(EX).filter(id=>EX[id].g===k).length;return {label:l,count:s_(n,'exercise'),img:'ll-group-'+k,src:'images/group-'+k+'.jpg',open:()=>this.push({s:'group',k,pick})};})};}
+  grpVals(top){const st=this.state;const k=top.k,pick=!!top.pick;const g=ALLG.find(x=>x[0]===k);const cardio=k==='cardio';let rid='';if(pick){const r=st.stack.slice().reverse().find(x=>x.s==='routine');rid=r?r.id:'';}
+    const ids=Object.keys(EX).filter(id=>EX[id].g===k);
+    return {label:g[1],count:cardio?ids.length+' activities':s_(ids.length,'exercise'),img:'ll-group-'+k,src:gSrc(k),items:ids.map(id=>({name:EX[id].n,eq:EX[id].eq,img:img1(id),src:exSrc(id,0),action:pick?'Add':'View',actBg:pick?'var(--accent)':'var(--surface)',actColor:pick?'var(--accent-ink)':'var(--ink)',
+      open:()=>{if(pick&&rid){this.clonePlan(p=>{p.routines[rid].items.push(cardio?{ex:id,min:15,zone:2}:{ex:id,sets:3,reps:10});});this.pop(cardio?1:3);}else this.push({s:'exercise',id});}}))};}
+
+  exVals(id){const e=EX[id];const s=series(id);const glabel=(ALLG.find(g=>g[0]===e.g)||['',''])[1];
+    const o={group:glabel,name:e.n,eq:e.eq,d:e.d,steps:e.s.map((t,i)=>({no:String(i+1),t})),img1:img1(id),img2:'ll-ex-'+id+'-2',img3:'ll-ex-'+id+'-3',src1:exSrc(id,0),src2:exSrc(id,1),src3:exSrc(id,2),two:!!PHOTOS[id]&&PHOTOS[id].length===2,three:!PHOTOS[id]||PHOTOS[id].length!==2,hasStats:!!s,l1:'1. Start position',l2:'2. End position',ph1:' ',ph2:' ',p1:'Photo 1: starting position'};
+    if(e.kind==='cardio'){const L=e.last;const km=e.unit==='km';
+      Object.assign(o,{two:true,three:false,hasStats:true,l1:'1. Setup',l2:'2. In motion',ph1:'Photo 1: setup',ph2:'Photo 2: in motion',p1:'Photo 1: machine setup',
+        stats:[{k:'Last time',v:L.min+' min, '+fmt(L.v)+' '+e.unit},{k:km?'Best distance':'Best session',v:fmt(e.best)+' '+e.unit},{k:km?'Average pace':'Average rate',v:km?mmss(L.min*60000/L.v)+' per km':fmt(Math.round(L.v/L.min*10)/10)+' floors per min'}],
+        toProgress:()=>this.setState({tab:'progress',stack:[],progMode:'cardio'})});return o;}
+    if(s){let it=null;Object.values(this.P().plan.routines).forEach(r=>r.items.forEach(x=>{if(x.ex===id&&!it)it=x;}));const reps=it?it.reps:8,sets=it?it.sets:3;
+      o.stats=[{k:'Best set',v:fmt(Math.max(...s))+' kg × '+reps},{k:'Last time',v:sets+' × '+reps+' × '+fmt(s[11])+' kg'},{k:'Estimated 1RM',v:fmt(Math.round(Math.max(...s)*(1+reps/30)*2)/2)+' kg'}];
+      o.toProgress=()=>this.setState({tab:'progress',stack:[],progMode:'lift',progEx:id});}
+    return o;}
+
+  logVals(){const st=this.state,s=st.session;const e=s.ex[s.cur];const set=s.sel>=0?e.sets[s.sel]:null;const last=s.cur===s.ex.length-1;
+    const o={elapsed:mmss(st.now-s.start),position:'Exercise '+(s.cur+1)+' of '+s.ex.length,name:EX[e.id].n,img:img1(e.id),src:exSrc(e.id,0),prevColor:s.cur>0?'var(--ink)':'var(--muted)',nextColor:last?'var(--muted)':'var(--ink)',
+      prev:()=>this.goEx(-1),next:()=>this.goEx(1),openEx:()=>this.push({s:'exercise',id:e.id}),finish:()=>this.finish(),
+      prevText:EX[e.id].cur?'Last time: '+e.target+' × '+e.reps+' × '+fmt(EX[e.id].cur)+' kg':'Last time: '+e.target+' × '+e.reps,
+      segs:s.ex.map((x,i)=>({bg:x.sets.every(d=>d.done)?'var(--ink)':i===s.cur?'var(--accent)':'var(--surface2)'})),
+      rows:e.sets.map((x,i)=>{const active=i===s.sel;return {no:String(i+1),w:fmt(x.w),r:x.r,status:x.pr?'PR':x.done?'Done':active?'Now':'',color:x.done||active?'var(--ink)':'var(--muted)',bg:active?'var(--surface)':(x.done?'var(--surface)':'transparent'),ring:active?'inset 0 0 0 2px var(--accent)':(x.done?'none':'inset 0 0 0 1px var(--line)'),statusColor:x.pr||active?'var(--accent)':'var(--muted)',select:()=>this.upd(ss=>{ss.sel=i;},{padText:null})};}),
+      addSet:()=>this.upd(ss=>{const ee=ss.ex[ss.cur];const l=ee.sets[ee.sets.length-1];ee.sets.push({w:l?l.w:0,r:l?l.r:ee.reps,done:false,pr:false});ss.sel=ee.sets.length-1;}),
+      cancel:()=>this.cancel(),cancelLabel:st.confirmCancel?'Tap again to end':'End workout',cancelColor:st.confirmCancel?'var(--red)':'var(--muted)',
+      hasRest:!!st.rest,restLeft:st.rest?mmss(st.rest.end-st.now):'',restPct:st.rest?Math.max(0,Math.min(100,(st.rest.end-st.now)/st.rest.total*100)).toFixed(1)+'%':'0%',
+      restAdd:()=>this.setState(x=>x.rest?{rest:{end:x.rest.end+30000,total:x.rest.total+30000}}:null),restSkip:()=>this.setState({rest:null}),
+      showStepper:!!set&&st.variant==='stepper',showKeypad:!!set&&st.variant==='keypad',showScale:!!set&&st.variant==='scale',
+      rowDir:this.props.handedness==='left'?'row-reverse':'row',stepText:fmt(this.wStep())+' kg',
+      mainLabel:set?'Log set '+(s.sel+1):(last?'Finish workout':'Next exercise'),main:()=>{if(set)this.logSet();else if(last)this.finish();else this.goEx(1);}};
+    if(set){const step=this.wStep();Object.assign(o,{wVal:fmt(set.w),rVal:String(set.r),wDec:()=>this.adj('w',-step),wInc:()=>this.adj('w',step),rDec:()=>this.adj('r',-1),rInc:()=>this.adj('r',1)});
+      if(st.variant==='keypad'){const f=st.field;o.wShown=f==='w'&&st.padText!=null?(st.padText||'0'):fmt(set.w);o.rShown=f==='r'&&st.padText!=null?(st.padText||'0'):String(set.r);
+        o.ringW=f==='w'?'inset 0 0 0 2px var(--accent)':'none';o.ringR=f==='r'?'inset 0 0 0 2px var(--accent)':'none';
+        o.focusW=()=>this.setState({field:'w',padText:null});o.focusR=()=>this.setState({field:'r',padText:null});
+        o.keys=['1','2','3','4','5','6','7','8','9','.','0','del'].map(k=>({label:k==='del'?'Delete':k,size:k==='del'?'14px':'22px',press:()=>this.press(k)}));}
+      if(st.variant==='scale'){o.ticksW=this.ticks('w',set.w);o.ticksR=this.ticks('r',set.r);o.rwDown=ev=>this.rDown(ev,'w');o.rrDown=ev=>this.rDown(ev,'r');o.rMove=ev=>this.rMove(ev);o.rUp=()=>{this.drag=null;};}}
+    return o;}
+
+  clVals(){const st=this.state,s=st.session;const a=s.ex[s.cur];const e=EX[a.id];const el=this.cElapsed();const tg=a.target*60000;const allDone=s.ex.every(x=>x.done);const last=s.cur===s.ex.length-1;
+    return {elapsed:mmss(st.now-s.start),position:'Activity '+(s.cur+1)+' of '+s.ex.length,name:e.n,img:img1(a.id),src:exSrc(a.id,0),
+      prevColor:s.cur>0?'var(--ink)':'var(--muted)',nextColor:last?'var(--muted)':'var(--ink)',prev:()=>this.cGo(s.cur-1),next:()=>this.cGo(s.cur+1),openEx:()=>this.push({s:'exercise',id:a.id}),finish:()=>this.finish(),
+      segs:s.ex.map((x,i)=>({bg:x.done?'var(--ink)':i===s.cur?'var(--accent)':'var(--surface2)'})),
+      prevText:'Last time: '+e.last.min+' min, '+fmt(e.last.v)+' '+e.unit,
+      timer:mmss(el),target:mmss(tg),pct:Math.min(100,el/tg*100).toFixed(1)+'%',timerColor:el>=tg?'var(--green)':'var(--ink)',zone:'Zone '+a.zone,zoneBg:zoneColor(a.zone),zoneText:ZONES[a.zone],
+      runLabel:s.runAt?'Pause':(s.acc>0?'Resume':'Start timer'),toggle:()=>this.cToggle(),reset:()=>this.upd(x=>{x.acc=0;x.runAt=null;}),
+      rows:s.ex.map((x,i)=>{const act=i===s.cur;const ee=EX[x.id];return {no:String(i+1),name:ee.n,val:x.done?x.min+' min, '+fmt(x.v)+' '+(ee.unit==='km'?'km':'fl'):x.target+' min',status:x.done?'Done':act?'Now':'',color:x.done||act?'var(--ink)':'var(--muted)',bg:act||x.done?'var(--surface)':'transparent',ring:act?'inset 0 0 0 2px var(--accent)':(x.done?'none':'inset 0 0 0 1px var(--line)'),statusColor:act?'var(--accent)':'var(--muted)',select:()=>this.cGo(i)};}),
+      minVal:String(a.min),vVal:fmt(a.v),vLabel:e.unit==='km'?'km, step 0.1':'floors',minDec:()=>this.cAdj('min',-1),minInc:()=>this.cAdj('min',1),vDec:()=>this.cAdj('v',-e.step),vInc:()=>this.cAdj('v',e.step),
+      rowDir:this.props.handedness==='left'?'row-reverse':'row',
+      cancel:()=>this.cancel(),cancelLabel:st.confirmCancel?'Tap again to end':'End workout',cancelColor:st.confirmCancel?'var(--red)':'var(--muted)',
+      mainLabel:!a.done?'Log activity':allDone?'Finish workout':'Next activity',main:()=>{if(!a.done)this.cLog();else if(allDone)this.finish();else this.cGo(s.ex.findIndex(x=>!x.done));}};}
+
+  progVals(){const st=this.state,p=this.P(),plan=p.plan;const v={isLift:st.progMode==='lift',isBody:st.progMode==='body',progModes:seg([['lift','Lifts'],['cardio','Cardio'],['body','Body weight']],st.progMode,k=>this.setState({progMode:k}),'var(--accent)')};
+    v.progModes.forEach(m=>{if(m.bg!=='transparent')m.color='var(--accent-ink)';});
+    if(v.isLift){const ids=[];Object.keys(plan.routines).sort().forEach(k=>plan.routines[k].items.forEach(it=>{if(EX[it.ex].cur&&!ids.includes(it.ex))ids.push(it.ex);}));if(!ids.includes(st.progEx)&&EX[st.progEx]&&EX[st.progEx].cur)ids.unshift(st.progEx);
+      const pe=ids.includes(st.progEx)?st.progEx:ids[0];v.liftChips=seg(ids.map(id=>[id,EX[id].n]),pe,k=>this.setState({progEx:k}));
+      const s=series(pe)||[0];let reps=8,sets=3;Object.values(plan.routines).forEach(r=>r.items.forEach(x=>{if(x.ex===pe){reps=x.reps;sets=x.sets;}}));const best=Math.max(...s);
+      v.pg={title:EX[pe].n+', best set',big:fmt(best),unit:'kg',delta:'+'+fmt(s[11]-s[0])+' kg in 12 weeks',ch:this.chart(s,DATES),hasTarget:false,
+        rows:[{k:'Estimated 1RM',v:fmt(Math.round(best*(1+reps/30)*2)/2)+' kg'},...[11,10,9,8].map(i=>({k:DATES[i],v:sets+' × '+reps+' × '+fmt(s[i])+' kg'}))]};}
+    else if(st.progMode==='cardio'){const c=CARDIO_WK,n=c.length;
+      v.pg={title:'Cardio minutes per week',big:String(c[n-1]),unit:'min',delta:'+'+(c[n-1]-c[0])+' min a week since '+DATES[0],ch:this.chart(c,DATES),hasTarget:false,
+        rows:[11,10,9,8].map(i=>({k:'Week of '+DATES[i],v:c[i]+' min, '+fmt(CARDIO_KM[i])+' km'}))};}
+    else{const vals=this.bodyVals(),labels=[...DATES,...p.bodyLog.map(b=>b.label)];const cur=vals[vals.length-1],tg=p.target;
+      v.pg={title:'Body weight',big:fmt(cur),unit:'kg',delta:fmt(Math.abs(r2(cur-tg)))+' kg to your goal of '+fmt(tg)+' kg',ch:this.chart(vals,labels,tg),hasTarget:true,rows:vals.map((x,i)=>({k:labels[i],v:fmt(x)+' kg'})).slice(-4).reverse()};
+      const saved=p.bodyLog.length>0;
+      v.bw={val:fmt(st.bwInput)+' kg',dec:()=>this.setState(x=>({bwInput:r2(x.bwInput-0.1)})),inc:()=>this.setState(x=>({bwInput:r2(x.bwInput+0.1)})),saveLabel:saved?'Saved for Nov 6. Tap to update':'Save for today',
+        save:()=>{const val=this.state.bwInput;this.updP(pp=>{pp.bodyLog=[{label:'Nov 6',v:val}];pp.weight=val;});}};}
+    return v;}
+
+  profVals(){const p=this.P(),plan=p.plan,st=this.state;const set=(k,d)=>this.updP(pp=>{pp[k]=r2(Math.max(0,pp[k]+d));});
+    return {name:p.name,color:p.color,avatar:'ll-avatar-'+p.id,meta:p.height+' cm, '+fmt(p.weight)+' kg',switchP:()=>this.setState({mode:'profiles',stack:[]}),
+      rows:[{label:'Height',val:String(p.height),unit:'cm',dec:()=>set('height',-1),inc:()=>set('height',1)},{label:'Weight',val:fmt(p.weight),unit:'kg',dec:()=>set('weight',-0.1),inc:()=>set('weight',0.1)},{label:'Target weight',val:fmt(p.target),unit:'kg',dec:()=>set('target',-0.5),inc:()=>set('target',0.5)}],
+      goals:seg(GOALS.map(g=>[g[0],g[1]]),p.goal,k=>this.updP(pp=>{pp.goal=k;})),
+      planTitle:plan.weekly+' workouts a week',week:weekCells(plan,[]).map(c=>Object.assign(c,{fill:c.letter!=='·'?plate(c.letter):'transparent',ring:c.letter!=='·'?'none':'inset 0 0 0 1px var(--line)'})),openPlan:()=>this.push({s:'plan'}),
+      variants:seg([['stepper','Buttons'],['keypad','Keypad'],['scale','Scale']],st.variant,k=>this.setState({variant:k}))};}
+
+  planVals(){const plan=this.P().plan;const keys=Object.keys(plan.routines).sort();const assigned=plan.days.filter(Boolean).length;
+    return {weeklyOpts:[2,3,4,5,6].map(n=>({label:String(n),pick:()=>this.setWeekly(n),bg:n===plan.weekly?'var(--accent)':'var(--surface)',color:n===plan.weekly?'var(--accent-ink)':'var(--ink)'})),
+      days:DAYS.map((d,i)=>{const k=plan.days[i];return {name:d,letter:k||'·',toggle:()=>this.toggleDay(i),fill:k?plate(k):'transparent',ring:k?'none':'inset 0 0 0 1px var(--line)'};}),
+      note:assigned===plan.weekly?'Tap a day to change its routine or make it a rest day.':'Your schedule has '+s_(assigned,'day')+', your plan says '+plan.weekly+'.',noteColor:assigned===plan.weekly?'var(--muted)':'var(--accent)',
+      routines:keys.map(k=>({key:k,name:plan.routines[k].name,meta:this.routineMeta(plan.routines[k]).list,cover:'ll-cover-'+k,coverSrc:coverSrc(plan.routines[k]),plate:plate(k),open:()=>this.push({s:'routine',id:k})})),addStrength:()=>this.addRoutine('strength'),addCardio:()=>this.addRoutine('cardio')};}
+
+  routineVals(id){const r=this.P().plan.routines[id];if(!r)return {key:id,name:'',meta:'',items:[],cover:'',plate:'transparent'};const ch=(i,f,d)=>this.clonePlan(p=>{const it=p.routines[id].items[i];it[f]=Math.max(f==='min'?5:1,it[f]+d);if(f==='zone')it.zone=Math.min(5,it.zone);});const cardio=r.type==='cardio';
+    return {key:id,plate:plate(id),cover:'ll-cover-'+id,coverSrc:coverSrc(r,true),name:r.name,meta:'Routine '+id+', '+this.routineMeta(r).text,rename:e=>{const val=e.target.value;this.clonePlan(p=>{p.routines[id].name=val;});},addLabel:cardio?'Add activity':'Add exercise',add:()=>this.push(cardio?{s:'group',k:'cardio',pick:true}:{s:'pick'}),
+      items:r.items.map((it,i)=>({name:EX[it.ex].n,img:img1(it.ex),src:exSrc(it.ex,0),strength:!cardio,cardio,sets:String(it.sets),reps:String(it.reps),min:String(it.min),zoneN:String(it.zone),zoneText:cardio?'Zone '+it.zone+': '+ZONES[it.zone]:'',mDec:()=>ch(i,'min',-5),mInc:()=>ch(i,'min',5),zDec:()=>ch(i,'zone',-1),zInc:()=>ch(i,'zone',1),sDec:()=>ch(i,'sets',-1),sInc:()=>ch(i,'sets',1),rDec:()=>ch(i,'reps',-1),rInc:()=>ch(i,'reps',1),remove:()=>this.clonePlan(p=>{p.routines[id].items.splice(i,1);})}))};}
+
+  renderVals(){const st=this.state;const app=st.mode==='app';const top=st.stack[st.stack.length-1];const scr=app?(top?top.s:st.tab):st.mode;
+    const v={isWelcome:scr==='welcome',isProfiles:scr==='profiles',isOnboard:scr==='onboard'&&!!st.ob,isHome:scr==='home',isWorkout:scr==='workout',isDay:scr==='day',isLog:scr==='log'&&!!st.session&&st.session.type!=='cardio',isCLog:scr==='log'&&!!st.session&&st.session.type==='cardio',isSum:scr==='summary'&&!!st.summary,
+      isLib:scr==='library'||scr==='pick',isGroup:scr==='group',isEx:scr==='exercise',isProg:scr==='progress',isProf:scr==='profile',isPlan:scr==='plan',isRoutine:scr==='routine',showTabs:app&&st.stack.length===0,back:()=>this.pop(),
+      tabs:TABS.map(([k,l])=>({label:l,go:()=>this.setTab(k),color:st.tab===k?'var(--ink)':'var(--muted)',bar:st.tab===k?'var(--accent)':'transparent',dot:st.tab===k?'22px':'6px'}))};
+    if(v.isWelcome)v.wel=this.welVals();
+    if(v.isProfiles)v.pf=this.pfVals();
+    if(v.isOnboard)v.ob=this.obVals();
+    if(v.isHome)v.home=this.homeVals();
+    if(v.isWorkout)v.wk=this.wkVals();
+    if(v.isDay)v.day=this.dayVals(top.d);
+    if(v.isLog)v.log=this.logVals();
+    if(v.isCLog)v.cl=this.clVals();
+    if(v.isSum){const s=st.summary;const c=s.type==='cardio';v.sum={name:s.name,cover:'ll-summary',coverSrc:'images/workout-done.png',rows:c?s.rows:[{k:'Time',v:s.dur},{k:'Sets',v:String(s.sets)},{k:'Volume',v:s.vol}],prs:c?s.list:s.prs,hasPrs:(c?s.list:s.prs).length>0,listTitle:c?'Activities':'New records',done:()=>this.setState({stack:[],tab:'home'})};}
+    if(v.isLib)v.lib=this.libVals(scr==='pick');
+    if(v.isGroup)v.grp=this.grpVals(top);
+    if(v.isEx)v.ex=this.exVals(top.id);
+    if(v.isProg)Object.assign(v,this.progVals());
+    if(v.isProf)v.prof=this.profVals();
+    if(v.isPlan)v.plan=this.planVals();
+    if(v.isRoutine)v.rt=this.routineVals(top.id);
+    return v;}
+}
+</script>
+</body>
+</html>

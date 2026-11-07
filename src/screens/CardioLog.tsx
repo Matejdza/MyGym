@@ -13,7 +13,7 @@ import type { CardioSession } from '@/domain/types';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
 import { useNow } from '@/hooks/useNow';
 import { useActive, useDbQuery, useStore } from '@/state/store';
-import { useTop } from '@/theme/layout';
+import { useScale, useTop } from '@/theme/layout';
 import { ZONE_COLORS, colors } from '@/theme/tokens';
 
 /** Cardio workout: activity timer, activity rows, minutes and distance steppers. */
@@ -21,6 +21,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
   const { profile, settings } = useActive();
   const { setSession } = useStore();
   const top = useTop();
+  const { fit } = useScale();
   const insets = useSafeAreaInsets();
   const now = useNow(500);
   const { confirming, endWorkout, finish } = useEndWorkout(s, 'Finish without logging any activities?');
@@ -149,7 +150,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
         <PrimaryButton
           label={(!a.done ? 'Log activity' : C.allDone(s) ? 'Finish workout' : 'Next activity').toUpperCase()}
           onPress={main}
-          height={66}
+          height={fit(66)}
         />
       </View>
     </View>

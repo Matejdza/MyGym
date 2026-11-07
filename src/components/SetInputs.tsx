@@ -8,6 +8,7 @@ import { Mono, UI } from '@/components/Txt';
 import { RoundButton, Ring } from '@/components/ui';
 import { fmt, r2 } from '@/domain/format';
 import type { Field } from '@/domain/strength';
+import { useScale } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 // ── Stepper ─────────────────────────────────────────────────────────────────
@@ -26,9 +27,11 @@ export function StepRow({
   onInc: () => void;
   mirrored: boolean;
 }) {
+  const { fit } = useScale();
+  const b = fit(74);
   return (
-    <View style={sheetRow(mirrored)}>
-      <RoundButton sign="−" size={74} fontSize={28} onPress={onDec} />
+    <View style={[sheetRow(mirrored), { height: b }]}>
+      <RoundButton sign="−" size={74} fitHeight fontSize={28} onPress={onDec} />
       <View style={styles.stepValue}>
         <Mono size={42} weight={500} lh={1} spacing={-0.05}>
           {value}
@@ -37,7 +40,7 @@ export function StepRow({
           {label}
         </UI>
       </View>
-      <RoundButton sign="+" size={74} fontSize={28} onPress={onInc} />
+      <RoundButton sign="+" size={74} fitHeight fontSize={28} onPress={onInc} />
     </View>
   );
 }
@@ -60,6 +63,7 @@ export function KeypadInput({
   onFocus: (f: Field) => void;
   onKey: (k: string) => void;
 }) {
+  const { fit } = useScale();
   return (
     <>
       <View style={styles.fields}>
@@ -69,7 +73,7 @@ export function KeypadInput({
             onPress={() => onFocus(f)}
             accessibilityRole="button"
             accessibilityLabel={f === 'w' ? 'Weight' : 'Reps'}
-            style={styles.field}>
+            style={[styles.field, { height: fit(64), paddingTop: fit(14) }]}>
             {field === f && <Ring width={2} color={colors.accent} radius={16} />}
             <Mono size={30} weight={500} spacing={-0.05}>
               {f === 'w' ? wShown : rShown}
@@ -89,7 +93,7 @@ export function KeypadInput({
                 onPress={() => onKey(k)}
                 accessibilityRole="button"
                 accessibilityLabel={k === 'del' ? 'Delete' : k}
-                style={({ pressed }) => [styles.key, { backgroundColor: pressed ? colors.line : colors.surface2 }]}>
+                style={({ pressed }) => [styles.key, { height: fit(46), backgroundColor: pressed ? colors.line : colors.surface2 }]}>
                 <Mono size={k === 'del' ? 14 : 22} weight={500}>
                   {k === 'del' ? 'Delete' : k}
                 </Mono>
@@ -148,6 +152,7 @@ export function ScaleRuler({
   onChange: (v: number) => void;
 }) {
   const [width, setWidth] = useState(358);
+  const { fit } = useScale();
   const center = width / 2;
 
   // Drag: value = start − dx / spacing × step, snapped to the step (`rMove` in the prototype).
@@ -186,7 +191,7 @@ export function ScaleRuler({
         onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         accessibilityRole="adjustable"
         accessibilityLabel={label}
-        style={styles.ruler}>
+        style={[styles.ruler, { height: fit(60) }]}>
         {ticks.map((t, i) => (
           <View key={i} pointerEvents="none" style={[StyleSheet.absoluteFill, { left: t.x }]}>
             <View style={{ position: 'absolute', left: 0, bottom: 0, width: 1, height: t.h, backgroundColor: t.color }} />

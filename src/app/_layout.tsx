@@ -3,6 +3,7 @@ import { DarkTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppDataProvider, useStore } from '@/state/store';
@@ -10,6 +11,12 @@ import { fontAssets } from '@/theme/fonts';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
+
+// On the web all training history lives in the browser. Ask it to keep the data
+// even when the phone runs low on space or the site isn't opened for a while.
+if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+  navigator.storage?.persist?.().catch(() => {});
+}
 
 const theme: Theme = {
   ...DarkTheme,

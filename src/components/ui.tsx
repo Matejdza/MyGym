@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Display, Mono, UI } from '@/components/Txt';
+import { useScale } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 type PressProps = { onPress?: () => void; disabled?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string };
@@ -59,8 +60,12 @@ export function RoundButton({
   fontSize,
   onPress,
   style,
-}: PressProps & { sign: '−' | '+'; size: number; fontSize: number }) {
+  fitHeight,
+}: PressProps & { sign: '−' | '+'; size: number; fontSize: number; fitHeight?: boolean }) {
   const plus = sign === '+';
+  const { sz, fit } = useScale();
+  // Log-sheet buttons also shrink on short screens; the rest only follow the width.
+  const d = fitHeight ? fit(size) : sz(size);
   return (
     <Pressable
       onPress={onPress}
@@ -69,9 +74,9 @@ export function RoundButton({
       style={({ pressed }) => [
         styles.center,
         {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          width: d,
+          height: d,
+          borderRadius: d / 2,
           backgroundColor: plus ? (pressed ? colors.muted : colors.ink) : pressed ? colors.line : colors.surface2,
         },
         style,
@@ -197,8 +202,9 @@ export function Avatar({
   fontSize: number;
   children?: ReactNode;
 }) {
+  const d = useScale().sz(size);
   return (
-    <View style={[styles.center, { width: size, height: size, borderRadius: size / 2, backgroundColor: color }]}>
+    <View style={[styles.center, { width: d, height: d, borderRadius: d / 2, backgroundColor: color }]}>
       <Display size={fontSize} weight={900} color={colors.bg}>
         {initial}
       </Display>

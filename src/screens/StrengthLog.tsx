@@ -14,7 +14,7 @@ import type { StrengthSession } from '@/domain/types';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
 import { useNow } from '@/hooks/useNow';
 import { useActive, useDbQuery, useStore } from '@/state/store';
-import { useTop } from '@/theme/layout';
+import { useScale, useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 /** Strength workout: set rows, rest timer and the set-entry sheet. */
@@ -22,6 +22,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   const { profile, settings } = useActive();
   const { setSession } = useStore();
   const top = useTop();
+  const { fit } = useScale();
   const insets = useSafeAreaInsets();
   const now = useNow(500);
 
@@ -134,7 +135,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
 
       <View style={[logStyles.sheet, { paddingTop: 10, paddingBottom: 12 + insets.bottom }]}>
         {s.rest && (
-          <View style={styles.rest}>
+          <View style={[styles.rest, { height: fit(46) }]}>
             <UI size={14} color={colors.muted}>
               Rest
             </UI>
@@ -197,7 +198,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
         <PrimaryButton
           label={(set ? `Log set ${s.sel + 1}` : last ? 'Finish workout' : 'Next exercise').toUpperCase()}
           onPress={main}
-          height={66}
+          height={fit(66)}
         />
       </View>
     </View>

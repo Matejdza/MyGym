@@ -230,7 +230,7 @@ export default function Onboarding() {
                     {DAY_LETTERS[i]}
                   </UI>
                   <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
-                    {!k && <Ring width={1} color={colors.line} radius={20} />}
+                    {!k && <Ring width={1} color={colors.line} radius={999} />}
                     <Mono size={15} weight={500} color={colors.bg}>
                       {k ?? '·'}
                     </Mono>
@@ -286,6 +286,6 @@ const styles = StyleSheet.create({
   weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', gap: 6, marginTop: 12 },
   weekCell: { flex: 1, alignItems: 'center', gap: 8 },
-  dayCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  dayCircle: { width: 40, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   footer: { paddingTop: 12, paddingHorizontal: 20 },
 });

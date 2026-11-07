@@ -1,0 +1,61 @@
+# Builds the LiftLog web app and publishes it to GitHub Pages on every push to main.
+# Nothing is built on a personal computer: tests, typecheck and the web export all run here.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push cancels an older one still waiting.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      # Don't publish a version that breaks the rules or the database code.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Export web build
+        run: npx expo export -p web
+        env:
+          CI: '1'
+
+      # GitHub Pages has no SPA routing: serve the app for any unknown path
+      # (e.g. /MyGym/workout after a refresh), and keep Expo's _expo folder.
+      - name: Prepare for GitHub Pages
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
