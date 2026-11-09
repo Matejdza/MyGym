@@ -4,7 +4,7 @@
 import { PATTERNS, routinesDefault } from '@/data/catalog';
 
 import { plural } from './format';
-import type { Plan, Routine, RoutineKey } from './types';
+import type { Plan, Routine, RoutineKey, StrengthItem } from './types';
 
 export const MIN_WEEKLY = 2;
 export const MAX_WEEKLY = 6;
@@ -82,3 +82,92 @@ export function routineMeta(r: Routine): RoutineMeta {
 
 /** Number of days in the schedule that have a routine. */
 export const assignedDays = (plan: Plan) => plan.days.filter(Boolean).length;
+
+// ── Building your own plan ──────────────────────────────────────────────────
+
+/** Workouts a week = the days that have a routine (chosen by tapping days, not set separately). */
+export const workoutsPerWeek = assignedDays;
+
+/** "3 workouts a week" / "1 workout a week". */
+export const workoutsText = (plan: Plan) => `${plural(workoutsPerWeek(plan), 'workout')} a week`;
+
+/**
+ * The stored `weekly` value follows the schedule. The database keeps it within
+ * 2–6 (its original range), so 0, 1 or 7 training days are stored as 2 or 6;
+ * screens always show `workoutsPerWeek`, never this number.
+ */
+export function withWeeklyFromDays(plan: Plan): Plan {
+  return { ...plan, weekly: Math.min(MAX_WEEKLY, Math.max(MIN_WEEKLY, workoutsPerWeek(plan))) };
+}
+
+/**
+ * "Build my own" from onboarding: one empty strength routine per chosen day,
+ * named after the day, in weekday order (Monday → A, Wednesday → B…).
+ */
+export function ownPlan(days: number[], dayNames: readonly string[]): Plan {
+  const sorted = [...new Set(days)].filter((d) => d >= 0 && d < 7).sort((a, b) => a - b);
+  const plan: Plan = { weekly: MIN_WEEKLY, days: [null, null, null, null, null, null, null], routines: {} };
+  sorted.slice(0, MAX_ROUTINES).forEach((d, i) => {
+    const k = String.fromCharCode(65 + i);
+    plan.routines[k] = { name: dayNames[d], items: [] };
+    plan.days[d] = k;
+  });
+  return withWeeklyFromDays(plan);
+}
+
+/** Removes a routine and turns the days it had into rest days. */
+export function withoutRoutine(plan: Plan, key: RoutineKey): Plan {
+  const routines = { ...plan.routines };
+  delete routines[key];
+  return withWeeklyFromDays({ ...plan, routines, days: plan.days.map((k) => (k === key ? null : k)) });
+}
+
+/** Moves item `i` of a routine one place up (−1) or down (+1). */
+export function withItemMoved(r: Routine, i: number, dir: -1 | 1): Routine {
+  const j = i + dir;
+  if (i < 0 || i >= r.items.length || j < 0 || j >= r.items.length) return r;
+  const items = [...r.items] as typeof r.items;
+  [items[i], items[j]] = [items[j], items[i]];
+  return { ...r, items } as Routine;
+}
+
+/** Reps as written in a plan: "8" or "6–8". */
+export const repsText = (it: StrengthItem) => (it.repsMax != null && it.repsMax > it.reps ? `${it.reps}–${it.repsMax}` : String(it.reps));
+
+/** Sets × reps: "4 × 6" or "3 × 6–8". */
+export const schemeText = (it: StrengthItem) => `${it.sets} × ${repsText(it)}`;
+
+/** Rest in the editor and log: "90 s", "2:00", "2:30". */
+export function restText(seconds: number): string {
+  if (seconds < 120) return `${seconds} s`;
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+export const REST_STEP = 15;
+export const REST_MIN = 15;
+export const REST_MAX = 600;
+
+export type StrengthField = 'sets' | 'reps' | 'repsMax' | 'rest';
+
+/**
+ * Routine editor steppers for a strength exercise. Sets and reps stay ≥ 1, the
+ * top of the range never drops below the bottom (a range equal at both ends is a
+ * single number), and rest moves within 15 s – 10 min starting from `defaultRest`.
+ */
+export function withStrengthChange(it: StrengthItem, f: StrengthField, d: number, defaultRest: number): StrengthItem {
+  const { repsMax: _max, ...rest } = it;
+  const top = it.repsMax ?? it.reps;
+  const withRange = (min: number, max: number): StrengthItem => (max > min ? { ...rest, reps: min, repsMax: max } : { ...rest, reps: min });
+  switch (f) {
+    case 'sets':
+      return { ...it, sets: Math.max(1, it.sets + d) };
+    case 'reps': {
+      const min = Math.max(1, it.reps + d);
+      return withRange(min, Math.max(min, top));
+    }
+    case 'repsMax':
+      return withRange(it.reps, Math.max(it.reps, top + d));
+    case 'rest':
+      return { ...it, rest: Math.min(REST_MAX, Math.max(REST_MIN, (it.rest ?? defaultRest) + d)) };
+  }
+}

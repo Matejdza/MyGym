@@ -11,14 +11,14 @@ import { colors } from '@/theme/tokens';
 import { mkPlan, nextRoutineKey, routineMeta, schedule, withDayCycled, withWeekly } from '@/domain/plan';
 
 test('catalog matches the prototype', () => {
-  assert.equal(EXERCISE_IDS.length, 26);
+  assert.equal(EXERCISE_IDS.length, 34); // 26 from the prototype + 8 added for the owner's plan
   assert.equal(EXERCISE_IDS.filter((id) => EX[id].group === 'cardio').length, 5);
   assert.equal(EX.bench.steps[1], 'Grip slightly wider than your shoulders. Lower the bar to the lower chest, elbows at about 45°.');
   assert.equal(EX.stairs.unit, 'floors');
   assert.equal(EX.stairs.step, 1);
   assert.deepEqual(
     EXERCISE_IDS.filter((id) => 'bodyweight' in EX[id]),
-    ['legraise', 'abwheel'],
+    ['legraise', 'abwheel', 'plank'],
   );
   assert.equal(ZONES[2], 'Easy, you can hold a conversation');
   assert.equal(GOALS[1].description, 'Heavier lifts on the main exercises');

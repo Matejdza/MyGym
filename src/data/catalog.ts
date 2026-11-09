@@ -1,5 +1,6 @@
 // Generated from the <script data-dc-script> block of design_handoff_liftlog/LiftLog.dc.html.
 // Names, copy and how-to steps are verbatim. Do not edit by hand without checking the prototype.
+// Exception: the block marked "Added for the owner's training plan" was written by hand.
 //
 // The prototype's demo numbers (`cur`, `last`, `best`) are not ported: real history replaces them.
 // The one thing they encoded is kept as `bodyweight: true` (exercises with `cur: 0`).
@@ -259,6 +260,104 @@ export const EX = {
       "Kneel with the wheel under your shoulders.",
       "Roll forward while keeping your back flat.",
       "Pull back by bracing your abs, not your hips.",
+    ],
+  },
+  // ── Added for the owner's training plan (not in the prototype). Photos supplied by the owner. ──
+  dbpress: {
+    id: "dbpress",
+    name: "Seated dumbbell press",
+    group: "shoulders",
+    equipment: "Dumbbells, bench",
+    description: "Shoulders and triceps with the back supported. Each arm works on its own.",
+    steps: [
+      "Sit on a bench with an upright back, dumbbells at shoulder height, palms forward.",
+      "Press the dumbbells up until your arms are almost straight over your head.",
+      "Lower under control back to shoulder height.",
+    ],
+  },
+  dbcurl: {
+    id: "dbcurl",
+    name: "Dumbbell curl",
+    group: "arms",
+    equipment: "Dumbbells",
+    description: "Biceps, one arm at a time or both together. Turn the palm up as you lift.",
+    steps: [
+      "Stand tall, dumbbells at your sides, elbows close to your body.",
+      "Curl the dumbbells up, turning your palms to face your shoulders.",
+      "Lower slowly to full extension without swinging.",
+    ],
+  },
+  ohext: {
+    id: "ohext",
+    name: "Overhead triceps extension",
+    group: "arms",
+    equipment: "Dumbbell",
+    description: "Triceps, especially the long head, with one dumbbell held overhead.",
+    steps: [
+      "Hold one dumbbell with both hands over your head, arms straight.",
+      "Bend at the elbows and lower the dumbbell behind your head. Keep your elbows pointing up.",
+      "Extend back up. Your upper arms stay still.",
+    ],
+  },
+  cablerow: {
+    id: "cablerow",
+    name: "Seated cable row",
+    group: "back",
+    equipment: "Cable",
+    description: "Builds the middle of the back with constant cable tension.",
+    steps: [
+      "Sit with your feet on the platform, knees soft, back straight.",
+      "Pull the handle to your belly, squeezing your shoulder blades together.",
+      "Return slowly until your arms are straight. Don't round your back.",
+    ],
+  },
+  bulgarian: {
+    id: "bulgarian",
+    name: "Bulgarian split squat",
+    group: "legs",
+    equipment: "Dumbbells, bench",
+    description: "Single-leg squat with the back foot on a bench. Quads and glutes, one side at a time.",
+    steps: [
+      "Stand in front of a bench, dumbbells at your sides, and rest your back foot on it.",
+      "Lower until the back knee nearly touches the floor, torso upright.",
+      "Drive up through the front foot. Finish all reps, then switch legs.",
+    ],
+  },
+  legcurl: {
+    id: "legcurl",
+    name: "Leg curl",
+    group: "legs",
+    equipment: "Machine",
+    description: "Isolates the hamstrings on the machine, lying or seated.",
+    steps: [
+      "Set the pad just above your heels and hold the handles.",
+      "Curl your heels toward your glutes without lifting your hips.",
+      "Lower slowly to almost straight legs.",
+    ],
+  },
+  calf: {
+    id: "calf",
+    name: "Calf raise",
+    group: "legs",
+    equipment: "Machine or dumbbells",
+    description: "Calves. Use the full range: a deep stretch at the bottom, a pause at the top.",
+    steps: [
+      "Stand with the balls of your feet on a step or the machine platform, heels free.",
+      "Rise as high as you can onto your toes and pause for a second.",
+      "Lower your heels below the step for a full stretch.",
+    ],
+  },
+  plank: {
+    id: "plank",
+    name: "Plank",
+    group: "core",
+    equipment: "Body weight",
+    bodyweight: true,
+    description: "Holds the whole core still. Log the seconds you hold as reps.",
+    steps: [
+      "Rest on your forearms and toes, elbows under your shoulders.",
+      "Keep your body in a straight line from head to heels. Brace your abs.",
+      "Hold without letting your hips sag or rise, breathing steadily.",
     ],
   },
   treadmill: {

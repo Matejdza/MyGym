@@ -54,7 +54,8 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   const main = () => {
     if (set) {
       setField('w');
-      update(S.logSet(s, Date.now(), settings.restSeconds));
+      // Rest set on this exercise in the routine, otherwise the profile setting.
+      update(S.logSet(s, Date.now(), e.rest ?? settings.restSeconds));
     } else if (last) finish();
     else update(S.goExercise(s, 1));
   };

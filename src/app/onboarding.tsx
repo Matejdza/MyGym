@@ -14,9 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Display, Mono, UI } from '@/components/Txt';
 import { Avatar, BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
-import { GOALS } from '@/data/catalog';
+import { DAYS_FULL, GOALS } from '@/data/catalog';
 import { fmt, r2 } from '@/domain/format';
-import { mkPlan } from '@/domain/plan';
+import { mkPlan, ownPlan } from '@/domain/plan';
 import type { GoalKey } from '@/domain/types';
 import { DAY_LETTERS } from '@/domain/week';
 import { useStore } from '@/state/store';
@@ -30,8 +30,17 @@ const SUBS = [
   'This shapes your progress screen and suggestions.',
   'Pick workouts per week. We build a schedule from it.',
 ];
+/** Step 4 subtitle when building your own plan. */
+const SUB_OWN = 'Pick the days you train. You add the exercises next.';
 
-/** New profile in four steps: name and color, body, goal, workouts per week. */
+/** Step 4: a suggested plan (the design's flow) or one you build yourself. */
+const MODES = [
+  { key: 'suggested', label: 'Suggested plan', description: 'We pick the days and routines for you.' },
+  { key: 'own', label: 'Build my own', description: 'Choose your days, then add your own exercises.' },
+] as const;
+type Mode = (typeof MODES)[number]['key'];
+
+/** New profile in four steps: name and color, body, goal, and a suggested or own plan. */
 export default function Onboarding() {
   const { createProfile } = useStore();
   const top = useTop();
@@ -45,9 +54,13 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<GoalKey>('muscle');
   const [target, setTarget] = useState(78);
   const [weekly, setWeekly] = useState(3);
+  const [mode, setMode] = useState<Mode>('suggested');
+  const [ownDays, setOwnDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const canContinue = step !== 1 || name.trim().length > 0;
+  const canContinue = (step !== 1 || name.trim().length > 0) && (step !== 4 || mode === 'suggested' || ownDays.length > 0);
+
+  const toggleDay = (i: number) => setOwnDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
 
   const back = () => {
     if (step > 1) setStep(step - 1);
@@ -75,7 +88,10 @@ export default function Onboarding() {
     setSaving(true);
     try {
       // Selecting the new profile unlocks the app; the router moves to Home.
-      await createProfile({ name: name.trim(), color, height, weight, goal, target, plan: mkPlan(weekly) });
+      const plan = mode === 'own' ? ownPlan(ownDays, DAYS_FULL) : mkPlan(weekly);
+      await createProfile({ name: name.trim(), color, height, weight, goal, target, plan });
+      // Your own plan starts with empty days: go straight to adding exercises.
+      if (mode === 'own') setTimeout(() => router.push('/plan'), 50);
     } catch (e) {
       console.error('[liftlog] could not create profile', e);
       setSaving(false);
@@ -102,7 +118,7 @@ export default function Onboarding() {
           {TITLES[step - 1]}
         </Display>
         <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 12 }}>
-          {SUBS[step - 1]}
+          {step === 4 && mode === 'own' ? SUB_OWN : SUBS[step - 1]}
         </UI>
 
         {step === 1 && (
@@ -202,8 +218,65 @@ export default function Onboarding() {
         )}
 
         {step === 4 && (
+          <View style={{ gap: 10, marginTop: 26 }}>
+            {MODES.map((m) => (
+              <Pressable
+                key={m.key}
+                onPress={() => setMode(m.key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: m.key === mode }}
+                style={styles.goal}>
+                {m.key === mode && <Ring width={2} color={colors.accent} radius={20} />}
+                <View style={{ flex: 1 }}>
+                  <Display size={26} weight={800}>
+                    {m.label}
+                  </Display>
+                  <UI size={14} color={colors.muted} style={{ marginTop: 2 }}>
+                    {m.description}
+                  </UI>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {step === 4 && mode === 'own' && (
           <>
-            <View style={styles.weeklyRow}>
+            <UI size={15} color={colors.muted} style={{ marginTop: 28 }}>
+              Tap the days you train
+            </UI>
+            <View style={styles.week}>
+              {DAY_LETTERS.map((d, i) => {
+                const on = ownDays.includes(i);
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => toggleDay(i)}
+                    accessibilityRole="button"
+                    accessibilityLabel={DAYS_FULL[i]}
+                    accessibilityState={{ selected: on }}
+                    style={styles.weekCell}>
+                    <View style={[styles.ownDay, { backgroundColor: on ? colors.accent : 'transparent' }]}>
+                      {!on && <Ring width={1} color={colors.line} radius={999} />}
+                      <Mono size={15} weight={500} color={on ? colors.accentInk : colors.muted}>
+                        {d}
+                      </Mono>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 22 }}>
+              {ownDays.length
+                ? `${ownDays.length} ${ownDays.length === 1 ? 'workout' : 'workouts'} a week. Each day gets its own routine, ready for your exercises.`
+                : 'You can change days and routines any time from your profile.'}
+            </UI>
+          </>
+        )}
+
+        {step === 4 && mode === 'suggested' && (
+          <>
+            <View style={[styles.weeklyRow, { marginTop: 22 }]}>
               {[2, 3, 4, 5, 6].map((n) => {
                 const on = n === weekly;
                 return (
@@ -286,6 +359,7 @@ const styles = StyleSheet.create({
   weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', gap: 6, marginTop: 12 },
   weekCell: { flex: 1, alignItems: 'center', gap: 8 },
+  ownDay: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   dayCircle: { width: 40, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   footer: { paddingTop: 12, paddingHorizontal: 20 },
 });

@@ -20,7 +20,16 @@ export type Exercise = {
   bodyweight?: boolean;
 };
 
-export type StrengthItem = { ex: string; sets: number; reps: number };
+export type StrengthItem = {
+  ex: string;
+  sets: number;
+  /** Target reps, or the bottom of a range ("6" in 6–8). */
+  reps: number;
+  /** Top of a rep range ("8" in 6–8). Absent or equal to `reps` = a single number. */
+  repsMax?: number;
+  /** Rest after each set in seconds. Absent = the profile's rest setting. */
+  rest?: number;
+};
 export type CardioItem = { ex: string; min: number; zone: number };
 
 export type Routine =
@@ -76,6 +85,10 @@ export type SessionStrengthEx = {
   sets: SessionSet[];
   /** Heaviest weight in history when the workout started (0 = never logged, so no PRs yet). */
   best: number;
+  /** Top of the rep range, when the routine has one. */
+  repsMax?: number;
+  /** Rest after each set in seconds, when the routine sets one for this exercise. */
+  rest?: number;
 };
 export type SessionCardioEx = { id: string; target: number; zone: number; min: number; v: number; done: boolean };
 

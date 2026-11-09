@@ -9,6 +9,7 @@ import { BackPill, StepperCard } from '@/components/ui';
 import { GOALS } from '@/data/catalog';
 import { pickProfilePhoto } from '@/data/profilePhoto';
 import { fmt, r2 } from '@/domain/format';
+import { workoutsText } from '@/domain/plan';
 import type { GoalKey, InputVariant } from '@/domain/types';
 import { planCells } from '@/domain/week';
 import { useActive, useStore } from '@/state/store';
@@ -117,7 +118,7 @@ export default function Profile() {
           Training plan
         </UI>
         <Display size={36} weight={900} lh={0.95} style={{ marginTop: 6 }}>
-          {`${profile.plan.weekly} workouts a week`}
+          {workoutsText(profile.plan)}
         </Display>
         <View style={{ marginTop: 16 }}>
           <WeekStrip cells={planCells(profile.plan)} size={34} fontSize={13} labelSize={12} labelWeight={400} gap={4} innerGap={6} />

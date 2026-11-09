@@ -34,6 +34,43 @@ export const PHOTOS: Record<string, Img[]> = {
   rower: [require('@/assets/photos/rower-1.jpg'), require('@/assets/photos/rower-2.jpg')],
   elliptical: [require('@/assets/photos/elliptical-1.jpg'), require('@/assets/photos/elliptical-2.jpg')],
   stairs: [require('@/assets/photos/stairs-1.jpg'), require('@/assets/photos/stairs-2.jpg')],
+  // Exercises added for the owner's training plan (photos supplied by the owner).
+  dbpress: [
+    require('@/assets/photos/dbpress-1.jpg'),
+    require('@/assets/photos/dbpress-2.jpg'),
+    require('@/assets/photos/dbpress-3.jpg'),
+  ],
+  ohext: [
+    require('@/assets/photos/ohext-1.jpg'),
+    require('@/assets/photos/ohext-2.jpg'),
+    require('@/assets/photos/ohext-3.jpg'),
+  ],
+  cablerow: [
+    require('@/assets/photos/cablerow-1.jpg'),
+    require('@/assets/photos/cablerow-2.jpg'),
+    require('@/assets/photos/cablerow-3.jpg'),
+  ],
+  bulgarian: [
+    require('@/assets/photos/bulgarian-1.jpg'),
+    require('@/assets/photos/bulgarian-2.jpg'),
+    require('@/assets/photos/bulgarian-3.jpg'),
+  ],
+  dbcurl: [
+    require('@/assets/photos/dbcurl-1.jpg'),
+    require('@/assets/photos/dbcurl-2.jpg'),
+    require('@/assets/photos/dbcurl-3.jpg'),
+  ],
+  calf: [
+    require('@/assets/photos/calf-1.jpg'),
+    require('@/assets/photos/calf-2.jpg'),
+    require('@/assets/photos/calf-3.jpg'),
+  ],
+  legcurl: [
+    require('@/assets/photos/legcurl-1.jpg'),
+    require('@/assets/photos/legcurl-2.jpg'),
+    require('@/assets/photos/legcurl-3.jpg'),
+  ],
+  plank: [require('@/assets/photos/plank-1.jpg'), require('@/assets/photos/plank-2.jpg')],
 };
 
 /** Strength routine covers, matched by routine name (as in the prototype). */

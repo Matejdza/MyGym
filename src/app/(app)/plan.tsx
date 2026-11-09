@@ -6,32 +6,20 @@ import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill, Ring } from '@/components/ui';
 import { DAYS } from '@/data/catalog';
 import { coverPhoto } from '@/data/photos';
-import { plural } from '@/domain/format';
-import {
-  MAX_WEEKLY,
-  MIN_WEEKLY,
-  assignedDays,
-  newRoutine,
-  nextRoutineKey,
-  routineMeta,
-  sortedKeys,
-  withDayCycled,
-  withWeekly,
-} from '@/domain/plan';
+import { newRoutine, nextRoutineKey, routineMeta, sortedKeys, withDayCycled, workoutsText } from '@/domain/plan';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, plate } from '@/theme/tokens';
 
-const WEEKLY = Array.from({ length: MAX_WEEKLY - MIN_WEEKLY + 1 }, (_, i) => MIN_WEEKLY + i);
-
-/** Workouts per week, the 7-day schedule and the routine list. */
+/**
+ * The 7-day schedule and the routine list. Workouts a week follow the days that
+ * have a routine: tapping a day cycles A → B → … → rest.
+ */
 export default function Plan() {
   const { profile } = useActive();
   const { setPlan } = useStore();
   const top = useTop();
   const plan = profile.plan;
-  const assigned = assignedDays(plan);
-  const matches = assigned === plan.weekly;
 
   const addRoutine = (type: 'strength' | 'cardio') => {
     const k = nextRoutineKey(plan);
@@ -48,27 +36,6 @@ export default function Plan() {
       </Display>
 
       <UI size={15} color={colors.muted} style={{ marginTop: 22 }}>
-        Workouts per week
-      </UI>
-      <View style={styles.weekly}>
-        {WEEKLY.map((n) => {
-          const on = n === plan.weekly;
-          return (
-            <Pressable
-              key={n}
-              onPress={() => setPlan(withWeekly(plan, n))}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={[styles.weeklyOpt, { backgroundColor: on ? colors.accent : colors.surface }]}>
-              <Mono size={24} weight={500} color={on ? colors.accentInk : colors.ink}>
-                {String(n)}
-              </Mono>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <UI size={15} color={colors.muted} style={{ marginTop: 26 }}>
         Schedule
       </UI>
       <View style={styles.days}>
@@ -89,10 +56,8 @@ export default function Plan() {
           );
         })}
       </View>
-      <UI size={14} color={matches ? colors.muted : colors.accent} style={{ marginTop: 12 }}>
-        {matches
-          ? 'Tap a day to change its routine or make it a rest day.'
-          : `Your schedule has ${plural(assigned, 'day')}, your plan says ${plan.weekly}.`}
+      <UI size={14} color={colors.muted} style={{ marginTop: 12 }}>
+        {`${workoutsText(plan)}. Tap a day to change its routine or make it a rest day.`}
       </UI>
 
       <Display size={28} weight={800} style={{ marginTop: 30 }}>
@@ -138,8 +103,6 @@ export default function Plan() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
-  weekly: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   days: { flexDirection: 'row', gap: 5, marginTop: 10 },
   day: { flex: 1, alignItems: 'center', gap: 8 },
   dayCircle: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },

@@ -11,7 +11,7 @@ import { IMAGES, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { addDays, dateInWeek, dayIndex, fullDate, isoDate, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt, r2 } from '@/domain/format';
-import { routineMeta } from '@/domain/plan';
+import { routineMeta, workoutsPerWeek } from '@/domain/plan';
 import { canStart } from '@/domain/session';
 import { homeWeekCells } from '@/domain/week';
 import { useActive, useDbQuery, useStore } from '@/state/store';
@@ -135,7 +135,7 @@ export default function Home() {
           <Display size={28} weight={800}>
             This week
           </Display>
-          <Mono size={15} color={colors.muted}>{`${doneCount} of ${plan.weekly} done`}</Mono>
+          <Mono size={15} color={colors.muted}>{`${doneCount} of ${workoutsPerWeek(plan)} done`}</Mono>
         </View>
         <View style={{ marginTop: 14 }}>
           <WeekStrip

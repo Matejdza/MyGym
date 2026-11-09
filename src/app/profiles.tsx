@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Display, Mono, UI } from '@/components/Txt';
 import { Ring } from '@/components/ui';
 import { GOALS } from '@/data/catalog';
+import { workoutsPerWeek } from '@/domain/plan';
 import { useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
@@ -53,7 +54,7 @@ export default function Profiles() {
                 {p.name}
               </UI>
               <UI size={14} color={colors.muted} style={styles.meta}>
-                {`${p.plan.weekly}× a week, ${goal}`}
+                {`${workoutsPerWeek(p.plan)}× a week, ${goal}`}
               </UI>
             </Pressable>
           );

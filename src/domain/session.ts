@@ -29,6 +29,8 @@ export function makeSession(plan: Plan, day: number, weekStart: string, now: num
       target: it.sets,
       reps: it.reps,
       best: hist.bestKg[it.ex] ?? 0,
+      ...(it.repsMax != null && it.repsMax > it.reps ? { repsMax: it.repsMax } : {}),
+      ...(it.rest != null ? { rest: it.rest } : {}),
       sets: Array.from({ length: it.sets }, () => ({ w, r: it.reps, done: false, pr: false })),
     };
   });

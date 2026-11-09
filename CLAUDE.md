@@ -19,7 +19,9 @@ home screen). The owner writes in Serbian; answer in Serbian.
   There is no backend and no export/import (the owner declined it). History must never be lost:
   schema changes go through `migrate()` in `src/data/db.ts` with a new `user_version`, never by
   dropping tables.
-- `src/data/catalog.ts` is generated verbatim from the prototype script; keep copy identical.
+- `src/data/catalog.ts` is generated verbatim from the prototype script; keep copy identical. The block
+  marked "Added for the owner's training plan" (8 exercises) was written by hand; its photos were supplied by the owner. Exercise
+  photos go in `assets/photos/` and the `PHOTOS` map in `src/data/photos.ts`.
 
 ## Product decisions (from the owner)
 - First launch is empty (Welcome → onboarding), no demo profiles.
@@ -27,6 +29,13 @@ home screen). The owner writes in Serbian; answer in Serbian.
 - No history → hide "Last time" lines and "Your numbers"; charts say "No workouts logged yet."
 - Finishing with nothing logged asks to confirm, then closes without counting the day.
 - PRs only count when the exercise already has history.
+- Users build their own plan (added on request, not in the design): onboarding step 4 offers
+  "Suggested plan" or "Build my own" (tap days → one empty routine per day → opens Training plan).
+  Workouts a week always equal the days that have a routine (`workoutsPerWeek`); the stored
+  `weekly` column is kept within its old 2–6 CHECK range and is never shown.
+- Routines can be deleted (their days become rest days); exercises can be reordered, have a rep
+  range (`reps`–`repsMax`, sessions start at the bottom) and their own rest (`rest`, else the
+  profile setting).
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

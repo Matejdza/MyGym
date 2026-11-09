@@ -11,7 +11,7 @@ import { coverPhoto, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { dateInWeek, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt } from '@/domain/format';
-import { routineMeta } from '@/domain/plan';
+import { routineMeta, schemeText } from '@/domain/plan';
 import { canStart } from '@/domain/session';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
@@ -120,7 +120,7 @@ export default function DayDetail() {
                 const e = exercise(it.ex);
                 const last = history?.[it.ex];
                 const line = e.bodyweight ? 'Body weight' : last != null ? `Last time ${fmt(last)} kg` : null;
-                return <ItemRow key={i} exId={it.ex} name={e.name} last={line} scheme={`${it.sets} × ${it.reps}`} />;
+                return <ItemRow key={i} exId={it.ex} name={e.name} last={line} scheme={schemeText(it)} />;
               })}
           <EditLink label="Edit this routine" onPress={() => router.push(`/routine/${key}`)} />
         </View>

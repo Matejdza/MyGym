@@ -19,6 +19,7 @@ import { DATABASE_NAME, migrate, type Db } from '@/data/db';
 import * as repo from '@/data/repo';
 import type { NewWorkout, ProfileFields } from '@/data/repo';
 import { isoDate, weekStartOf } from '@/domain/dates';
+import { withWeeklyFromDays } from '@/domain/plan';
 import { makeSession, routineExercises } from '@/domain/session';
 import type { Plan, Profile, Session, Settings } from '@/domain/types';
 import { DEFAULT_SETTINGS } from '@/domain/types';
@@ -145,8 +146,10 @@ function StoreProvider({ children }: PropsWithChildren) {
         write(() => repo.updateProfileFields(db, id, fields));
       },
 
-      setPlan: (plan) => {
+      setPlan: (input) => {
         const id = active();
+        // Workouts a week always follow the days that have a routine.
+        const plan = withWeeklyFromDays(input);
         patchActive((e) => ({ ...e, profile: { ...e.profile, plan } }));
         write(() => repo.savePlan(db, id, plan));
       },

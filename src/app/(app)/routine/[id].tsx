@@ -1,22 +1,35 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { confirm } from '@/components/confirm';
 import { PlateBadge } from '@/components/Cover';
 import { Photo } from '@/components/Photo';
 import { Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { ZONES, exercise } from '@/data/catalog';
 import { coverPhoto, exPhoto } from '@/data/photos';
-import { routineMeta } from '@/domain/plan';
+import {
+  REST_STEP,
+  repsText,
+  restText,
+  routineMeta,
+  withItemMoved,
+  withStrengthChange,
+  withoutRoutine,
+  type StrengthField,
+} from '@/domain/plan';
 import type { Routine } from '@/domain/types';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
 
-/** Rename a routine, change sets / reps (or minutes / zone), remove and add items. */
+/**
+ * Rename a routine; change sets, rep range and rest (or minutes and zone);
+ * reorder, remove and add items; delete the routine.
+ */
 export default function RoutineEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { profile } = useActive();
+  const { profile, settings } = useActive();
   const { setPlan } = useStore();
   const top = useTop();
   const plan = profile.plan;
@@ -34,19 +47,28 @@ export default function RoutineEditor() {
 
   const cardio = r.type === 'cardio';
 
-  /** Stepper change with the prototype's limits: minutes ≥ 5 (±5), zone 1–5, sets/reps ≥ 1. */
-  const change = (i: number, f: 'sets' | 'reps' | 'min' | 'zone', d: number) => {
-    if (r.type === 'cardio') {
-      const items = r.items.map((it, j) => {
-        if (j !== i) return it;
-        if (f === 'min') return { ...it, min: Math.max(5, it.min + d) };
-        return { ...it, zone: Math.min(5, Math.max(1, it.zone + d)) };
-      });
-      save({ ...r, items });
-    } else {
-      const items = r.items.map((it, j) => (j !== i ? it : f === 'sets' ? { ...it, sets: Math.max(1, it.sets + d) } : { ...it, reps: Math.max(1, it.reps + d) }));
-      save({ ...r, items });
-    }
+  /** Cardio steppers with the prototype's limits: minutes ≥ 5 (±5), zone 1–5. */
+  const changeCardio = (i: number, f: 'min' | 'zone', d: number) => {
+    if (r.type !== 'cardio') return;
+    const items = r.items.map((it, j) => {
+      if (j !== i) return it;
+      if (f === 'min') return { ...it, min: Math.max(5, it.min + d) };
+      return { ...it, zone: Math.min(5, Math.max(1, it.zone + d)) };
+    });
+    save({ ...r, items });
+  };
+
+  const changeStrength = (i: number, f: StrengthField, d: number) => {
+    if (r.type === 'cardio') return;
+    save({ ...r, items: r.items.map((it, j) => (j !== i ? it : withStrengthChange(it, f, d, settings.restSeconds))) });
+  };
+
+  const move = (i: number, dir: -1 | 1) => save(withItemMoved(r, i, dir));
+
+  const deleteRoutine = async () => {
+    if (!(await confirm('Delete this routine?', 'Delete'))) return;
+    router.back();
+    setPlan(withoutRoutine(plan, id));
   };
 
   const remove = (i: number) =>
@@ -78,10 +100,10 @@ export default function RoutineEditor() {
       <View style={styles.items}>
         {r.type === 'cardio'
           ? r.items.map((it, i) => (
-              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)}>
+              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
                 <View style={styles.pair}>
-                  <Pill label="minutes" value={String(it.min)} onDec={() => change(i, 'min', -5)} onInc={() => change(i, 'min', 5)} />
-                  <Pill label="zone" value={String(it.zone)} onDec={() => change(i, 'zone', -1)} onInc={() => change(i, 'zone', 1)} />
+                  <Pill label="minutes" value={String(it.min)} onDec={() => changeCardio(i, 'min', -5)} onInc={() => changeCardio(i, 'min', 5)} />
+                  <Pill label="zone" value={String(it.zone)} onDec={() => changeCardio(i, 'zone', -1)} onInc={() => changeCardio(i, 'zone', 1)} />
                 </View>
                 <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
                   {`Zone ${it.zone}: ${ZONES[it.zone]}`}
@@ -89,11 +111,29 @@ export default function RoutineEditor() {
               </ItemCard>
             ))
           : r.items.map((it, i) => (
-              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)}>
+              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
                 <View style={styles.pair}>
-                  <Pill label="sets" value={String(it.sets)} onDec={() => change(i, 'sets', -1)} onInc={() => change(i, 'sets', 1)} />
-                  <Pill label="reps" value={String(it.reps)} onDec={() => change(i, 'reps', -1)} onInc={() => change(i, 'reps', 1)} />
+                  <Pill label="sets" value={String(it.sets)} onDec={() => changeStrength(i, 'sets', -1)} onInc={() => changeStrength(i, 'sets', 1)} />
+                  <Pill label="reps" value={String(it.reps)} onDec={() => changeStrength(i, 'reps', -1)} onInc={() => changeStrength(i, 'reps', 1)} />
                 </View>
+                <View style={styles.pair}>
+                  {/* "up to" turns the reps into a range (6–8); equal to reps means a single number. */}
+                  <Pill
+                    label="up to"
+                    value={String(it.repsMax ?? it.reps)}
+                    onDec={() => changeStrength(i, 'repsMax', -1)}
+                    onInc={() => changeStrength(i, 'repsMax', 1)}
+                  />
+                  <Pill
+                    label="rest"
+                    value={restText(it.rest ?? settings.restSeconds)}
+                    onDec={() => changeStrength(i, 'rest', -REST_STEP)}
+                    onInc={() => changeStrength(i, 'rest', REST_STEP)}
+                  />
+                </View>
+                <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+                  {`${it.sets} × ${repsText(it)}, rest ${restText(it.rest ?? settings.restSeconds)}`}
+                </UI>
               </ItemCard>
             ))}
       </View>
@@ -103,11 +143,31 @@ export default function RoutineEditor() {
           {cardio ? 'Add activity' : 'Add exercise'}
         </UI>
       </Pressable>
+
+      <Pressable onPress={deleteRoutine} accessibilityRole="button" style={styles.delete}>
+        <UI size={15} weight={600} color={colors.red}>
+          Delete routine
+        </UI>
+      </Pressable>
     </ScrollView>
   );
 }
 
-function ItemCard({ exId, onRemove, children }: { exId: string; onRemove: () => void; children: React.ReactNode }) {
+function ItemCard({
+  exId,
+  onRemove,
+  onMove,
+  first,
+  last,
+  children,
+}: {
+  exId: string;
+  onRemove: () => void;
+  onMove: (dir: -1 | 1) => void;
+  first: boolean;
+  last: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHead}>
@@ -115,6 +175,8 @@ function ItemCard({ exId, onRemove, children }: { exId: string; onRemove: () => 
         <UI size={16} weight={600} style={{ flex: 1, minWidth: 0 }}>
           {exercise(exId)?.name ?? exId}
         </UI>
+        <MoveButton label="↑" hint="Move up" disabled={first} onPress={() => onMove(-1)} />
+        <MoveButton label="↓" hint="Move down" disabled={last} onPress={() => onMove(1)} />
         <Pressable onPress={onRemove} accessibilityRole="button" style={styles.remove}>
           <UI size={14} color={colors.muted}>
             Remove
@@ -123,6 +185,23 @@ function ItemCard({ exId, onRemove, children }: { exId: string; onRemove: () => 
       </View>
       {children}
     </View>
+  );
+}
+
+/** Small round arrow that moves an item up or down; dimmed at the ends of the list. */
+function MoveButton({ label, hint, disabled, onPress }: { label: string; hint: string; disabled: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={hint}
+      accessibilityState={{ disabled }}
+      style={[styles.moveBtn, { opacity: disabled ? 0.3 : 1 }]}>
+      <UI size={16} weight={700}>
+        {label}
+      </UI>
+    </Pressable>
   );
 }
 
@@ -170,6 +249,8 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   thumb: { width: 44, height: 44, borderRadius: 11 },
   remove: { height: 36, paddingHorizontal: 4, justifyContent: 'center' },
+  moveBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
+  delete: { height: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center' },
   pair: { flexDirection: 'row', gap: 8, marginTop: 10 },
   pill: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 50, borderRadius: 25, backgroundColor: colors.surface2 },
   pillBtn: { width: 46, height: 50, alignItems: 'center', justifyContent: 'center' },
