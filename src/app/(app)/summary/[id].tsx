@@ -70,7 +70,8 @@ export default function Summary() {
                   <UI size={13} color={colors.muted}>
                     {r.k}
                   </UI>
-                  <Mono size={19} weight={500} spacing={-0.04} numberOfLines={1} style={{ marginTop: 8 }}>
+                  {/* Long values ("2,740 kg") step down a size so they fit a third of the width. */}
+                  <Mono size={r.v.length > 7 ? 16 : 19} weight={500} spacing={-0.04} numberOfLines={1} style={{ marginTop: 8 }}>
                     {r.v}
                   </Mono>
                 </View>
