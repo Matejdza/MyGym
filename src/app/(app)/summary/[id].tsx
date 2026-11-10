@@ -8,13 +8,16 @@ import { InkDisplayButton } from '@/components/ui';
 import { IMAGES } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { cardioSummary, strengthSummary } from '@/domain/cardio';
+import { shortDate } from '@/domain/dates';
 import { useActive, useDbQuery } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 /** "Workout done": stat tiles and new records (strength) or activities (cardio). */
 export default function Summary() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  // Opened from All workouts: show when it was and go back to the list.
+  const past = from === 'history';
   const { profile } = useActive();
   const top = useTop();
   const insets = useSafeAreaInsets();
@@ -51,7 +54,7 @@ export default function Summary() {
           />
           <View style={styles.heroText}>
             <UI size={15} weight={600} color={colors.accent}>
-              {w?.routineName ?? ''}
+              {w ? (past ? `${w.routineName}, ${shortDate(new Date(w.finishedAt))}` : w.routineName) : ''}
             </UI>
             <Display size={68} weight={900} lh={0.88} style={{ marginTop: 8 }}>
               Workout done
@@ -96,7 +99,7 @@ export default function Summary() {
         )}
       </ScrollView>
       <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 14 + insets.bottom }}>
-        <InkDisplayButton label="BACK TO HOME" onPress={home} />
+        <InkDisplayButton label={past ? 'BACK' : 'BACK TO HOME'} onPress={past ? () => router.back() : home} />
       </View>
     </View>
   );

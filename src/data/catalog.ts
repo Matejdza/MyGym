@@ -353,7 +353,8 @@ export const EX = {
     group: "core",
     equipment: "Body weight",
     bodyweight: true,
-    description: "Holds the whole core still. Log the seconds you hold as reps.",
+    timed: true,
+    description: "Holds the whole core still. Logged in seconds.",
     steps: [
       "Rest on your forearms and toes, elbows under your shoulders.",
       "Keep your body in a straight line from head to heels. Brace your abs.",

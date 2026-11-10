@@ -1,7 +1,7 @@
 // Weekly plan rules ported from schedule / mkPlan / routineMeta / setWeekly /
 // toggleDay / addRoutine in the prototype.
 
-import { PATTERNS, routinesDefault } from '@/data/catalog';
+import { PATTERNS, exercise, routinesDefault } from '@/data/catalog';
 
 import { plural } from './format';
 import type { Plan, Routine, RoutineKey, StrengthItem } from './types';
@@ -131,8 +131,23 @@ export function withItemMoved(r: Routine, i: number, dir: -1 | 1): Routine {
   return { ...r, items } as Routine;
 }
 
-/** Reps as written in a plan: "8" or "6–8". */
-export const repsText = (it: StrengthItem) => (it.repsMax != null && it.repsMax > it.reps ? `${it.reps}–${it.repsMax}` : String(it.reps));
+/** Reps as written in a plan: "8", "6–8", or "30 s" for holds. */
+export const repsText = (it: StrengthItem) => {
+  const n = it.repsMax != null && it.repsMax > it.reps ? `${it.reps}–${it.repsMax}` : String(it.reps);
+  return isTimed(it.ex) ? `${n} s` : n;
+};
+
+/** Held for time (plank): "reps" are seconds. */
+export const isTimed = (exId: string) => !!exercise(exId)?.timed;
+
+/** What the reps number counts, as a short label. */
+export const repsUnit = (exId: string) => (isTimed(exId) ? 'sec' : 'reps');
+
+/** Stepper increment for reps: 5 seconds for holds, otherwise 1 rep. */
+export const repsStep = (exId: string) => (isTimed(exId) ? 5 : 1);
+
+/** Starting reps when an exercise is added to a routine. */
+export const defaultReps = (exId: string) => (isTimed(exId) ? 30 : 10);
 
 /** Sets × reps: "4 × 6" or "3 × 6–8". */
 export const schemeText = (it: StrengthItem) => `${it.sets} × ${repsText(it)}`;

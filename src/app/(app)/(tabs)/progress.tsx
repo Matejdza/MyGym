@@ -77,9 +77,16 @@ export default function Progress() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(66) }]}>
-      <Display size={52} weight={900} lh={0.9}>
-        Progress
-      </Display>
+      <View style={styles.header}>
+        <Display size={52} weight={900} lh={0.9}>
+          Progress
+        </Display>
+        <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={styles.allBtn}>
+          <UI size={15} weight={600} numberOfLines={1}>
+            All workouts
+          </UI>
+        </Pressable>
+      </View>
       <View style={styles.segment}>
         {MODES.map(([m, label]) => (
           <Pressable
@@ -196,6 +203,8 @@ export default function Progress() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  allBtn: { height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line, justifyContent: 'center' },
   segment: { flexDirection: 'row', gap: 4, marginTop: 18, padding: 4, borderRadius: 26, backgroundColor: colors.surface },
   segBtn: { flex: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   chips: { marginTop: 14, marginHorizontal: -20 },

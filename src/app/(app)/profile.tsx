@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Photo } from '@/components/Photo';
+import { confirm } from '@/components/confirm';
 import { Segmented } from '@/components/Segmented';
 import { Display, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
@@ -9,12 +11,12 @@ import { BackPill, StepperCard } from '@/components/ui';
 import { GOALS } from '@/data/catalog';
 import { pickProfilePhoto } from '@/data/profilePhoto';
 import { fmt, r2 } from '@/domain/format';
-import { workoutsText } from '@/domain/plan';
-import type { GoalKey, InputVariant } from '@/domain/types';
+import { REST_MAX, REST_MIN, REST_STEP, restText, workoutsText } from '@/domain/plan';
+import type { GoalKey, InputVariant, Settings } from '@/domain/types';
 import { planCells } from '@/domain/week';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
-import { colors } from '@/theme/tokens';
+import { colors, fonts } from '@/theme/tokens';
 
 const VARIANTS: [InputVariant, string][] = [
   ['stepper', 'Buttons'],
@@ -22,10 +24,13 @@ const VARIANTS: [InputVariant, string][] = [
   ['scale', 'Scale'],
 ];
 
-/** Profile: photo, body numbers, goal, plan summary and set-entry setting. */
+const STEPS: Settings['weightStep'][] = [1.25, 2.5, 5];
+type Step = `${Settings['weightStep']}`;
+
+/** Profile: name, photo, body numbers, goal, plan summary and workout settings. */
 export default function Profile() {
   const { profile, settings } = useActive();
-  const { updateProfile, setSettings, leaveProfile } = useStore();
+  const { updateProfile, setSettings, leaveProfile, deleteProfile } = useStore();
   const top = useTop();
 
   const step = (k: 'height' | 'weight' | 'target', d: number) => updateProfile({ [k]: r2(Math.max(0, profile[k] + d)) });
@@ -37,6 +42,23 @@ export default function Profile() {
     } catch (e) {
       console.error('[liftlog] could not save the profile photo', e);
     }
+  };
+
+  // Name being typed; saved when the field loses focus. An empty name keeps the old one.
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const saveName = () => {
+    const name = nameDraft?.trim();
+    if (name && name !== profile.name) updateProfile({ name });
+    setNameDraft(null);
+  };
+
+  const removeProfile = async () => {
+    const ok = await confirm(
+      `Delete ${profile.name}?`,
+      'Delete',
+      'Every workout, record and body weight entry for this profile will be removed from this phone. This cannot be undone.',
+    );
+    if (ok) await deleteProfile();
   };
 
   return (
@@ -77,6 +99,24 @@ export default function Profile() {
       </View>
 
       <View style={styles.rows}>
+        <View style={styles.nameCard}>
+          <UI size={14} color={colors.muted}>
+            Name
+          </UI>
+          <TextInput
+            value={nameDraft ?? profile.name}
+            onChangeText={setNameDraft}
+            onBlur={saveName}
+            onSubmitEditing={saveName}
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            maxLength={24}
+            maxFontSizeMultiplier={1.2}
+            accessibilityLabel="Profile name"
+            style={styles.nameInput}
+          />
+        </View>
         {(
           [
             ['Height', 'height', 'cm', 1],
@@ -142,6 +182,56 @@ export default function Profile() {
         onChange={(inputVariant) => setSettings({ inputVariant })}
         style={{ marginTop: 8 }}
       />
+
+      <UI size={15} color={colors.muted} style={{ marginTop: 18 }}>
+        Weight step
+      </UI>
+      <Segmented<Step>
+        options={STEPS.map((v) => [String(v) as Step, `${fmt(v)} kg`])}
+        value={String(settings.weightStep) as Step}
+        onChange={(v) => setSettings({ weightStep: Number(v) as Settings['weightStep'] })}
+        style={{ marginTop: 8 }}
+      />
+
+      <View style={{ marginTop: 18 }}>
+        <StepperCard
+          label="Rest between sets"
+          value={restText(settings.restSeconds)}
+          unit=""
+          onDec={() => setSettings({ restSeconds: Math.max(REST_MIN, settings.restSeconds - REST_STEP) })}
+          onInc={() => setSettings({ restSeconds: Math.min(REST_MAX, settings.restSeconds + REST_STEP) })}
+          valueSize={26}
+          button={52}
+          buttonFont={22}
+          labelSize={14}
+          unitSize={14}
+          valueGap={2}
+          padding={[10, 10, 10, 18]}
+          gap={8}
+        />
+      </View>
+      <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+        Used when an exercise has no rest of its own.
+      </UI>
+
+      <UI size={15} color={colors.muted} style={{ marginTop: 18 }}>
+        Workout buttons
+      </UI>
+      <Segmented<Settings['handedness']>
+        options={[
+          ['right', 'Right hand'],
+          ['left', 'Left hand'],
+        ]}
+        value={settings.handedness}
+        onChange={(handedness) => setSettings({ handedness })}
+        style={{ marginTop: 8 }}
+      />
+
+      <Pressable onPress={removeProfile} accessibilityRole="button" style={styles.delete}>
+        <UI size={15} weight={600} color={colors.red}>
+          Delete profile
+        </UI>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -163,6 +253,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rows: { gap: 8, marginTop: 26 },
+  nameCard: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 10, paddingBottom: 6, paddingHorizontal: 18 },
+  nameInput: { color: colors.ink, fontFamily: fonts.ui600, fontSize: 22, paddingVertical: 4, paddingHorizontal: 0 },
   planCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 20, marginTop: 26 },
+  delete: { height: 48, marginTop: 28, alignItems: 'center', justifyContent: 'center' },
   planBtn: { height: 54, marginTop: 18, borderRadius: 27, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
 });

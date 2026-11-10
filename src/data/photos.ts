@@ -107,9 +107,12 @@ export const exPhoto = (id: string, n = 0): Img | null => PHOTOS[id]?.[n] ?? nul
 /** Muscle-group photo (`gSrc` in the prototype). */
 export const groupPhoto = (key: GroupKey): Img => (key === 'cardio' ? IMAGES.cardioHero : GROUP_PHOTOS[key]);
 
-/** Routine cover (`coverSrc`). `wide` is the routine editor banner. Null for custom strength routines. */
+/**
+ * Routine cover (`coverSrc`). `wide` is the routine editor banner. Routines the
+ * user built show the photo of their first exercise that has one; null while empty.
+ */
 export function coverPhoto(r: Routine | null | undefined, wide = false): Img | null {
   if (!r) return null;
   if (r.type === 'cardio') return wide ? IMAGES.cardioBanner : IMAGES.cardioHero;
-  return COVERS[r.name] ?? null;
+  return COVERS[r.name] ?? r.items.map((it) => exPhoto(it.ex)).find((p) => p != null) ?? null;
 }

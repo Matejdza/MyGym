@@ -5,19 +5,24 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { Img } from '@/data/photos';
 import { colors } from '@/theme/tokens';
 
-/** Photo filling its box (object-fit: cover). Shows the surface color when there is no image. */
+/**
+ * Photo filling its box (object-fit: cover). Shows the surface color when there is no image.
+ * `top` keeps the top of the photo in view when it is cropped (heads in tall hero boxes).
+ */
 export function Photo({
   source,
   style,
   fill = colors.surface,
+  top = false,
 }: {
   source: Img | null;
   style?: StyleProp<ViewStyle>;
   fill?: string;
+  top?: boolean;
 }) {
   return (
     <View style={[{ overflow: 'hidden', backgroundColor: fill }, style]}>
-      {source != null && <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={0} />}
+      {source != null && <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={top ? 'top' : 'center'} transition={0} />}
     </View>
   );
 }

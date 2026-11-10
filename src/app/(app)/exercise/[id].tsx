@@ -47,7 +47,7 @@ export default function ExerciseDetail() {
   return (
     <ScrollView style={styles.screen}>
       <View style={{ height: top(340) }}>
-        <Photo source={exPhoto(id, 0)} style={StyleSheet.absoluteFill} />
+        <Photo source={exPhoto(id, 0)} style={StyleSheet.absoluteFill} top />
         <Shade stops={heroStops(0.7, [0.28, 0.5], 0.97)} />
         <BackPill onPress={() => router.back()} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />
         <View style={styles.heroText}>

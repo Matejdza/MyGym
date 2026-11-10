@@ -18,6 +18,7 @@ import {
 import { DATABASE_NAME, migrate, type Db } from '@/data/db';
 import * as repo from '@/data/repo';
 import type { NewWorkout, ProfileFields } from '@/data/repo';
+import { removeProfilePhoto } from '@/data/profilePhoto';
 import { isoDate, weekStartOf } from '@/domain/dates';
 import { withWeeklyFromDays } from '@/domain/plan';
 import { makeSession, routineExercises } from '@/domain/session';
@@ -42,6 +43,8 @@ type Actions = {
   /** "Switch profile": back to the profile picker. */
   leaveProfile: () => void;
   createProfile: (p: Omit<Profile, 'id' | 'createdAt' | 'photoUri'>) => Promise<string>;
+  /** Deletes the active profile and all its history, then returns to the profile picker. */
+  deleteProfile: () => Promise<void>;
   updateProfile: (fields: ProfileFields) => void;
   setPlan: (plan: Plan) => void;
   setSettings: (patch: Partial<Settings>) => void;
@@ -138,6 +141,18 @@ function StoreProvider({ children }: PropsWithChildren) {
           activeId: profile.id,
         }));
         return profile.id;
+      },
+
+      deleteProfile: async () => {
+        const id = active();
+        const photo = ref.current.byId[id].profile.photoUri;
+        await write(() => repo.deleteProfile(db, id));
+        removeProfilePhoto(photo);
+        // Leaving the profile sends the router back to the picker (or Welcome when none is left).
+        commit((s) => {
+          const { [id]: _removed, ...byId } = s.byId;
+          return { ...s, order: s.order.filter((o) => o !== id), byId, activeId: null, historyVersion: s.historyVersion + 1 };
+        });
       },
 
       updateProfile: (fields) => {

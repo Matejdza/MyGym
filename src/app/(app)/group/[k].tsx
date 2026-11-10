@@ -7,6 +7,7 @@ import { BackPill } from '@/components/ui';
 import { ALL_GROUPS, EXERCISE_IDS, exercise } from '@/data/catalog';
 import { exPhoto, groupPhoto } from '@/data/photos';
 import { plural } from '@/domain/format';
+import { defaultReps } from '@/domain/plan';
 import type { GroupKey, Routine } from '@/domain/types';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
@@ -37,7 +38,7 @@ export default function Group() {
     const next: Routine =
       r.type === 'cardio'
         ? { ...r, items: [...r.items, { ex: id, min: 15, zone: 2 }] }
-        : { ...r, items: [...r.items, { ex: id, sets: 3, reps: 10 }] };
+        : { ...r, items: [...r.items, { ex: id, sets: 3, reps: defaultReps(id) }] };
     setPlan({ ...plan, routines: { ...plan.routines, [pick]: next } });
     // Back to the routine editor, past the muscle-group picker if it was used.
     router.dismissTo({ pathname: '/routine/[id]', params: { id: pick } });

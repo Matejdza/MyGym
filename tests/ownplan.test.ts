@@ -5,9 +5,13 @@ import { DAYS_FULL } from '@/data/catalog';
 import { migrate } from '@/data/db';
 import * as repo from '@/data/repo';
 import {
+  defaultReps,
+  isTimed,
   mkPlan,
   ownPlan,
+  repsStep,
   repsText,
+  repsUnit,
   restText,
   schemeText,
   withDayCycled,
@@ -124,4 +128,18 @@ test('own plans, ranges and rest survive the database', async () => {
   [loaded] = await repo.loadProfiles(db);
   assert.deepEqual(loaded.profile.plan.routines, {});
   assert.equal(workoutsPerWeek(loaded.profile.plan), 0);
+});
+
+test('plank is held in seconds; other exercises count reps', () => {
+  assert.equal(isTimed('plank'), true);
+  assert.equal(isTimed('bench'), false);
+  assert.equal(repsUnit('plank'), 'sec');
+  assert.equal(repsUnit('squat'), 'reps');
+  assert.equal(repsStep('plank'), 5);
+  assert.equal(repsStep('squat'), 1);
+  assert.equal(defaultReps('plank'), 30);
+  assert.equal(defaultReps('bench'), 10);
+  assert.equal(schemeText({ ex: 'plank', sets: 3, reps: 30 }), '3 × 30 s');
+  assert.equal(schemeText({ ex: 'plank', sets: 3, reps: 30, repsMax: 45 }), '3 × 30–45 s');
+  assert.equal(schemeText({ ex: 'bench', sets: 3, reps: 8 }), '3 × 8');
 });

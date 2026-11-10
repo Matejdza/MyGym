@@ -9,13 +9,18 @@ import { PrimaryButton, Ring } from '@/components/ui';
 import { exercise } from '@/data/catalog';
 import * as repo from '@/data/repo';
 import { fmt, mmss } from '@/domain/format';
+import { isTimed, repsStep, repsUnit } from '@/domain/plan';
 import * as S from '@/domain/strength';
 import type { StrengthSession } from '@/domain/types';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
 import { useNow } from '@/hooks/useNow';
+import { playRestSignal, primeRestSignal } from '@/hooks/restSignal';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useScale, useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+
+/** A rest that ended more than this long ago (app was closed) ends silently. */
+const SIGNAL_GRACE = 3000;
 
 /** Strength workout: set rows, rest timer and the set-entry sheet. */
 export function StrengthLog({ session: s }: { session: StrengthSession }) {
@@ -36,10 +41,13 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   const set = S.currentSet(s);
   const last = s.cur === s.ex.length - 1;
   const mirrored = settings.handedness === 'left';
+  const timed = isTimed(e.id);
 
-  // Rest timer ends on its own.
+  // Rest timer ends on its own, with a signal unless the app was away long past the end.
   useEffect(() => {
-    if (s.rest && now >= s.rest.end) setSession(S.skipRest(s));
+    if (!s.rest || now < s.rest.end) return;
+    if (now - s.rest.end < SIGNAL_GRACE) playRestSignal();
+    setSession(S.skipRest(s));
   }, [now, s, setSession]);
 
   const lastTime = useDbQuery((db) => repo.lastSets(db, profile.id, e.id), [profile.id, e.id]);
@@ -54,6 +62,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   const main = () => {
     if (set) {
       setField('w');
+      primeRestSignal();
       // Rest set on this exercise in the routine, otherwise the profile setting.
       update(S.logSet(s, Date.now(), e.rest ?? settings.restSeconds));
     } else if (last) finish();
@@ -71,7 +80,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   if (lastTime && lastTime.length) {
     const kg = Math.max(...lastTime.map((x) => x.kg));
     lastLine = ex.bodyweight
-      ? `Last time: ${lastTime.length} × ${lastTime[0].reps}`
+      ? `Last time: ${lastTime.length} × ${lastTime[0].reps}${timed ? ' s' : ''}`
       : `Last time: ${lastTime.length} × ${lastTime[0].reps} × ${fmt(kg)} kg`;
   }
 
@@ -116,7 +125,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
                 {String(i + 1)}
               </Mono>
               <Mono size={18} weight={500} color={x.done || active ? colors.ink : colors.muted} style={{ flex: 1 }}>
-                {`${fmt(x.w)} kg × ${x.r}`}
+                {timed && x.w === 0 ? `${x.r} s` : `${fmt(x.w)} kg × ${x.r}${timed ? ' s' : ''}`}
               </Mono>
               <UI size={13} weight={700} color={x.pr || active ? colors.accent : colors.muted}>
                 {status}
@@ -168,10 +177,10 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
             />
             <StepRow
               value={String(set.r)}
-              label="reps"
+              label={timed ? 'seconds' : 'reps'}
               mirrored={mirrored}
-              onDec={() => update(S.adjust(s, 'r', -1))}
-              onInc={() => update(S.adjust(s, 'r', 1))}
+              onDec={() => update(S.adjust(s, 'r', -repsStep(e.id)))}
+              onInc={() => update(S.adjust(s, 'r', repsStep(e.id)))}
             />
           </>
         )}
@@ -186,13 +195,14 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               setPadText(null);
             }}
             onKey={onKey}
+            rLabel={repsUnit(e.id)}
           />
         )}
 
         {set && settings.inputVariant === 'scale' && (
           <>
             <ScaleRuler f="w" label="kg" value={set.w} conf={rulerConf('w', settings.weightStep)} onChange={(v) => update(S.setValue(s, 'w', v))} />
-            <ScaleRuler f="r" label="reps" value={set.r} conf={rulerConf('r', settings.weightStep)} onChange={(v) => update(S.setValue(s, 'r', v))} />
+            <ScaleRuler f="r" label={repsUnit(e.id)} value={set.r} conf={rulerConf('r', settings.weightStep)} onChange={(v) => update(S.setValue(s, 'r', v))} />
           </>
         )}
 

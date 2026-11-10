@@ -56,10 +56,13 @@ export function KeypadInput({
   rShown,
   onFocus,
   onKey,
+  rLabel = 'reps',
 }: {
   field: Field;
   wShown: string;
   rShown: string;
+  /** Label under the second field: "reps", or "sec" for holds. */
+  rLabel?: string;
   onFocus: (f: Field) => void;
   onKey: (k: string) => void;
 }) {
@@ -79,7 +82,7 @@ export function KeypadInput({
               {f === 'w' ? wShown : rShown}
             </Mono>
             <UI size={13} color={colors.muted}>
-              {f === 'w' ? 'kg' : 'reps'}
+              {f === 'w' ? 'kg' : rLabel}
             </UI>
           </Pressable>
         ))}

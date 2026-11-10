@@ -18,6 +18,8 @@ export type Exercise = {
   step?: number;
   /** Strength exercises done with body weight (shown as "Body weight", no lift chart). */
   bodyweight?: boolean;
+  /** Holds logged in seconds instead of reps (plank). */
+  timed?: boolean;
 };
 
 export type StrengthItem = {

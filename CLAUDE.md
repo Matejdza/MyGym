@@ -36,6 +36,16 @@ home screen). The owner writes in Serbian; answer in Serbian.
 - Routines can be deleted (their days become rest days); exercises can be reordered, have a rep
   range (`reps`–`repsMax`, sessions start at the bottom) and their own rest (`rest`, else the
   profile setting).
+- Profiles can be deleted from the bottom of Profile (added on request): a confirm that says the
+  history goes too, then `repo.deleteProfile` clears every table for that profile and the app
+  returns to the profile picker (Welcome when none is left).
+- Approved by the owner after a review (not in the design): the screen stays on during a workout
+  (`useScreenAwake`, re-requested on the web after the app comes back); two beeps and a vibration
+  when a rest ends (`hooks/restSignal.ts`, audio unlocked by the Log set tap); routines without a
+  design cover use their first exercise's photo; Progress → "All workouts" lists finished
+  workouts (opens the summary with a Back button); Profile has Name, Weight step (1.25/2.5/5),
+  Rest between sets and Workout buttons (right/left hand); Plank is `timed` (seconds, steps of 5);
+  exercise hero photos are top-aligned.
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

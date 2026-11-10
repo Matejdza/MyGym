@@ -187,6 +187,23 @@ export async function updateProfileFields(db: Db, id: string, fields: ProfileFie
   await db.runAsync(`UPDATE profiles SET ${set} WHERE id = ?`, ...keys.map((k) => fields[k] ?? null), id);
 }
 
+/**
+ * Deletes a profile and everything stored for it: plan, settings, the workout in
+ * progress, finished workouts and body weight. Each table is cleared explicitly
+ * instead of relying on ON DELETE CASCADE, which only works while foreign keys are on.
+ */
+export async function deleteProfile(db: Db, id: string) {
+  await db.withTransactionAsync(async () => {
+    const workouts = 'SELECT id FROM workouts WHERE profile_id = ?';
+    await db.runAsync(`DELETE FROM workout_sets WHERE workout_id IN (${workouts})`, id);
+    await db.runAsync(`DELETE FROM cardio_entries WHERE workout_id IN (${workouts})`, id);
+    for (const table of ['workouts', 'body_log', 'active_sessions', 'settings', 'routines']) {
+      await db.runAsync(`DELETE FROM ${table} WHERE profile_id = ?`, id);
+    }
+    await db.runAsync('DELETE FROM profiles WHERE id = ?', id);
+  });
+}
+
 /** Saves the whole plan: weekly count, schedule and every routine. */
 export async function savePlan(db: Db, profileId: string, plan: Plan) {
   await db.withTransactionAsync(async () => {
@@ -348,6 +365,52 @@ export async function bestKgMany(db: Db, profileId: string, exIds: string[]): Pr
     if (best > 0) out[id] = best;
   }
   return out;
+}
+
+export type WorkoutListRow = {
+  id: number;
+  routineKey: string;
+  routineName: string;
+  type: 'strength' | 'cardio';
+  startedAt: number;
+  finishedAt: number;
+  sets: number;
+  prs: number;
+  minutes: number;
+};
+
+/** Finished workouts, newest first, with set, record and cardio-minute counts. */
+export async function workoutList(db: Db, profileId: string, limit = 300): Promise<WorkoutListRow[]> {
+  const rows = await db.getAllAsync<{
+    id: number;
+    routine_key: string;
+    routine_name: string;
+    type: 'strength' | 'cardio';
+    started_at: number;
+    finished_at: number;
+    sets: number;
+    prs: number;
+    minutes: number;
+  }>(
+    `SELECT w.id, w.routine_key, w.routine_name, w.type, w.started_at, w.finished_at,
+       (SELECT COUNT(*) FROM workout_sets s WHERE s.workout_id = w.id) AS sets,
+       (SELECT COUNT(*) FROM workout_sets s WHERE s.workout_id = w.id AND s.pr = 1) AS prs,
+       (SELECT COALESCE(SUM(c.minutes), 0) FROM cardio_entries c WHERE c.workout_id = w.id) AS minutes
+     FROM workouts w WHERE w.profile_id = ? ORDER BY w.finished_at DESC LIMIT ?`,
+    profileId,
+    limit,
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    routineKey: r.routine_key,
+    routineName: r.routine_name,
+    type: r.type,
+    startedAt: r.started_at,
+    finishedAt: r.finished_at,
+    sets: r.sets,
+    prs: r.prs,
+    minutes: r.minutes,
+  }));
 }
 
 export type RecordRow = { exId: string; kg: number; reps: number; finishedAt: number };

@@ -33,3 +33,14 @@ export async function pickProfilePhoto(profileId: string, previous: string | nul
   }
   return dest.uri;
 }
+
+/** Deletes a stored profile photo. On the web the photo lives in the database row, so there is no file. */
+export function removeProfilePhoto(uri: string | null) {
+  if (!uri || Platform.OS === 'web') return;
+  try {
+    const file = new File(uri);
+    if (file.exists) file.delete();
+  } catch {
+    // Already gone; nothing to clean up.
+  }
+}

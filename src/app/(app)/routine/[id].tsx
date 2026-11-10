@@ -10,7 +10,9 @@ import { ZONES, exercise } from '@/data/catalog';
 import { coverPhoto, exPhoto } from '@/data/photos';
 import {
   REST_STEP,
+  repsStep,
   repsText,
+  repsUnit,
   restText,
   routineMeta,
   withItemMoved,
@@ -114,15 +116,20 @@ export default function RoutineEditor() {
               <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
                 <View style={styles.pair}>
                   <Pill label="sets" value={String(it.sets)} onDec={() => changeStrength(i, 'sets', -1)} onInc={() => changeStrength(i, 'sets', 1)} />
-                  <Pill label="reps" value={String(it.reps)} onDec={() => changeStrength(i, 'reps', -1)} onInc={() => changeStrength(i, 'reps', 1)} />
+                  <Pill
+                    label={repsUnit(it.ex)}
+                    value={String(it.reps)}
+                    onDec={() => changeStrength(i, 'reps', -repsStep(it.ex))}
+                    onInc={() => changeStrength(i, 'reps', repsStep(it.ex))}
+                  />
                 </View>
                 <View style={styles.pair}>
                   {/* "up to" turns the reps into a range (6–8); equal to reps means a single number. */}
                   <Pill
                     label="up to"
                     value={String(it.repsMax ?? it.reps)}
-                    onDec={() => changeStrength(i, 'repsMax', -1)}
-                    onInc={() => changeStrength(i, 'repsMax', 1)}
+                    onDec={() => changeStrength(i, 'repsMax', -repsStep(it.ex))}
+                    onInc={() => changeStrength(i, 'repsMax', repsStep(it.ex))}
                   />
                   <Pill
                     label="rest"

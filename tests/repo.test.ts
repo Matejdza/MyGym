@@ -207,3 +207,60 @@ test('best set and best cardio', async () => {
   assert.deepEqual(await repo.bestSet(db, 'p1', 'bench'), { kg: 85, reps: 6 });
   assert.equal(await repo.bestCardio(db, 'p1', 'bike'), 6.2);
 });
+
+test('deleting a profile removes all of its data and nothing else', async () => {
+  const db = await freshDb();
+  // Foreign keys off, so the test proves every table is cleared explicitly.
+  await db.execAsync('PRAGMA foreign_keys = OFF');
+  for (const id of ['p1', 'p2']) {
+    await repo.createProfile(db, profile(id, id), '2026-11-01');
+    await repo.saveBodyWeight(db, id, '2026-11-05', 79);
+    await repo.recordWorkout(db, {
+      profileId: id, routineKey: 'A', routineName: 'Push', type: 'strength', weekStart: '2026-11-02', day: 0, startedAt: 1, finishedAt: 2,
+      sets: [{ exId: 'bench', setNo: 1, kg: 60, reps: 6, pr: false }],
+      cardio: [{ exId: 'treadmill', minutes: 10, value: 2, zone: 2, target: 10 }],
+    });
+    // A new workout in progress (finishing one clears the previous).
+    await repo.saveSession(db, id, session());
+  }
+
+  await repo.deleteProfile(db, 'p1');
+
+  const count = async (sql: string) => (await db.getFirstAsync<{ n: number }>(sql))?.n;
+  assert.deepEqual((await repo.loadProfiles(db)).map((l) => l.profile.id), ['p2']);
+  for (const table of ['routines', 'settings', 'active_sessions', 'workouts', 'body_log']) {
+    assert.equal(await count(`SELECT COUNT(*) AS n FROM ${table} WHERE profile_id = 'p1'`), 0, table);
+    assert.ok((await count(`SELECT COUNT(*) AS n FROM ${table} WHERE profile_id = 'p2'`))! > 0, table);
+  }
+  assert.equal(await count('SELECT COUNT(*) AS n FROM workout_sets'), 1);
+  assert.equal(await count('SELECT COUNT(*) AS n FROM cardio_entries'), 1);
+  assert.equal(await repo.bestKg(db, 'p2', 'bench'), 60);
+});
+
+test('workout list: newest first, with sets, records and cardio minutes', async () => {
+  const db = await freshDb();
+  await repo.createProfile(db, profile('p1'), '2026-11-01');
+  await repo.createProfile(db, profile('p2', 'Other'), '2026-11-01');
+  assert.deepEqual(await repo.workoutList(db, 'p1'), []);
+
+  const base = { routineKey: 'A', routineName: 'Push', type: 'strength' as const, weekStart: '2026-11-02', day: 0 };
+  await repo.recordWorkout(db, {
+    ...base, profileId: 'p1', startedAt: 1000, finishedAt: 61000, cardio: [],
+    sets: [{ exId: 'bench', setNo: 1, kg: 60, reps: 6, pr: false }, { exId: 'bench', setNo: 2, kg: 65, reps: 5, pr: true }],
+  });
+  await repo.recordWorkout(db, {
+    ...base, profileId: 'p1', type: 'cardio', routineKey: 'E', routineName: 'Cardio', startedAt: 70000, finishedAt: 90000, sets: [],
+    cardio: [{ exId: 'treadmill', minutes: 20, value: 3, zone: 2, target: 20 }, { exId: 'bike', minutes: 15, value: 5, zone: 2, target: 15 }],
+  });
+  await repo.recordWorkout(db, { ...base, profileId: 'p2', startedAt: 1, finishedAt: 2, cardio: [], sets: [] });
+
+  const list = await repo.workoutList(db, 'p1');
+  assert.deepEqual(
+    list.map((w) => [w.routineName, w.type, w.sets, w.prs, w.minutes]),
+    [
+      ['Cardio', 'cardio', 0, 0, 35],
+      ['Push', 'strength', 2, 1, 0],
+    ],
+  );
+  assert.equal(list[1].finishedAt - list[1].startedAt, 60000);
+});
