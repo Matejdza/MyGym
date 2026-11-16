@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
-import { Photo, Shade, dark } from '@/components/Photo';
+import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { EXERCISE_IDS, GROUPS, exercise } from '@/data/catalog';
@@ -54,7 +54,7 @@ export function Library({ pickFor }: { pickFor?: string }) {
         {GROUPS.map((g) => {
           const n = EXERCISE_IDS.filter((id) => exercise(id).group === g.key).length;
           return (
-            <Pressable key={g.key} onPress={() => openGroup(g.key)} accessibilityRole="button" style={[styles.tile, { width: tileWidth }]}>
+            <Pressable key={g.key} onPress={() => openGroup(g.key)} accessibilityRole="button" style={[styles.tile, { width: tileWidth }]} {...DARK_SCOPE}>
               <Photo source={groupPhoto(g.key)} style={StyleSheet.absoluteFill} />
               <Shade stops={TILE_STOPS} />
               <View style={styles.tileText}>
@@ -71,7 +71,7 @@ export function Library({ pickFor }: { pickFor?: string }) {
       </View>
 
       {!pick && (
-        <Pressable onPress={() => openGroup('cardio')} accessibilityRole="button" style={styles.cardio}>
+        <Pressable onPress={() => openGroup('cardio')} accessibilityRole="button" style={styles.cardio} {...DARK_SCOPE}>
           <Photo source={IMAGES.cardioWide} style={StyleSheet.absoluteFill} />
           <Shade stops={CARDIO_STOPS} horizontal />
           <View style={styles.cardioText}>

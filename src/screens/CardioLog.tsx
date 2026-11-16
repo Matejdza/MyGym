@@ -71,7 +71,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
               Activity timer
             </UI>
             <View style={[styles.zone, { backgroundColor: ZONE_COLORS[a.zone] }]}>
-              <UI size={13} weight={700} color={colors.bg}>{`Zone ${a.zone}`}</UI>
+              <UI size={13} weight={700} color={colors.onPlate}>{`Zone ${a.zone}`}</UI>
             </View>
           </View>
           <View style={styles.timerRow}>
@@ -88,7 +88,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
           </UI>
           <View style={styles.timerButtons}>
             <Pressable onPress={() => setSession(C.toggleTimer(s, Date.now()))} accessibilityRole="button" style={styles.toggle}>
-              <UI size={16} weight={700} color={colors.bg}>
+              <UI size={16} weight={600}>
                 {C.timerLabel(s)}
               </UI>
             </Pressable>
@@ -139,6 +139,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
           mirrored={mirrored}
           onDec={() => setSession(C.adjustActivity(s, 'min', -1))}
           onInc={() => setSession(C.adjustActivity(s, 'min', 1))}
+          input={{ min: 1, max: 600, value: a.min, onSet: (v) => setSession(C.adjustActivity(s, 'min', v - a.min)) }}
         />
         <StepRow
           value={fmt(a.v)}
@@ -146,11 +147,12 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
           mirrored={mirrored}
           onDec={() => setSession(C.adjustActivity(s, 'v', -(e.step ?? 1)))}
           onInc={() => setSession(C.adjustActivity(s, 'v', e.step ?? 1))}
+          input={{ min: 0, max: km ? 300 : 1000, decimals: km, value: a.v, onSet: (v) => setSession(C.adjustActivity(s, 'v', v - a.v)) }}
         />
         <PrimaryButton
           label={(!a.done ? 'Log activity' : C.allDone(s) ? 'Finish workout' : 'Next activity').toUpperCase()}
           onPress={main}
-          height={fit(66)}
+          height={fit(56)}
         />
       </View>
     </View>
@@ -165,9 +167,9 @@ const styles = StyleSheet.create({
   zone: { height: 28, paddingHorizontal: 12, borderRadius: 14, justifyContent: 'center' },
   timerRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginTop: 8 },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.surface2, marginTop: 14, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 3, backgroundColor: colors.accent },
+  fill: { height: '100%', borderRadius: 3, backgroundColor: colors.accentFill },
   timerButtons: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  toggle: { flex: 1, height: 48, borderRadius: 24, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  toggle: { flex: 1, height: 48, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   reset: { height: 48, paddingHorizontal: 20, borderRadius: 24, backgroundColor: colors.surface2, justifyContent: 'center' },
   rows: { gap: 5, marginTop: 10 },
   row: { height: 48, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 },

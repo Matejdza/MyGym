@@ -46,6 +46,21 @@ home screen). The owner writes in Serbian; answer in Serbian.
   workouts (opens the summary with a Back button); Profile has Name, Weight step (1.25/2.5/5),
   Rest between sets and Workout buttons (right/left hand); Plank is `timed` (seconds, steps of 5);
   exercise hero photos are top-aligned.
+- Design rules: the owner's `/Users/Matejdza/Desktop/Design edukacija/Pravila.txt` applies to all UI work
+  (2 fonts, 60/30/10 colors, contrast ≥ 4.5:1, spacing 8/16/24/32/48/64/96, every control shows its
+  states, no shadows / bento / three cards in a row). Finish design work with a self-check.
+- Visual direction "Grafit i zlato" (2026-11-16): lighter graphite dark theme plus a light theme,
+  switch in Profile (Auto / Light / Dark, stored in localStorage `liftlog-theme`, Auto follows the
+  phone). Colors are CSS variables on the web (`src/theme/tokens.ts` ↔ `public/index.html`, kept equal
+  by `tests/theme.test.ts`); photo sections stay dark via `DARK_SCOPE`. `accent` is for text/lines
+  (darker gold in light mode), `accentFill` for the yellow fills, `onPlate` for text on colored plates.
+  Only the main action is yellow; secondary buttons are outlined. Numbers use Archivo with tabular
+  figures (Martian Mono was dropped to keep two fonts).
+- Stepper numbers can be typed (`NumberField`: tap → empty field with the old value as hint; commas
+  allowed; rest as 2:30 / 2.30 / 90 / 2 = minutes; invalid values show the range and are not saved).
+- Progress starts with an overview (Week / Month / Year, workouts done of planned, sets, volume,
+  time); the Workout tab is a week timeline; Training plan → "Import from text" builds a routine from
+  pasted lines (`src/domain/importText.ts`, library names only, unknown lines listed and skipped).
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

@@ -31,7 +31,7 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: BottomTab
             <View
               style={[
                 styles.indicator,
-                { width: focused ? 22 : 6, backgroundColor: focused ? colors.accent : 'transparent' },
+                { width: focused ? 22 : 6, backgroundColor: focused ? colors.accentFill : 'transparent' },
               ]}
             />
             <UI size={14} weight={600} color={focused ? colors.ink : colors.muted}>

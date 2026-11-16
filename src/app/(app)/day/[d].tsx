@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlateBadge } from '@/components/Cover';
-import { Photo, Shade, heroStops } from '@/components/Photo';
+import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill, PrimaryButton } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
@@ -145,7 +145,7 @@ function Hero({
   children: React.ReactNode;
 }) {
   return (
-    <View style={{ height: top(330) }}>
+    <View style={{ height: top(330) }} {...DARK_SCOPE}>
       <Photo source={source} style={StyleSheet.absoluteFill} />
       <Shade stops={heroStops(0.7, [0.3, 0.45], 0.96)} />
       <BackPill onPress={onBack} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />

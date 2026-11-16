@@ -43,7 +43,14 @@ export function UI({ weight = 400, ...props }: Base & { weight?: 400 | 500 | 600
   return render(family, props, useScale().s);
 }
 
-/** Martian Mono, every number. Weights 400/500. */
-export function Mono({ weight = 400, ...props }: Base & { weight?: 400 | 500 }) {
-  return render(weight === 500 ? fonts.mono500 : fonts.mono400, props, useScale().s);
+/**
+ * Numbers: Archivo with tabular figures, so digits line up in lists and timers.
+ * (Martian Mono was dropped to keep two fonts.) Its tight mono tracking is
+ * reduced to a fifth for Archivo's narrower digits.
+ */
+export function Mono({ weight = 400, spacing, ...props }: Base & { weight?: 400 | 500 }) {
+  const tracking = spacing != null ? spacing * 0.2 : undefined;
+  return render(weight === 500 ? fonts.mono500 : fonts.mono400, { ...props, spacing: tracking }, useScale().s, {
+    fontVariant: ['tabular-nums'],
+  });
 }

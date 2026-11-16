@@ -4,7 +4,6 @@ import {
   BigShouldersDisplay_800ExtraBold,
   BigShouldersDisplay_900Black,
 } from '@expo-google-fonts/big-shoulders-display';
-import { MartianMono_400Regular, MartianMono_500Medium } from '@expo-google-fonts/martian-mono';
 
 import { fonts } from './tokens';
 
@@ -17,6 +16,4 @@ export const fontAssets = {
   [fonts.ui500]: Archivo_500Medium,
   [fonts.ui600]: Archivo_600SemiBold,
   [fonts.ui700]: Archivo_700Bold,
-  [fonts.mono400]: MartianMono_400Regular,
-  [fonts.mono500]: MartianMono_500Medium,
 };

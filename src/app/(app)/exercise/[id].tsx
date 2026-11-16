@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Photo, Shade, heroStops } from '@/components/Photo';
+import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { ALL_GROUPS, EX, exercise } from '@/data/catalog';
@@ -46,7 +46,7 @@ export default function ExerciseDetail() {
 
   return (
     <ScrollView style={styles.screen}>
-      <View style={{ height: top(340) }}>
+      <View style={{ height: top(340) }} {...DARK_SCOPE}>
         <Photo source={exPhoto(id, 0)} style={StyleSheet.absoluteFill} top />
         <Shade stops={heroStops(0.7, [0.28, 0.5], 0.97)} />
         <BackPill onPress={() => router.back()} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />
@@ -111,7 +111,7 @@ export default function ExerciseDetail() {
               </View>
             ))}
             <Pressable onPress={toProgress} accessibilityRole="button" style={styles.progressBtn}>
-              <UI size={16} weight={700} color={colors.bg}>
+              <UI size={16} weight={600}>
                 View progress
               </UI>
             </Pressable>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   photos: { flexDirection: 'row', gap: 10 },
   steps: { gap: 8, marginTop: 12 },
   step: { flexDirection: 'row', gap: 14, backgroundColor: colors.surface, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16 },
-  stepNo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  stepNo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.accentFill, alignItems: 'center', justifyContent: 'center' },
   stat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -150,5 +150,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  progressBtn: { height: 56, marginTop: 18, borderRadius: 28, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  progressBtn: { height: 48, marginTop: 16, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
 });

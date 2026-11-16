@@ -48,7 +48,7 @@ export default function Plan() {
               </UI>
               <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
                 {!k && <Ring width={1} color={colors.line} radius={999} />}
-                <Mono size={16} weight={500} color={colors.bg}>
+                <Mono size={16} weight={500} color={k ? colors.onPlate : colors.muted}>
                   {k ?? '·'}
                 </Mono>
               </View>
@@ -96,6 +96,11 @@ export default function Plan() {
           </UI>
         </Pressable>
       </View>
+      <Pressable onPress={() => router.push('/import')} accessibilityRole="button" style={[styles.newBtn, { flex: 0, marginTop: 8 }]}>
+        <UI size={16} weight={700}>
+          Import from text
+        </UI>
+      </Pressable>
     </ScrollView>
   );
 }

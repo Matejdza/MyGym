@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Photo, Shade, heroStops } from '@/components/Photo';
+import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
 import { Display, UI } from '@/components/Txt';
 import { PrimaryButton } from '@/components/ui';
 import { IMAGES } from '@/data/photos';
@@ -12,7 +12,7 @@ import { colors } from '@/theme/tokens';
 export default function Welcome() {
   const insets = useSafeAreaInsets();
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} {...DARK_SCOPE}>
       <Photo source={IMAGES.hero} style={StyleSheet.absoluteFill} fill={colors.bg} />
       <Shade stops={heroStops(0.55, [0.22, 0.38], 0.72)} />
       <View style={[styles.content, { paddingBottom: 20 + insets.bottom }]}>

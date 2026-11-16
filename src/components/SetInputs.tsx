@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
 
 import { sheetRow } from '@/components/LogChrome';
+import { NumberField, type NumberInput } from '@/components/NumberField';
 import { Mono, UI } from '@/components/Txt';
 import { RoundButton, Ring } from '@/components/ui';
 import { fmt, r2 } from '@/domain/format';
@@ -20,24 +21,32 @@ export function StepRow({
   onDec,
   onInc,
   mirrored,
+  input,
 }: {
   value: string;
   label: string;
   onDec: () => void;
   onInc: () => void;
   mirrored: boolean;
+  /** Makes the number typeable; its error replaces the label while shown. */
+  input?: NumberInput;
 }) {
   const { fit } = useScale();
   const b = fit(74);
+  const [error, setError] = useState<string | null>(null);
   return (
     <View style={[sheetRow(mirrored), { height: b }]}>
       <RoundButton sign="−" size={74} fitHeight fontSize={28} onPress={onDec} />
       <View style={styles.stepValue}>
-        <Mono size={42} weight={500} lh={1} spacing={-0.05}>
-          {value}
-        </Mono>
-        <UI size={13} color={colors.muted} numberOfLines={1} style={{ marginTop: 6 }}>
-          {label}
+        {input ? (
+          <NumberField input={input} display={value} size={42} label={label} onError={setError} />
+        ) : (
+          <Mono size={42} weight={500} lh={1} spacing={-0.05}>
+            {value}
+          </Mono>
+        )}
+        <UI size={13} color={error ? colors.red : colors.muted} numberOfLines={1} style={{ marginTop: input ? 2 : 6 }}>
+          {error ?? label}
         </UI>
       </View>
       <RoundButton sign="+" size={74} fitHeight fontSize={28} onPress={onInc} />
@@ -231,5 +240,5 @@ const styles = StyleSheet.create({
   scaleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 4 },
   ruler: { height: 60, borderRadius: 14, backgroundColor: colors.bg, overflow: 'hidden' },
   tickLabel: { position: 'absolute', top: 7, left: -20, width: 40 },
-  centerLine: { position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: colors.accent },
+  centerLine: { position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: colors.accentFill },
 });

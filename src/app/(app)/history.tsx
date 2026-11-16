@@ -81,5 +81,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  pr: { backgroundColor: colors.accent, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10 },
+  pr: { backgroundColor: colors.accentFill, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10 },
 });

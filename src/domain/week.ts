@@ -41,7 +41,7 @@ export function weekCells(plan: Plan, done: number[], today: number | null): Wee
       letter: k ?? '·',
       key: k,
       fill: isDone ? plate(k) : 'transparent',
-      text: isDone ? colors.bg : k ? colors.ink : colors.muted,
+      text: isDone ? colors.onPlate : k ? colors.ink : colors.muted,
       dayColor: isToday ? colors.accent : colors.muted,
       ring,
     };
@@ -72,7 +72,7 @@ export function planCells(plan: Plan): WeekCell[] {
       letter: k ?? '·',
       key: k,
       fill: k ? plate(k) : 'transparent',
-      text: colors.bg,
+      text: k ? colors.onPlate : colors.muted,
       dayColor: colors.muted,
       ring: k ? { kind: 'none' } : { kind: 'inset', width: 1, color: colors.line },
     };

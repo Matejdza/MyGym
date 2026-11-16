@@ -1,15 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { confirm } from '@/components/confirm';
 import { PlateBadge } from '@/components/Cover';
+import { NumberField, type NumberInput } from '@/components/NumberField';
 import { Photo } from '@/components/Photo';
 import { Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { ZONES, exercise } from '@/data/catalog';
 import { coverPhoto, exPhoto } from '@/data/photos';
 import {
+  REST_MAX,
+  REST_MIN,
   REST_STEP,
+  maxReps,
   repsStep,
   repsText,
   repsUnit,
@@ -65,6 +70,19 @@ export default function RoutineEditor() {
     save({ ...r, items: r.items.map((it, j) => (j !== i ? it : withStrengthChange(it, f, d, settings.restSeconds))) });
   };
 
+  // Typed values go through the same rules as the steppers, as one step of (typed − current).
+  const strengthInput = (i: number, f: StrengthField, current: number, spec: Omit<NumberInput, 'value' | 'onSet'>): NumberInput => ({
+    ...spec,
+    value: current,
+    onSet: (v) => changeStrength(i, f, v - current),
+  });
+  const cardioInput = (i: number, f: 'min' | 'zone', current: number, min: number, max: number): NumberInput => ({
+    min,
+    max,
+    value: current,
+    onSet: (v) => changeCardio(i, f, v - current),
+  });
+
   const move = (i: number, dir: -1 | 1) => save(withItemMoved(r, i, dir));
 
   const deleteRoutine = async () => {
@@ -104,8 +122,20 @@ export default function RoutineEditor() {
           ? r.items.map((it, i) => (
               <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
                 <View style={styles.pair}>
-                  <Pill label="minutes" value={String(it.min)} onDec={() => changeCardio(i, 'min', -5)} onInc={() => changeCardio(i, 'min', 5)} />
-                  <Pill label="zone" value={String(it.zone)} onDec={() => changeCardio(i, 'zone', -1)} onInc={() => changeCardio(i, 'zone', 1)} />
+                  <Pill
+                    label="minutes"
+                    value={String(it.min)}
+                    onDec={() => changeCardio(i, 'min', -5)}
+                    onInc={() => changeCardio(i, 'min', 5)}
+                    input={cardioInput(i, 'min', it.min, 5, 240)}
+                  />
+                  <Pill
+                    label="zone"
+                    value={String(it.zone)}
+                    onDec={() => changeCardio(i, 'zone', -1)}
+                    onInc={() => changeCardio(i, 'zone', 1)}
+                    input={cardioInput(i, 'zone', it.zone, 1, 5)}
+                  />
                 </View>
                 <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
                   {`Zone ${it.zone}: ${ZONES[it.zone]}`}
@@ -115,12 +145,19 @@ export default function RoutineEditor() {
           : r.items.map((it, i) => (
               <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
                 <View style={styles.pair}>
-                  <Pill label="sets" value={String(it.sets)} onDec={() => changeStrength(i, 'sets', -1)} onInc={() => changeStrength(i, 'sets', 1)} />
+                  <Pill
+                    label="sets"
+                    value={String(it.sets)}
+                    onDec={() => changeStrength(i, 'sets', -1)}
+                    onInc={() => changeStrength(i, 'sets', 1)}
+                    input={strengthInput(i, 'sets', it.sets, { min: 1, max: 20 })}
+                  />
                   <Pill
                     label={repsUnit(it.ex)}
                     value={String(it.reps)}
                     onDec={() => changeStrength(i, 'reps', -repsStep(it.ex))}
                     onInc={() => changeStrength(i, 'reps', repsStep(it.ex))}
+                    input={strengthInput(i, 'reps', it.reps, { min: 1, max: maxReps(it.ex) })}
                   />
                 </View>
                 <View style={styles.pair}>
@@ -130,12 +167,14 @@ export default function RoutineEditor() {
                     value={String(it.repsMax ?? it.reps)}
                     onDec={() => changeStrength(i, 'repsMax', -repsStep(it.ex))}
                     onInc={() => changeStrength(i, 'repsMax', repsStep(it.ex))}
+                    input={strengthInput(i, 'repsMax', it.repsMax ?? it.reps, { min: it.reps, max: maxReps(it.ex) })}
                   />
                   <Pill
                     label="rest"
                     value={restText(it.rest ?? settings.restSeconds)}
                     onDec={() => changeStrength(i, 'rest', -REST_STEP)}
                     onInc={() => changeStrength(i, 'rest', REST_STEP)}
+                    input={strengthInput(i, 'rest', it.rest ?? settings.restSeconds, { min: REST_MIN, max: REST_MAX, kind: 'duration' })}
                   />
                 </View>
                 <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
@@ -213,19 +252,30 @@ function MoveButton({ label, hint, disabled, onPress }: { label: string; hint: s
 }
 
 /** − label/value + pill (50 h). */
-function Pill({ label, value, onDec, onInc }: { label: string; value: string; onDec: () => void; onInc: () => void }) {
+function Pill({
+  label,
+  value,
+  onDec,
+  onInc,
+  input,
+}: {
+  label: string;
+  value: string;
+  onDec: () => void;
+  onInc: () => void;
+  input: NumberInput;
+}) {
+  const [error, setError] = useState<string | null>(null);
   return (
     <View style={styles.pill}>
       <Pressable onPress={onDec} accessibilityRole="button" accessibilityLabel={`Fewer ${label}`} style={styles.pillBtn}>
         <Mono size={20}>−</Mono>
       </Pressable>
-      <View style={{ flex: 1, alignItems: 'center' }}>
-        <UI size={11} lh={1.1} color={colors.muted}>
-          {label}
+      <View style={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
+        <UI size={11} lh={1.1} color={error ? colors.red : colors.muted} numberOfLines={1}>
+          {error ?? label}
         </UI>
-        <Mono size={18} weight={500} lh={1.1}>
-          {value}
-        </Mono>
+        <NumberField input={input} display={value} size={18} label={label} onError={setError} />
       </View>
       <Pressable onPress={onInc} accessibilityRole="button" accessibilityLabel={`More ${label}`} style={styles.pillBtn}>
         <Mono size={20}>+</Mono>

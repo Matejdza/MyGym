@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Photo, Shade, dark } from '@/components/Photo';
+import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
 import { Display, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { ALL_GROUPS, EXERCISE_IDS, exercise } from '@/data/catalog';
@@ -46,7 +46,7 @@ export default function Group() {
 
   return (
     <ScrollView style={styles.screen}>
-      <View style={{ height: top(250) }}>
+      <View style={{ height: top(250) }} {...DARK_SCOPE}>
         <Photo source={groupPhoto(g.key as GroupKey)} style={StyleSheet.absoluteFill} />
         <Shade
           stops={[
@@ -81,7 +81,7 @@ export default function Group() {
                   {e.equipment}
                 </UI>
               </View>
-              <View style={[styles.pill, { backgroundColor: picking ? colors.accent : colors.surface }]}>
+              <View style={[styles.pill, { backgroundColor: picking ? colors.accentFill : colors.surface }]}>
                 <UI size={14} weight={700} color={picking ? colors.accentInk : colors.ink}>
                   {picking ? 'Add' : 'View'}
                 </UI>

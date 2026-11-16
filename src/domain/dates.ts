@@ -3,7 +3,7 @@
 
 import { DAYS_FULL, MONTHS } from '@/data/catalog';
 
-const MONTHS_FULL = [
+export const MONTHS_FULL = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];

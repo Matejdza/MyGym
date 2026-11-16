@@ -46,7 +46,7 @@ export default function Profiles() {
                 {/* inset 0 0 0 15px rgba(0,0,0,.28) under inset 0 0 0 14px rgba(0,0,0,.16) */}
                 <Ring width={15} color="rgba(0,0,0,0.28)" radius={avatar / 2} />
                 <Ring width={14} color="rgba(0,0,0,0.16)" radius={avatar / 2} />
-                <Display size={72} weight={900} color={colors.bg}>
+                <Display size={72} weight={900} color={colors.onPlate}>
                   {(p.name[0] || '?').toUpperCase()}
                 </Display>
               </View>

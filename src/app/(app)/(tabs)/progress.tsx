@@ -3,9 +3,12 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { LineChart } from '@/components/LineChart';
+import { NumberField } from '@/components/NumberField';
+import { Overview } from '@/components/Overview';
 import { Display, Mono, UI } from '@/components/Txt';
 import { RoundButton } from '@/components/ui';
 import { exercise } from '@/data/catalog';
+import { BODY_LIMITS } from '@/domain/numberEntry';
 import * as repo from '@/data/repo';
 import { addDays, isoDate, parseIso, shortDate } from '@/domain/dates';
 import { fmt, r2 } from '@/domain/format';
@@ -70,6 +73,7 @@ export default function Progress() {
 
   // "Today" stepper starts at the current weight.
   const [bwInput, setBwInput] = useState<number | null>(null);
+  const [bwError, setBwError] = useState<string | null>(null);
   const bw = bwInput ?? profile.weight;
 
   const setMode = (m: Mode) => router.setParams({ mode: m });
@@ -87,6 +91,14 @@ export default function Progress() {
           </UI>
         </Pressable>
       </View>
+
+      <View style={{ marginTop: 24 }}>
+        <Overview profileId={profile.id} plan={profile.plan} />
+      </View>
+
+      <Display size={28} weight={800} style={{ marginTop: 48 }}>
+        Trends
+      </Display>
       <View style={styles.segment}>
         {MODES.map(([m, label]) => (
           <Pressable
@@ -94,8 +106,8 @@ export default function Progress() {
             onPress={() => setMode(m)}
             accessibilityRole="button"
             accessibilityState={{ selected: m === mode }}
-            style={[styles.segBtn, { backgroundColor: m === mode ? colors.accent : 'transparent' }]}>
-            <UI size={15} weight={700} color={m === mode ? colors.accentInk : colors.ink}>
+            style={[styles.segBtn, { backgroundColor: m === mode ? colors.ink : 'transparent' }]}>
+            <UI size={15} weight={700} color={m === mode ? colors.bg : colors.ink}>
               {label}
             </UI>
           </Pressable>
@@ -161,17 +173,23 @@ export default function Progress() {
           <View style={styles.today}>
             <RoundButton sign="−" size={56} fontSize={24} onPress={() => setBwInput(r2(bw - 0.1))} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <UI size={13} color={colors.muted}>
-                Today
+              <UI size={13} color={bwError ? colors.red : colors.muted}>
+                {bwError ?? 'Today, kg'}
               </UI>
-              <Mono size={26} weight={500} spacing={-0.04}>{`${fmt(bw)} kg`}</Mono>
+              <NumberField
+                input={{ ...BODY_LIMITS.weight, value: bw, onSet: setBwInput }}
+                display={fmt(bw)}
+                size={26}
+                label="Today's body weight in kg"
+                onError={setBwError}
+              />
             </View>
             <RoundButton sign="+" size={56} fontSize={24} onPress={() => setBwInput(r2(bw + 0.1))} />
           </View>
           <Pressable
             onPress={() => saveBodyWeight(today, bw)}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.save, { backgroundColor: pressed ? colors.press : colors.accent }]}>
+            style={({ pressed }) => [styles.save, { backgroundColor: pressed ? colors.press : colors.accentFill }]}>
             <UI size={16} weight={700} color={colors.accentInk}>
               {view?.savedToday ? `Saved for ${shortDate(now)}. Tap to update` : 'Save for today'}
             </UI>

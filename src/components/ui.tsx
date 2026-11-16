@@ -1,8 +1,9 @@
 // Shared controls from the design: CTAs, round stepper buttons, stepper cards, rings.
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { NumberField, type NumberInput } from '@/components/NumberField';
 import { Display, Mono, UI } from '@/components/Txt';
 import { useScale } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
@@ -18,8 +19,8 @@ export function PrimaryButton({
   onPress,
   disabled,
   dimmed,
-  height = 64,
-  fontSize = 26,
+  height = 52,
+  fontSize = 22,
   style,
 }: PressProps & { label: string; dimmed?: boolean; height?: number; fontSize?: number }) {
   return (
@@ -29,7 +30,7 @@ export function PrimaryButton({
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.center,
-        { height, borderRadius: height / 2, backgroundColor: pressed ? colors.press : colors.accent, opacity: dimmed ? 0.35 : 1 },
+        { height, borderRadius: height / 2, backgroundColor: pressed ? colors.press : colors.accentFill, opacity: dimmed ? 0.35 : 1 },
         style,
       ]}>
       <Display size={fontSize} weight={900} spacing={0.02} color={colors.accentInk}>
@@ -39,11 +40,14 @@ export function PrimaryButton({
   );
 }
 
-/** Secondary CTA with ink fill and bg-colored label (e.g. "BACK TO HOME"). */
+/** Secondary CTA: outlined, ink label (e.g. "BACK TO HOME"). Only the main action is yellow. */
 export function InkDisplayButton({ label, onPress, style }: PressProps & { label: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.center, { height: 64, borderRadius: 32, backgroundColor: colors.ink }, style]}>
-      <Display size={26} weight={900} spacing={0.02} color={colors.bg}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.center, { height: 52, borderRadius: 26, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border }, pressed && { backgroundColor: colors.surface }, style]}>
+      <Display size={22} weight={900} spacing={0.02}>
         {label}
       </Display>
     </Pressable>
@@ -51,8 +55,8 @@ export function InkDisplayButton({ label, onPress, style }: PressProps & { label
 }
 
 /**
- * Round − / + button. Minus: surface2 fill (pressed → line). Plus: ink fill with
- * bg-colored sign (pressed → muted).
+ * Round − / + button, kept quiet so the yellow main action stands out.
+ * Plus: surface2 fill. Minus: outline only. Both darken to `line` when pressed.
  */
 export function RoundButton({
   sign,
@@ -77,11 +81,13 @@ export function RoundButton({
           width: d,
           height: d,
           borderRadius: d / 2,
-          backgroundColor: plus ? (pressed ? colors.muted : colors.ink) : pressed ? colors.line : colors.surface2,
+          backgroundColor: pressed ? colors.line : plus ? colors.surface2 : 'transparent',
+          borderWidth: plus ? 0 : 1.5,
+          borderColor: colors.border,
         },
         style,
       ]}>
-      <Mono size={fontSize} color={plus ? colors.bg : colors.ink}>
+      <Mono size={fontSize}>
         {sign}
       </Mono>
     </Pressable>
@@ -106,10 +112,13 @@ export function StepperCard({
   valueGap = 4,
   padding = [14, 14, 14, 18],
   gap = 10,
+  input,
 }: {
   label: string;
   value: string;
   unit: string;
+  /** Makes the number typeable; its error replaces the label while shown. */
+  input?: NumberInput;
   onDec: () => void;
   onInc: () => void;
   valueSize?: number;
@@ -122,16 +131,21 @@ export function StepperCard({
   gap?: number;
 }) {
   const [pt, pr, pb, pl] = padding;
+  const [error, setError] = useState<string | null>(null);
   return (
     <View style={[styles.stepCard, { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl, gap }]}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <UI size={labelSize} color={colors.muted}>
-          {label}
+        <UI size={labelSize} color={error ? colors.red : colors.muted} numberOfLines={1}>
+          {error ?? label}
         </UI>
         <View style={[styles.baseline, { marginTop: valueGap }]}>
-          <Mono size={valueSize} weight={500} spacing={-0.05}>
-            {value}
-          </Mono>
+          {input ? (
+            <NumberField input={input} display={value} size={valueSize} label={`${label}${unit ? ` in ${unit}` : ''}`} onError={setError} />
+          ) : (
+            <Mono size={valueSize} weight={500} spacing={-0.05}>
+              {value}
+            </Mono>
+          )}
           <UI size={unitSize} color={colors.muted}>
             {unit}
           </UI>
@@ -205,7 +219,7 @@ export function Avatar({
   const d = useScale().sz(size);
   return (
     <View style={[styles.center, { width: d, height: d, borderRadius: d / 2, backgroundColor: color }]}>
-      <Display size={fontSize} weight={900} color={colors.bg}>
+      <Display size={fontSize} weight={900} color={colors.onPlate}>
         {initial}
       </Display>
       {children}

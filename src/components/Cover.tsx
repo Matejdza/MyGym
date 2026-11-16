@@ -45,7 +45,7 @@ export function PlateBadge({
 }) {
   return (
     <View style={[styles.badge, { width: size, height: size, borderRadius: size / 2, backgroundColor: plate(routineKey) }, style]}>
-      <Mono size={fontSize} weight={500} color={colors.bg}>
+      <Mono size={fontSize} weight={500} color={colors.onPlate}>
         {routineKey}
       </Mono>
     </View>

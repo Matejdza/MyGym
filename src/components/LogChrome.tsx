@@ -18,7 +18,7 @@ export function LogTopBar({ elapsed, onFinish }: { elapsed: string; onFinish: ()
         {elapsed}
       </Mono>
       <Pressable onPress={onFinish} accessibilityRole="button" style={styles.finish}>
-        <UI size={15} weight={700} color={colors.bg}>
+        <UI size={15} weight={600}>
           Finish
         </UI>
       </Pressable>
@@ -78,7 +78,7 @@ export function ProgressSegments({ states }: { states: ('done' | 'current' | 'to
       {states.map((st, i) => (
         <View
           key={i}
-          style={[styles.seg, { backgroundColor: st === 'done' ? colors.ink : st === 'current' ? colors.accent : colors.surface2 }]}
+          style={[styles.seg, { backgroundColor: st === 'done' ? colors.ink : st === 'current' ? colors.accentFill : colors.surface2 }]}
         />
       ))}
     </View>
@@ -113,7 +113,7 @@ export const logStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   topBar: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14 },
-  finish: { height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: colors.ink, justifyContent: 'center' },
+  finish: { height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, justifyContent: 'center' },
   switcher: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingHorizontal: 16 },
   arrow: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   current: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },

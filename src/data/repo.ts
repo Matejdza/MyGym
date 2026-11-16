@@ -367,6 +367,49 @@ export async function bestKgMany(db: Db, profileId: string, exIds: string[]): Pr
   return out;
 }
 
+export type PeriodStats = { workouts: number; sets: number; volume: number; minutes: number; days: string[] };
+
+/**
+ * Totals for finished workouts between `fromMs` (inclusive) and `toMs`
+ * (exclusive): workouts, logged sets, volume (kg × reps), minutes trained, and
+ * the local dates (YYYY-MM-DD) that had a workout.
+ */
+export async function periodStats(db: Db, profileId: string, fromMs: number, toMs: number): Promise<PeriodStats> {
+  const totals = await db.getFirstAsync<{ workouts: number; minutes: number }>(
+    `SELECT COUNT(*) AS workouts, COALESCE(SUM(finished_at - started_at), 0) / 60000.0 AS minutes
+     FROM workouts WHERE profile_id = ? AND finished_at >= ? AND finished_at < ?`,
+    profileId,
+    fromMs,
+    toMs,
+  );
+  const sets = await db.getFirstAsync<{ sets: number; volume: number }>(
+    `SELECT COUNT(*) AS sets, COALESCE(SUM(s.kg * s.reps), 0) AS volume
+     FROM workout_sets s JOIN workouts w ON w.id = s.workout_id
+     WHERE w.profile_id = ? AND w.finished_at >= ? AND w.finished_at < ?`,
+    profileId,
+    fromMs,
+    toMs,
+  );
+  const rows = await db.getAllAsync<{ finished_at: number }>(
+    'SELECT finished_at FROM workouts WHERE profile_id = ? AND finished_at >= ? AND finished_at < ?',
+    profileId,
+    fromMs,
+    toMs,
+  );
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const days = [...new Set(rows.map((r) => {
+    const d = new Date(r.finished_at);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }))].sort();
+  return {
+    workouts: totals?.workouts ?? 0,
+    minutes: totals?.minutes ?? 0,
+    sets: sets?.sets ?? 0,
+    volume: sets?.volume ?? 0,
+    days,
+  };
+}
+
 export type WorkoutListRow = {
   id: number;
   routineKey: string;

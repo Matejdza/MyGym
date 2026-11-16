@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { Img } from '@/data/photos';
 import { colors } from '@/theme/tokens';
@@ -30,7 +30,15 @@ export function Photo({
 /** One gradient stop: [position 0–1, color]. */
 export type Stop = [number, string];
 
-const DARK = (a: number) => `rgba(13,13,12,${a})`;
+const DARK = (a: number) => `rgba(28,28,26,${a})`;
+
+/**
+ * Spread on a section that shows text over a photo (heroes, group tiles): it
+ * keeps the dark palette there in both themes, so light text stays on a dark
+ * photo. On the web it sets data-scope="dark", which redefines the color
+ * variables for that subtree (see public/index.html).
+ */
+export const DARK_SCOPE = (Platform.OS === 'web' ? { dataSet: { scope: 'dark' } } : {}) as object;
 
 /** Vertical (top→bottom) or horizontal (left→right) gradient over a photo. */
 export function Shade({ stops, horizontal }: { stops: Stop[]; horizontal?: boolean }) {

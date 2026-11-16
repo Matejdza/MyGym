@@ -9,7 +9,7 @@ import { PrimaryButton, Ring } from '@/components/ui';
 import { exercise } from '@/data/catalog';
 import * as repo from '@/data/repo';
 import { fmt, mmss } from '@/domain/format';
-import { isTimed, repsStep, repsUnit } from '@/domain/plan';
+import { isTimed, maxReps, repsStep, repsUnit } from '@/domain/plan';
 import * as S from '@/domain/strength';
 import type { StrengthSession } from '@/domain/types';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
@@ -174,6 +174,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               mirrored={mirrored}
               onDec={() => update(S.adjust(s, 'w', -settings.weightStep))}
               onInc={() => update(S.adjust(s, 'w', settings.weightStep))}
+              input={{ min: 0, max: 500, decimals: true, value: set.w, onSet: (v) => update(S.setValue(s, 'w', v)) }}
             />
             <StepRow
               value={String(set.r)}
@@ -181,6 +182,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               mirrored={mirrored}
               onDec={() => update(S.adjust(s, 'r', -repsStep(e.id)))}
               onInc={() => update(S.adjust(s, 'r', repsStep(e.id)))}
+              input={{ min: 1, max: maxReps(e.id), value: set.r, onSet: (v) => update(S.setValue(s, 'r', v)) }}
             />
           </>
         )}
@@ -209,7 +211,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
         <PrimaryButton
           label={(set ? `Log set ${s.sel + 1}` : last ? 'Finish workout' : 'Next exercise').toUpperCase()}
           onPress={main}
-          height={fit(66)}
+          height={fit(56)}
         />
       </View>
     </View>
@@ -233,5 +235,5 @@ const styles = StyleSheet.create({
   plus30: { height: 38, paddingHorizontal: 14, borderRadius: 19, backgroundColor: colors.surface2, justifyContent: 'center' },
   skip: { height: 38, paddingHorizontal: 10, justifyContent: 'center' },
   restTrack: { position: 'absolute', left: 6, right: 6, bottom: 0, height: 3, borderRadius: 2, backgroundColor: colors.surface2 },
-  restFill: { height: '100%', borderRadius: 2, backgroundColor: colors.accent },
+  restFill: { height: '100%', borderRadius: 2, backgroundColor: colors.accentFill },
 });

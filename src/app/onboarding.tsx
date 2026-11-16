@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Display, Mono, UI } from '@/components/Txt';
 import { Avatar, BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
 import { DAYS_FULL, GOALS } from '@/data/catalog';
+import { BODY_LIMITS } from '@/domain/numberEntry';
 import { fmt, r2 } from '@/domain/format';
 import { mkPlan, ownPlan } from '@/domain/plan';
 import type { GoalKey } from '@/domain/types';
@@ -107,7 +108,7 @@ export default function Onboarding() {
         <BackCircle onPress={back} />
         <View style={styles.segs}>
           {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[styles.seg, { backgroundColor: i <= step ? colors.accent : colors.surface2 }]} />
+            <View key={i} style={[styles.seg, { backgroundColor: i <= step ? colors.accentFill : colors.surface2 }]} />
           ))}
         </View>
         <Mono size={13} color={colors.muted}>{`${step}/4`}</Mono>
@@ -170,6 +171,7 @@ export default function Onboarding() {
               unit="cm"
               onDec={() => setHeight((h) => h - 1)}
               onInc={() => setHeight((h) => h + 1)}
+              input={{ ...BODY_LIMITS.height, value: height, onSet: setHeight }}
             />
             <StepperCard
               label="Weight"
@@ -177,6 +179,7 @@ export default function Onboarding() {
               unit="kg"
               onDec={() => setWeight((w) => r2(w - 0.5))}
               onInc={() => setWeight((w) => r2(w + 0.5))}
+              input={{ ...BODY_LIMITS.weight, value: weight, onSet: setWeight }}
             />
           </View>
         )}
@@ -212,6 +215,7 @@ export default function Onboarding() {
                 valueSize={36}
                 onDec={() => setTarget((t) => r2(t - 0.5))}
                 onInc={() => setTarget((t) => r2(t + 0.5))}
+                input={{ ...BODY_LIMITS.target, value: target, onSet: setTarget }}
               />
             </View>
           </>
@@ -256,7 +260,7 @@ export default function Onboarding() {
                     accessibilityLabel={DAYS_FULL[i]}
                     accessibilityState={{ selected: on }}
                     style={styles.weekCell}>
-                    <View style={[styles.ownDay, { backgroundColor: on ? colors.accent : 'transparent' }]}>
+                    <View style={[styles.ownDay, { backgroundColor: on ? colors.accentFill : 'transparent' }]}>
                       {!on && <Ring width={1} color={colors.line} radius={999} />}
                       <Mono size={15} weight={500} color={on ? colors.accentInk : colors.muted}>
                         {d}
@@ -285,7 +289,7 @@ export default function Onboarding() {
                     onPress={() => setWeekly(n)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
-                    style={[styles.weeklyOpt, { backgroundColor: on ? colors.accent : colors.surface }]}>
+                    style={[styles.weeklyOpt, { backgroundColor: on ? colors.accentFill : colors.surface }]}>
                     <Mono size={26} weight={500} color={on ? colors.accentInk : colors.ink}>
                       {String(n)}
                     </Mono>
@@ -304,7 +308,7 @@ export default function Onboarding() {
                   </UI>
                   <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
                     {!k && <Ring width={1} color={colors.line} radius={999} />}
-                    <Mono size={15} weight={500} color={colors.bg}>
+                    <Mono size={15} weight={500} color={k ? colors.onPlate : colors.muted}>
                       {k ?? '·'}
                     </Mono>
                   </View>

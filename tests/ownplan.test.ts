@@ -13,6 +13,7 @@ import {
   repsText,
   repsUnit,
   restText,
+  routineEquipment,
   schemeText,
   withDayCycled,
   withItemMoved,
@@ -142,4 +143,12 @@ test('plank is held in seconds; other exercises count reps', () => {
   assert.equal(schemeText({ ex: 'plank', sets: 3, reps: 30 }), '3 × 30 s');
   assert.equal(schemeText({ ex: 'plank', sets: 3, reps: 30, repsMax: 45 }), '3 × 30–45 s');
   assert.equal(schemeText({ ex: 'bench', sets: 3, reps: 8 }), '3 × 8');
+});
+
+test('routine equipment: first use order, no duplicates, aliases merged', () => {
+  const plan = mkPlan(4);
+  assert.equal(routineEquipment({ name: 'X', items: [{ ex: 'bench', sets: 3, reps: 5 }, { ex: 'incline', sets: 3, reps: 8 }, { ex: 'dbpress', sets: 3, reps: 8 }] }), 'Barbell, Dumbbells, Bench');
+  assert.equal(routineEquipment({ name: 'Empty', items: [] }), '');
+  assert.equal(routineEquipment({ name: 'Dips', items: [{ ex: 'dips', sets: 3, reps: 8 }] }), 'Parallel bars');
+  assert.ok(routineEquipment(plan.routines.A).length > 0);
 });

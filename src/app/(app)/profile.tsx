@@ -9,6 +9,7 @@ import { Display, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
 import { BackPill, StepperCard } from '@/components/ui';
 import { GOALS } from '@/data/catalog';
+import { BODY_LIMITS } from '@/domain/numberEntry';
 import { pickProfilePhoto } from '@/data/profilePhoto';
 import { fmt, r2 } from '@/domain/format';
 import { REST_MAX, REST_MIN, REST_STEP, restText, workoutsText } from '@/domain/plan';
@@ -16,6 +17,7 @@ import type { GoalKey, InputVariant, Settings } from '@/domain/types';
 import { planCells } from '@/domain/week';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
+import { THEME_SWITCH, getThemePref, setThemePref, type ThemePref } from '@/theme/themePref';
 import { colors, fonts } from '@/theme/tokens';
 
 const VARIANTS: [InputVariant, string][] = [
@@ -46,6 +48,7 @@ export default function Profile() {
 
   // Name being typed; saved when the field loses focus. An empty name keeps the old one.
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [theme, setTheme] = useState<ThemePref>(getThemePref);
   const saveName = () => {
     const name = nameDraft?.trim();
     if (name && name !== profile.name) updateProfile({ name });
@@ -131,6 +134,7 @@ export default function Profile() {
             unit={unit}
             onDec={() => step(k, -d)}
             onInc={() => step(k, d)}
+            input={{ ...BODY_LIMITS[k], value: profile[k], onSet: (v) => updateProfile({ [k]: v }) }}
             valueSize={26}
             button={52}
             buttonFont={22}
@@ -164,7 +168,7 @@ export default function Profile() {
           <WeekStrip cells={planCells(profile.plan)} size={34} fontSize={13} labelSize={12} labelWeight={400} gap={4} innerGap={6} />
         </View>
         <Pressable onPress={() => router.push('/plan')} accessibilityRole="button" style={styles.planBtn}>
-          <UI size={16} weight={700} color={colors.bg}>
+          <UI size={16} weight={600}>
             Edit plan and routines
           </UI>
         </Pressable>
@@ -173,7 +177,30 @@ export default function Profile() {
       <Display size={28} weight={800} style={{ marginTop: 30 }}>
         Settings
       </Display>
-      <UI size={15} color={colors.muted} style={{ marginTop: 12 }}>
+      {THEME_SWITCH && (
+        <>
+          <UI size={15} color={colors.muted} style={{ marginTop: 16 }}>
+            Appearance
+          </UI>
+          <Segmented<ThemePref>
+            options={[
+              ['auto', 'Auto'],
+              ['light', 'Light'],
+              ['dark', 'Dark'],
+            ]}
+            value={theme}
+            onChange={(t) => {
+              setThemePref(t);
+              setTheme(t);
+            }}
+            style={{ marginTop: 8 }}
+          />
+          <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+            {"Auto follows your phone's light or dark setting."}
+          </UI>
+        </>
+      )}
+      <UI size={15} color={colors.muted} style={{ marginTop: THEME_SWITCH ? 24 : 12 }}>
         Set entry
       </UI>
       <Segmented<InputVariant>
@@ -200,6 +227,13 @@ export default function Profile() {
           unit=""
           onDec={() => setSettings({ restSeconds: Math.max(REST_MIN, settings.restSeconds - REST_STEP) })}
           onInc={() => setSettings({ restSeconds: Math.min(REST_MAX, settings.restSeconds + REST_STEP) })}
+          input={{
+            min: REST_MIN,
+            max: REST_MAX,
+            kind: 'duration',
+            value: settings.restSeconds,
+            onSet: (restSeconds) => setSettings({ restSeconds }),
+          }}
           valueSize={26}
           button={52}
           buttonFont={22}
@@ -257,5 +291,5 @@ const styles = StyleSheet.create({
   nameInput: { color: colors.ink, fontFamily: fonts.ui600, fontSize: 22, paddingVertical: 4, paddingHorizontal: 0 },
   planCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 20, marginTop: 26 },
   delete: { height: 48, marginTop: 28, alignItems: 'center', justifyContent: 'center' },
-  planBtn: { height: 54, marginTop: 18, borderRadius: 27, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  planBtn: { height: 48, marginTop: 16, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
 });

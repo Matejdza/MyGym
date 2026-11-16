@@ -1,19 +1,35 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
-import { CoverThumb } from '@/components/Cover';
+import { PlateBadge } from '@/components/Cover';
+import { Photo } from '@/components/Photo';
 import { Display, UI } from '@/components/Txt';
-import { Ring } from '@/components/ui';
 import { DAYS_FULL } from '@/data/catalog';
 import { coverPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { dateInWeek, dayIndex, longDate, parseIso, shortDate, weekStartOf } from '@/domain/dates';
-import { routineMeta } from '@/domain/plan';
+import { routineEquipment, routineMeta } from '@/domain/plan';
+import type { Routine } from '@/domain/types';
 import { useActive, useDbQuery } from '@/state/store';
 import { useTop } from '@/theme/layout';
-import { colors, plate } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
 
-/** The 7 days of this week as cards; rest days as dashed rows. */
+type DayState = 'done' | 'progress' | 'today' | 'missed' | 'upcoming' | 'rest';
+
+const STATUS: Record<Exclude<DayState, 'rest'>, string> = {
+  done: 'Done',
+  progress: 'In progress',
+  today: 'Today',
+  missed: 'Missed',
+  upcoming: 'Upcoming',
+};
+
+/**
+ * This week as a timeline: a line down the left with one marker per day, and a
+ * card per training day (photo, date, routine, time and kit). Rest days are a
+ * single quiet line. Reading order: today's card (accent outline) → the rest.
+ */
 export default function Workout() {
   const { profile, session } = useActive();
   const top = useTop();
@@ -23,74 +39,74 @@ export default function Workout() {
   const today = dayIndex(now);
   const weekStart = weekStartOf(now);
   const done = useDbQuery((db) => repo.doneDays(db, profile.id, weekStart), [profile.id, weekStart]) ?? [];
+  const live = session && session.weekStart === weekStart ? session.day : -1;
+
+  const stateOf = (i: number, r: Routine | null): DayState => {
+    if (!r) return 'rest';
+    if (done.includes(i)) return 'done';
+    if (i === live) return 'progress';
+    if (i === today) return 'today';
+    return i < today ? 'missed' : 'upcoming';
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(66) }]}>
-      <View style={{ paddingHorizontal: 4 }}>
-        <Display size={52} weight={900} lh={0.9}>
-          Workout
-        </Display>
-        <UI size={16} color={colors.muted} style={{ marginTop: 10 }}>
-          {`Week of ${longDate(parseIso(weekStart))}. Pick a day to open its workout.`}
-        </UI>
-      </View>
+      <Display size={52} weight={900} lh={0.9}>
+        Workout
+      </Display>
+      <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+        {`Week of ${longDate(parseIso(weekStart))}. Pick a day to open its workout.`}
+      </UI>
 
-      <View style={styles.list}>
+      <View style={{ marginTop: 24 }}>
         {DAYS_FULL.map((dayName, i) => {
-          const date = shortDate(dateInWeek(weekStart, i));
           const k = plan.days[i];
-          const r = k ? plan.routines[k] : null;
-          if (!k || !r) {
-            return (
-              <View key={i} style={styles.rest}>
-                <UI size={14} weight={600} color={colors.muted}>{`${dayName}, ${date}`}</UI>
-                <UI size={14} color={colors.muted}>
-                  Rest
-                </UI>
-              </View>
-            );
-          }
-
-          let status: string;
-          let bg: string;
-          let fg: string;
-          if (done.includes(i)) {
-            status = 'Done';
-            bg = plate(k);
-            fg = colors.bg;
-          } else if (i === today) {
-            status = session && session.day === i && session.weekStart === weekStart ? 'In progress' : 'Today';
-            bg = colors.accent;
-            fg = colors.accentInk;
-          } else if (i < today) {
-            status = 'Missed';
-            bg = colors.surface2;
-            fg = colors.muted;
-          } else {
-            status = 'Upcoming';
-            bg = colors.surface2;
-            fg = colors.ink;
-          }
-
+          const r = k ? (plan.routines[k] ?? null) : null;
+          const state = stateOf(i, r);
+          const date = shortDate(dateInWeek(weekStart, i));
           return (
-            <Pressable key={i} onPress={() => router.push(`/day/${i}`)} accessibilityRole="button" style={styles.card}>
-              {i === today && <Ring width={2} color={colors.accent} radius={22} />}
-              <CoverThumb source={coverPhoto(r)} routineKey={k} size={72} radius={15} badge={24} badgeFont={12} inset={6} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <UI size={14} weight={600} color={colors.muted}>{`${dayName}, ${date}`}</UI>
-                <Display size={25} weight={800} lh={0.95} style={{ marginTop: 3 }}>
-                  {r.name}
-                </Display>
-                <UI size={14} color={colors.muted} style={{ marginTop: 3 }}>
-                  {routineMeta(r).list}
-                </UI>
+            <View key={i} style={styles.row}>
+              <View style={styles.rail}>
+                <View style={[styles.line, i === 0 && { top: '50%' }, i === 6 && { bottom: '50%' }]} />
+                <Marker state={state} />
               </View>
-              <View style={[styles.status, { backgroundColor: bg }]}>
-                <UI size={13} weight={700} color={fg}>
-                  {status}
-                </UI>
-              </View>
-            </Pressable>
+              {state === 'rest' || !r || !k ? (
+                <View style={styles.restRow}>
+                  <UI size={15} color={colors.muted}>{`${dayName}, ${date} · Rest`}</UI>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={() => router.push(`/day/${i}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${dayName}, ${r.name}, ${STATUS[state]}`}
+                  style={({ pressed }) => [
+                    styles.card,
+                    (state === 'today' || state === 'progress') && styles.cardToday,
+                    pressed && { opacity: 0.7 },
+                  ]}>
+                  <View style={styles.photo}>
+                    <Photo source={coverPhoto(r)} fill={colors.surface2} style={StyleSheet.absoluteFill} />
+                    <PlateBadge routineKey={k} size={24} fontSize={12} style={{ position: 'absolute', left: 8, bottom: 8 }} />
+                  </View>
+                  <View style={styles.text}>
+                    <UI size={13} weight={600} color={state === 'today' || state === 'progress' ? colors.accent : colors.muted}>
+                      {`${dayName}, ${date} · ${STATUS[state]}`}
+                    </UI>
+                    <Display size={22} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
+                      {r.name}
+                    </Display>
+                    <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
+                      {timeLine(r)}
+                    </UI>
+                    {r.items.length > 0 && (
+                      <UI size={14} color={colors.muted} numberOfLines={1}>
+                        {routineEquipment(r)}
+                      </UI>
+                    )}
+                  </View>
+                </Pressable>
+              )}
+            </View>
           );
         })}
       </View>
@@ -98,30 +114,69 @@ export default function Workout() {
   );
 }
 
+/** "About 45 min" (cardio: the planned minutes; empty routine: "No exercises yet"). */
+function timeLine(r: Routine): string {
+  if (!r.items.length) return r.type === 'cardio' ? 'No activities yet' : 'No exercises yet';
+  return r.type === 'cardio' ? `${routineMeta(r).min} min` : `About ${routineMeta(r).min} min`;
+}
+
+/** The marker on the line: check (done), accent ring (today), outline (upcoming), dash (missed), dot (rest). */
+function Marker({ state }: { state: DayState }) {
+  if (state === 'rest') return <View style={styles.restDot} />;
+  if (state === 'done')
+    return (
+      <View style={[styles.node, { backgroundColor: colors.accentFill }]}>
+        <Svg width={14} height={14} viewBox="0 0 18 18">
+          <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={colors.onPlate} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </View>
+    );
+  if (state === 'today' || state === 'progress')
+    return (
+      <View style={[styles.node, { borderWidth: 2, borderColor: colors.accent }]}>
+        <View style={[styles.innerDot, { backgroundColor: state === 'progress' ? colors.accentFill : colors.accent }]} />
+      </View>
+    );
+  if (state === 'missed')
+    return (
+      <View style={[styles.node, { borderWidth: 1.5, borderColor: colors.border }]}>
+        <View style={styles.dash} />
+      </View>
+    );
+  return <View style={[styles.node, { borderWidth: 1.5, borderColor: colors.border }]} />;
+}
+
+const NODE = 24;
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 16, paddingBottom: 20 },
-  list: { gap: 8, marginTop: 22 },
+  content: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { flexDirection: 'row', alignItems: 'stretch' },
+  rail: { width: 40, alignItems: 'center', justifyContent: 'center' },
+  line: { position: 'absolute', top: 0, bottom: 0, width: 2, left: 19, backgroundColor: colors.line },
+  node: {
+    width: NODE,
+    height: NODE,
+    borderRadius: NODE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg,
+  },
+  innerDot: { width: 8, height: 8, borderRadius: 4 },
+  dash: { width: 10, height: 2, borderRadius: 1, backgroundColor: colors.muted },
+  restDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  restRow: { flex: 1, justifyContent: 'center', paddingVertical: 16, paddingLeft: 8 },
   card: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    minHeight: 112,
+    marginVertical: 4,
+    marginLeft: 8,
     backgroundColor: colors.surface,
-    borderRadius: 22,
-    paddingVertical: 10,
-    paddingLeft: 10,
-    paddingRight: 14,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
-  status: { height: 30, paddingHorizontal: 12, borderRadius: 15, justifyContent: 'center', flexShrink: 0 },
-  rest: {
-    height: 48,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.line,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  cardToday: { borderWidth: 1.5, borderColor: colors.accent },
+  photo: { width: 96, backgroundColor: colors.surface2 },
+  text: { flex: 1, minWidth: 0, paddingVertical: 16, paddingHorizontal: 16, justifyContent: 'center' },
 });

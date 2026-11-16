@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { Photo, Shade, heroStops } from '@/components/Photo';
+import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
 import { PrimaryButton } from '@/components/ui';
@@ -91,7 +91,7 @@ export default function Home() {
 
   return (
     <ScrollView style={styles.screen} showsVerticalScrollIndicator={false}>
-      <View style={{ height: top(500) }}>
+      <View style={{ height: top(500) }} {...DARK_SCOPE}>
         <Photo source={IMAGES.hero} style={StyleSheet.absoluteFill} />
         <Shade stops={heroStops(0.7, [0.24, 0.42], 0.88)} />
         <View style={[styles.topBar, { top: top(54) }]}>
@@ -100,7 +100,7 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel="Profile"
             style={[styles.avatar, { backgroundColor: profile.color }]}>
-            <Display size={22} weight={900} color={colors.bg}>
+            <Display size={22} weight={900} color={colors.onPlate}>
               {(profile.name[0] || '?').toUpperCase()}
             </Display>
           </Pressable>
@@ -120,9 +120,9 @@ export default function Home() {
             {meta}
           </UI>
           <View style={styles.ctaRow}>
-            <PrimaryButton label={ctaLabel} onPress={ctaGo} height={58} fontSize={23} style={{ flex: 1 }} />
+            <PrimaryButton label={ctaLabel} onPress={ctaGo} height={52} fontSize={20} style={{ flex: 1 }} />
             <Pressable onPress={viewGo} accessibilityRole="button" style={styles.viewPill}>
-              <UI size={16} weight={600} color={colors.bg}>
+              <UI size={16} weight={600}>
                 {viewLabel}
               </UI>
             </Pressable>
@@ -224,10 +224,10 @@ const styles = StyleSheet.create({
   heroText: { position: 'absolute', left: 20, right: 20, bottom: 6 },
   ctaRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
   viewPill: {
-    height: 58,
+    height: 52,
     paddingHorizontal: 24,
-    borderRadius: 29,
-    backgroundColor: colors.ink,
+    borderRadius: 26,
+    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

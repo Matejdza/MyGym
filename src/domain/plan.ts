@@ -80,6 +80,22 @@ export function routineMeta(r: Routine): RoutineMeta {
   return { n, text, min, long: `${text}, about ${min} min`, list: text };
 }
 
+/** Same piece of kit written differently in the catalog. */
+const KIT_ALIASES: Record<string, string> = { dumbbell: 'dumbbells', 'incline bench': 'bench', 'added weight': '' };
+
+/** The kit a routine needs, in order of first use: "Barbell, Bench, Cable". */
+export function routineEquipment(r: Routine): string {
+  const seen: string[] = [];
+  for (const it of r.items) {
+    for (const raw of (exercise(it.ex)?.equipment ?? '').split(/,| or /)) {
+      const key = raw.trim().toLowerCase();
+      const name = key in KIT_ALIASES ? KIT_ALIASES[key] : key;
+      if (name && !seen.includes(name)) seen.push(name);
+    }
+  }
+  return seen.map((n) => n[0].toUpperCase() + n.slice(1)).join(', ');
+}
+
 /** Number of days in the schedule that have a routine. */
 export const assignedDays = (plan: Plan) => plan.days.filter(Boolean).length;
 
@@ -145,6 +161,9 @@ export const repsUnit = (exId: string) => (isTimed(exId) ? 'sec' : 'reps');
 
 /** Stepper increment for reps: 5 seconds for holds, otherwise 1 rep. */
 export const repsStep = (exId: string) => (isTimed(exId) ? 5 : 1);
+
+/** Highest reps (or seconds, for holds) that can be typed in. */
+export const maxReps = (exId: string) => (isTimed(exId) ? 600 : 100);
 
 /** Starting reps when an exercise is added to a routine. */
 export const defaultReps = (exId: string) => (isTimed(exId) ? 30 : 10);

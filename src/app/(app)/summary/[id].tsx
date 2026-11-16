@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Photo, Shade, dark } from '@/components/Photo';
+import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { InkDisplayButton } from '@/components/ui';
 import { IMAGES } from '@/data/photos';
@@ -42,7 +42,7 @@ export default function Summary() {
   return (
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }}>
-        <View style={{ height: top(300) }}>
+        <View style={{ height: top(300) }} {...DARK_SCOPE}>
           <Photo source={IMAGES.workoutDone} style={StyleSheet.absoluteFill} />
           <Shade
             stops={[
@@ -121,5 +121,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  pill: { backgroundColor: colors.accent, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 },
+  pill: { backgroundColor: colors.accentFill, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 },
 });
