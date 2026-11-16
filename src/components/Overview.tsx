@@ -110,7 +110,7 @@ function WeekDays({ from, plan, done, today }: { from: Date; plan: Plan; done: s
         const isToday = iso === today;
         return (
           <View key={i} style={styles.day} accessibilityLabel={`${letter} ${d.getDate()}${isDone ? ', done' : planned ? ', planned' : ''}`}>
-            <UI size={13} weight={600} color={isToday ? colors.accent : colors.muted}>
+            <UI size={14} weight={600} color={isToday ? colors.accent : colors.muted}>
               {letter}
             </UI>
             <View

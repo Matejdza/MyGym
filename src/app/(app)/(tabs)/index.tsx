@@ -7,12 +7,14 @@ import { Display, Mono, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
 import { PrimaryButton } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
-import { IMAGES, exPhoto } from '@/data/photos';
+import { IMAGES, coverPhoto, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { addDays, dateInWeek, dayIndex, fullDate, isoDate, shortDate, weekStartOf } from '@/domain/dates';
-import { fmt, r2 } from '@/domain/format';
-import { routineMeta, workoutsPerWeek } from '@/domain/plan';
+import { fmt, plural, r2 } from '@/domain/format';
+import { timeText, volumeText } from '@/domain/overview';
+import { routineEquipment, routineMeta, workoutsPerWeek } from '@/domain/plan';
 import { canStart } from '@/domain/session';
+import type { Plan } from '@/domain/types';
 import { homeWeekCells } from '@/domain/week';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
@@ -29,6 +31,15 @@ function spark(vals: number[]): string {
   return 'M' + vals.map((v, i) => `${((i * 120) / (n - 1)).toFixed(1)} ${(50 - ((v - lo) / (hi - lo || 1)) * 44).toFixed(1)}`).join(' L');
 }
 
+/** "Next: Thursday, Legs", or that the week has no more workouts. */
+function nextLine(plan: Plan, today: number): string {
+  for (let i = today + 1; i < 7; i++) {
+    const k = plan.days[i];
+    if (k && plan.routines[k]) return `Next: ${DAYS_FULL[i]}, ${plan.routines[k].name}`;
+  }
+  return 'No more workouts this week.';
+}
+
 export default function Home() {
   const { profile, session } = useActive();
   const { startWorkout } = useStore();
@@ -42,6 +53,10 @@ export default function Home() {
 
   const done = useDbQuery((db) => repo.doneDays(db, profile.id, weekStart), [profile.id, weekStart]) ?? [];
   const records = useDbQuery((db) => repo.recentRecords(db, profile.id, RECORDS_SHOWN), [profile.id]) ?? [];
+  // This week's totals and the newest finished workout, for the cards under the week strip.
+  const weekFrom = dateInWeek(weekStart, 0).getTime();
+  const totals = useDbQuery((db) => repo.periodStats(db, profile.id, weekFrom, weekFrom + 7 * 86400000), [profile.id, weekFrom]);
+  const lastWorkout = useDbQuery((db) => repo.workoutList(db, profile.id, 1), [profile.id])?.[0];
   const body = useDbQuery((db) => repo.bodyLog(db, profile.id), [profile.id, profile.weight]) ?? [];
 
   const key = plan.days[today];
@@ -56,32 +71,33 @@ export default function Home() {
   let ctaGo: () => void;
   let viewLabel: string;
   let viewGo: () => void;
+  // Today's workout is logged: nothing left to start, so the yellow button gives way to one quiet link.
+  let finished = false;
   if (routine) {
     title = routine.name;
-    meta = routineMeta(routine).long;
     const running = !!session && session.day === today && session.weekStart === weekStart;
-    ctaLabel = running ? 'CONTINUE' : doneToday ? 'DONE TODAY' : 'START WORKOUT';
+    finished = doneToday && !running;
+    meta = finished ? `Done for today. ${nextLine(plan, today)}` : routineMeta(routine).long;
+    ctaLabel = running ? 'CONTINUE' : 'START WORKOUT';
     ctaGo = async () => {
       // A finished day or an empty routine opens the day instead of starting.
       if ((doneToday && !running) || !canStart(plan, today)) router.push(`/day/${today}`);
       else if (await startWorkout(today)) router.push('/log');
     };
-    viewLabel = 'Details';
+    viewLabel = finished ? 'View workout' : 'Details';
     viewGo = () => router.push(`/day/${today}`);
   } else {
-    let next = -1;
-    for (let i = today + 1; i < 7; i++)
-      if (plan.days[i]) {
-        next = i;
-        break;
-      }
     title = 'Rest day';
-    meta = next < 0 ? 'No more workouts this week.' : `Next: ${DAYS_FULL[next]}, ${plan.routines[plan.days[next]!].name}`;
+    meta = nextLine(plan, today);
     ctaLabel = 'PICK A WORKOUT';
     ctaGo = () => router.navigate('/workout');
     viewLabel = 'Plan';
     viewGo = () => router.push('/plan');
   }
+
+  // The next planned workout later this week (today's own workout is the hero above).
+  const nextDay = plan.days.findIndex((k, i) => i > today && !!k && !!plan.routines[k]);
+  const nextRoutine = nextDay >= 0 ? plan.routines[plan.days[nextDay]!] : null;
 
   // Body weight over the last 12 weeks.
   const from = addDays(todayIso, -BODY_WINDOW_DAYS);
@@ -104,10 +120,6 @@ export default function Home() {
               {(profile.name[0] || '?').toUpperCase()}
             </Display>
           </Pressable>
-          <UI size={17} weight={600}>
-            Home
-          </UI>
-          <View style={{ width: 40 }} />
         </View>
         <View style={styles.heroText}>
           <UI size={15} weight={600} color={colors.accent}>
@@ -116,12 +128,15 @@ export default function Home() {
           <Display size={64} weight={900} lh={0.88} style={{ marginTop: 8 }}>
             {title}
           </Display>
-          <UI size={16} style={{ marginTop: 10, opacity: 0.8 }}>
+          <UI size={16} style={{ marginTop: 8, opacity: 0.8 }}>
             {meta}
           </UI>
           <View style={styles.ctaRow}>
-            <PrimaryButton label={ctaLabel} onPress={ctaGo} height={52} fontSize={20} style={{ flex: 1 }} />
-            <Pressable onPress={viewGo} accessibilityRole="button" style={styles.viewPill}>
+            {!finished && <PrimaryButton label={ctaLabel} onPress={ctaGo} height={52} fontSize={20} style={{ flex: 1 }} />}
+            <Pressable
+              onPress={viewGo}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.viewPill, finished && { flex: 1 }, pressed && { backgroundColor: colors.surface }]}>
               <UI size={16} weight={600}>
                 {viewLabel}
               </UI>
@@ -137,7 +152,7 @@ export default function Home() {
           </Display>
           <Mono size={15} color={colors.muted}>{`${doneCount} of ${workoutsPerWeek(plan)} done`}</Mono>
         </View>
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <WeekStrip
             cells={homeWeekCells(plan, done, today, weekStart)}
             size={42}
@@ -146,11 +161,88 @@ export default function Home() {
             accessibilityLabels={DAYS_FULL.map((d, i) => `${d}, ${shortDate(dateInWeek(weekStart, i))}`)}
           />
         </View>
+        {totals && totals.workouts > 0 && (
+          <UI size={15} color={colors.muted} style={{ marginTop: 16 }}>
+            {[plural(totals.sets, 'set'), totals.volume > 0 ? `${volumeText(totals.volume)} lifted` : null, timeText(totals.minutes)]
+              .filter(Boolean)
+              .join(' · ')}
+          </UI>
+        )}
       </View>
 
+      {nextRoutine && (
+        <View style={styles.section}>
+          <Display size={28} weight={800}>
+            Coming up
+          </Display>
+          <Pressable
+            onPress={() => router.push(`/day/${nextDay}`)}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
+            <Photo source={coverPhoto(nextRoutine)} fill={colors.surface2} style={styles.cardPhoto} />
+            <View style={styles.cardText}>
+              <UI size={14} weight={600} color={colors.muted}>
+                {`${DAYS_FULL[nextDay]}, ${shortDate(dateInWeek(weekStart, nextDay))}`}
+              </UI>
+              <Display size={22} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
+                {nextRoutine.name}
+              </Display>
+              <UI size={14} color={colors.muted} numberOfLines={1} style={{ marginTop: 8 }}>
+                {nextRoutine.items.length ? [routineMeta(nextRoutine).list, routineEquipment(nextRoutine)].filter(Boolean).join(' · ') : 'Nothing added yet'}
+              </UI>
+            </View>
+            <UI size={22} color={colors.muted} style={{ paddingRight: 16 }}>
+              ›
+            </UI>
+          </Pressable>
+        </View>
+      )}
+
+      {lastWorkout && (
+        <View style={styles.section}>
+          <View style={styles.sectionHead}>
+            <Display size={28} weight={800}>
+              Last workout
+            </Display>
+            <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={styles.link}>
+              <UI size={15} weight={600} color={colors.accent}>
+                All workouts
+              </UI>
+            </Pressable>
+          </View>
+          <Pressable
+            onPress={() => router.push({ pathname: '/summary/[id]', params: { id: String(lastWorkout.id), from: 'history' } })}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.card, styles.cardPad, pressed && { opacity: 0.7 }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <UI size={14} weight={600} color={colors.muted}>
+                {fullDate(new Date(lastWorkout.finishedAt))}
+              </UI>
+              <Display size={22} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
+                {lastWorkout.routineName}
+              </Display>
+              <UI size={14} color={colors.muted} numberOfLines={1} style={{ marginTop: 8 }}>
+                {lastWorkout.type === 'cardio'
+                  ? `${lastWorkout.minutes} min of cardio`
+                  : [
+                      plural(lastWorkout.sets, 'set'),
+                      timeText(Math.max(1, (lastWorkout.finishedAt - lastWorkout.startedAt) / 60000)),
+                      lastWorkout.prs ? plural(lastWorkout.prs, 'record') : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+              </UI>
+            </View>
+            <UI size={22} color={colors.muted}>
+              ›
+            </UI>
+          </Pressable>
+        </View>
+      )}
+
       {records.length > 0 && (
-        <View style={{ paddingTop: 34 }}>
-          <Display size={28} weight={800} style={{ paddingHorizontal: 20 }}>
+        <View style={{ paddingTop: 32 }}>
+          <Display size={28} weight={800} style={{ paddingHorizontal: 16 }}>
             Recent records
           </Display>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.records}>
@@ -161,13 +253,13 @@ export default function Home() {
                 accessibilityRole="button"
                 style={{ width: 156 }}>
                 <Photo source={exPhoto(r.exId)} style={styles.recordPhoto} />
-                <UI size={15} weight={600} numberOfLines={1} style={{ marginTop: 10 }}>
+                <UI size={15} weight={600} numberOfLines={1} style={{ marginTop: 8 }}>
                   {exercise(r.exId)?.name ?? r.exId}
                 </UI>
                 <Mono size={14} color={colors.accent} style={{ marginTop: 4 }}>
                   {`${fmt(r.kg)} kg × ${r.reps}`}
                 </Mono>
-                <UI size={13} color={colors.muted} style={{ marginTop: 2 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 2 }}>
                   {shortDate(new Date(r.finishedAt))}
                 </UI>
               </Pressable>
@@ -185,7 +277,7 @@ export default function Home() {
             <UI size={15} color={colors.muted}>
               Body weight
             </UI>
-            <View style={[styles.baseline, { marginTop: 6 }]}>
+            <View style={[styles.baseline, { marginTop: 8 }]}>
               <Mono size={34} weight={500} spacing={-0.05}>
                 {fmt(profile.weight)}
               </Mono>
@@ -194,7 +286,7 @@ export default function Home() {
               </UI>
             </View>
             {hasTrend && (
-              <UI size={14} weight={600} color={colors.green} style={{ marginTop: 6 }}>
+              <UI size={14} weight={600} color={colors.green} style={{ marginTop: 8 }}>
                 {`${delta <= 0 ? '−' : '+'}${fmt(Math.abs(delta))} kg in 12 weeks`}
               </UI>
             )}
@@ -221,8 +313,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  heroText: { position: 'absolute', left: 20, right: 20, bottom: 6 },
-  ctaRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
+  ctaRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   viewPill: {
     height: 52,
     paddingHorizontal: 24,
@@ -231,18 +323,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  week: { paddingTop: 30, paddingHorizontal: 20 },
+  week: { paddingTop: 32, paddingHorizontal: 16 },
+  section: { paddingTop: 32, paddingHorizontal: 16 },
+  link: { height: 44, justifyContent: 'center' },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 96,
+    marginTop: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  cardPad: { padding: 16, gap: 16 },
+  cardPhoto: { width: 96, alignSelf: 'stretch' },
+  cardText: { flex: 1, minWidth: 0, padding: 16 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  records: { gap: 12, paddingTop: 14, paddingHorizontal: 20 },
+  records: { gap: 16, paddingTop: 16, paddingHorizontal: 16 },
   recordPhoto: { height: 112, borderRadius: 16 },
-  bodyWrap: { paddingTop: 34, paddingHorizontal: 20, paddingBottom: 28 },
+  bodyWrap: { paddingTop: 32, paddingHorizontal: 16, paddingBottom: 32 },
   bodyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
     backgroundColor: colors.surface,
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 20,
+    padding: 16,
   },
-  baseline: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  baseline: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
 });

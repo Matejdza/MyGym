@@ -205,3 +205,24 @@ export function withStrengthChange(it: StrengthItem, f: StrengthField, d: number
       return { ...it, rest: Math.min(REST_MAX, Math.max(REST_MIN, (it.rest ?? defaultRest) + d)) };
   }
 }
+
+/** The plan with exercise `exId` appended to routine `key` (3 sets at the default reps, or 15 min in zone 2). */
+export function withExerciseAdded(plan: Plan, key: RoutineKey, exId: string): Plan {
+  const r = plan.routines[key];
+  if (!r) return plan;
+  const next: Routine =
+    r.type === 'cardio'
+      ? { ...r, items: [...r.items, { ex: exId, min: 15, zone: 2 }] }
+      : { ...r, items: [...r.items, { ex: exId, sets: 3, reps: defaultReps(exId) }] };
+  return { ...plan, routines: { ...plan.routines, [key]: next } };
+}
+
+/** Library exercises whose name, muscle group or equipment contains every word of `query`. */
+export function searchExercises(query: string, ids: readonly string[], describe: (id: string) => string): string[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return ids.filter((id) => {
+    const text = describe(id).toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+}

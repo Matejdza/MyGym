@@ -50,7 +50,6 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(PROFILE_COLORS[0]);
-  const [height, setHeight] = useState(178);
   const [weight, setWeight] = useState(80);
   const [goal, setGoal] = useState<GoalKey>('muscle');
   const [target, setTarget] = useState(78);
@@ -90,7 +89,7 @@ export default function Onboarding() {
     try {
       // Selecting the new profile unlocks the app; the router moves to Home.
       const plan = mode === 'own' ? ownPlan(ownDays, DAYS_FULL) : mkPlan(weekly);
-      await createProfile({ name: name.trim(), color, height, weight, goal, target, plan });
+      await createProfile({ name: name.trim(), color, height: 0, weight, goal, target, plan });
       // Your own plan starts with empty days: go straight to adding exercises.
       if (mode === 'own') setTimeout(() => router.push('/plan'), 50);
     } catch (e) {
@@ -111,14 +110,14 @@ export default function Onboarding() {
             <View key={i} style={[styles.seg, { backgroundColor: i <= step ? colors.accentFill : colors.surface2 }]} />
           ))}
         </View>
-        <Mono size={13} color={colors.muted}>{`${step}/4`}</Mono>
+        <Mono size={14} color={colors.muted}>{`${step}/4`}</Mono>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <Display size={52} weight={900} lh={0.92}>
           {TITLES[step - 1]}
         </Display>
-        <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 12 }}>
+        <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 16 }}>
           {step === 4 && mode === 'own' ? SUB_OWN : SUBS[step - 1]}
         </UI>
 
@@ -136,7 +135,7 @@ export default function Onboarding() {
               maxFontSizeMultiplier={1.2}
               style={styles.nameInput}
             />
-            <UI size={15} color={colors.muted} style={{ marginTop: 30 }}>
+            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
               Profile color
             </UI>
             <View style={styles.swatches}>
@@ -164,15 +163,7 @@ export default function Onboarding() {
         )}
 
         {step === 2 && (
-          <View style={{ gap: 12, marginTop: 30 }}>
-            <StepperCard
-              label="Height"
-              value={String(height)}
-              unit="cm"
-              onDec={() => setHeight((h) => h - 1)}
-              onInc={() => setHeight((h) => h + 1)}
-              input={{ ...BODY_LIMITS.height, value: height, onSet: setHeight }}
-            />
+          <View style={{ gap: 8, marginTop: 32 }}>
             <StepperCard
               label="Weight"
               value={fmt(weight)}
@@ -186,7 +177,7 @@ export default function Onboarding() {
 
         {step === 3 && (
           <>
-            <View style={{ gap: 10, marginTop: 26 }}>
+            <View style={{ gap: 8, marginTop: 24 }}>
               {GOALS.map((g) => (
                 <Pressable
                   key={g.key}
@@ -200,14 +191,14 @@ export default function Onboarding() {
                     <Display size={26} weight={800}>
                       {g.label}
                     </Display>
-                    <UI size={14} color={colors.muted} style={{ marginTop: 2 }}>
+                    <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                       {g.description}
                     </UI>
                   </View>
                 </Pressable>
               ))}
             </View>
-            <View style={{ marginTop: 18 }}>
+            <View style={{ marginTop: 16 }}>
               <StepperCard
                 label="Target weight"
                 value={fmt(target)}
@@ -222,7 +213,7 @@ export default function Onboarding() {
         )}
 
         {step === 4 && (
-          <View style={{ gap: 10, marginTop: 26 }}>
+          <View style={{ gap: 8, marginTop: 24 }}>
             {MODES.map((m) => (
               <Pressable
                 key={m.key}
@@ -235,7 +226,7 @@ export default function Onboarding() {
                   <Display size={26} weight={800}>
                     {m.label}
                   </Display>
-                  <UI size={14} color={colors.muted} style={{ marginTop: 2 }}>
+                  <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                     {m.description}
                   </UI>
                 </View>
@@ -246,7 +237,7 @@ export default function Onboarding() {
 
         {step === 4 && mode === 'own' && (
           <>
-            <UI size={15} color={colors.muted} style={{ marginTop: 28 }}>
+            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
               Tap the days you train
             </UI>
             <View style={styles.week}>
@@ -270,7 +261,7 @@ export default function Onboarding() {
                 );
               })}
             </View>
-            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 22 }}>
+            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
               {ownDays.length
                 ? `${ownDays.length} ${ownDays.length === 1 ? 'workout' : 'workouts'} a week. Each day gets its own routine, ready for your exercises.`
                 : 'You can change days and routines any time from your profile.'}
@@ -280,7 +271,7 @@ export default function Onboarding() {
 
         {step === 4 && mode === 'suggested' && (
           <>
-            <View style={[styles.weeklyRow, { marginTop: 22 }]}>
+            <View style={[styles.weeklyRow, { marginTop: 24 }]}>
               {[2, 3, 4, 5, 6].map((n) => {
                 const on = n === weekly;
                 return (
@@ -297,13 +288,13 @@ export default function Onboarding() {
                 );
               })}
             </View>
-            <UI size={15} color={colors.muted} style={{ marginTop: 28 }}>
+            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
               Your starting schedule
             </UI>
             <View style={styles.week}>
               {preview.days.map((k, i) => (
                 <View key={i} style={styles.weekCell}>
-                  <UI size={13} weight={600} color={colors.muted}>
+                  <UI size={14} weight={600} color={colors.muted}>
                     {DAY_LETTERS[i]}
                   </UI>
                   <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
@@ -315,14 +306,14 @@ export default function Onboarding() {
                 </View>
               ))}
             </View>
-            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 22 }}>
+            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
               You can change days and routines any time from your profile.
             </UI>
           </>
         )}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
+      <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
         <PrimaryButton label={step === 4 ? 'CREATE PROFILE' : 'NEXT'} dimmed={!canContinue} onPress={next} />
       </View>
     </KeyboardAvoidingView>
@@ -331,12 +322,12 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 8, paddingHorizontal: 20 },
-  segs: { flex: 1, flexDirection: 'row', gap: 6 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 8, paddingHorizontal: 16 },
+  segs: { flex: 1, flexDirection: 'row', gap: 8 },
   seg: { flex: 1, height: 5, borderRadius: 3 },
-  body: { paddingTop: 28, paddingHorizontal: 24, paddingBottom: 20 },
+  body: { paddingTop: 32, paddingHorizontal: 24, paddingBottom: 24 },
   nameInput: {
-    marginTop: 30,
+    marginTop: 32,
     borderBottomWidth: 2,
     borderBottomColor: colors.accent,
     color: colors.ink,
@@ -346,24 +337,24 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingHorizontal: 0,
   },
-  swatches: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  swatches: { flexDirection: 'row', gap: 8, marginTop: 16 },
   swatch: { width: 52, height: 52, borderRadius: 26 },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 34 },
+  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 32 },
   goal: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
     backgroundColor: colors.surface,
     borderRadius: 20,
     paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
   },
   goalDot: { width: 20, height: 20, borderRadius: 10 },
-  weeklyRow: { flexDirection: 'row', gap: 8, marginTop: 30 },
+  weeklyRow: { flexDirection: 'row', gap: 8, marginTop: 32 },
   weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  week: { flexDirection: 'row', gap: 6, marginTop: 12 },
+  week: { flexDirection: 'row', gap: 8, marginTop: 16 },
   weekCell: { flex: 1, alignItems: 'center', gap: 8 },
   ownDay: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   dayCircle: { width: 40, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  footer: { paddingTop: 12, paddingHorizontal: 20 },
+  footer: { paddingTop: 16, paddingHorizontal: 16 },
 });

@@ -52,6 +52,7 @@ type WorkoutRow = {
   week_start: string;
   started_at: number;
   finished_at: number;
+  note: string;
 };
 
 const toRoutine = (r: RoutineRow): Routine =>
@@ -76,6 +77,7 @@ const toWorkout = (r: WorkoutRow): WorkoutRecord => ({
   weekStart: r.week_start,
   startedAt: r.started_at,
   finishedAt: r.finished_at,
+  note: r.note ?? '',
 });
 
 // ── Profiles, plan, routines, settings ──────────────────────────────────────
@@ -367,6 +369,25 @@ export async function bestKgMany(db: Db, profileId: string, exIds: string[]): Pr
   return out;
 }
 
+export const NOTE_MAX = 280;
+
+/** Saves the note of a finished workout (trimmed, at most NOTE_MAX characters). */
+export async function setWorkoutNote(db: Db, id: number, note: string) {
+  await db.runAsync('UPDATE workouts SET note = ? WHERE id = ?', note.trim().slice(0, NOTE_MAX), id);
+}
+
+/**
+ * Removes one finished workout with its sets and cardio entries (e.g. one logged
+ * by mistake). Records set by later workouts keep their PR mark.
+ */
+export async function deleteWorkout(db: Db, profileId: string, id: number) {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM workout_sets WHERE workout_id IN (SELECT id FROM workouts WHERE id = ? AND profile_id = ?)', id, profileId);
+    await db.runAsync('DELETE FROM cardio_entries WHERE workout_id IN (SELECT id FROM workouts WHERE id = ? AND profile_id = ?)', id, profileId);
+    await db.runAsync('DELETE FROM workouts WHERE id = ? AND profile_id = ?', id, profileId);
+  });
+}
+
 export type PeriodStats = { workouts: number; sets: number; volume: number; minutes: number; days: string[] };
 
 /**
@@ -420,6 +441,7 @@ export type WorkoutListRow = {
   sets: number;
   prs: number;
   minutes: number;
+  note: string;
 };
 
 /** Finished workouts, newest first, with set, record and cardio-minute counts. */
@@ -434,8 +456,9 @@ export async function workoutList(db: Db, profileId: string, limit = 300): Promi
     sets: number;
     prs: number;
     minutes: number;
+    note: string;
   }>(
-    `SELECT w.id, w.routine_key, w.routine_name, w.type, w.started_at, w.finished_at,
+    `SELECT w.id, w.routine_key, w.routine_name, w.type, w.started_at, w.finished_at, w.note,
        (SELECT COUNT(*) FROM workout_sets s WHERE s.workout_id = w.id) AS sets,
        (SELECT COUNT(*) FROM workout_sets s WHERE s.workout_id = w.id AND s.pr = 1) AS prs,
        (SELECT COALESCE(SUM(c.minutes), 0) FROM cardio_entries c WHERE c.workout_id = w.id) AS minutes
@@ -453,6 +476,7 @@ export async function workoutList(db: Db, profileId: string, limit = 300): Promi
     sets: r.sets,
     prs: r.prs,
     minutes: r.minutes,
+    note: r.note ?? '',
   }));
 }
 

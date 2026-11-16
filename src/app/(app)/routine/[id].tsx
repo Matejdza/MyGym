@@ -33,6 +33,8 @@ import { colors, fonts } from '@/theme/tokens';
 /**
  * Rename a routine; change sets, rep range and rest (or minutes and zone);
  * reorder, remove and add items; delete the routine.
+ * Each item is one line ("4 × 6–8, rest 2:30"); tapping it opens its controls,
+ * one item at a time, so the list stays short enough to scan.
  */
 export default function RoutineEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,12 +43,14 @@ export default function RoutineEditor() {
   const top = useTop();
   const plan = profile.plan;
   const r = id ? plan.routines[id] : undefined;
+  /** Index of the item whose controls are open, or null. */
+  const [open, setOpen] = useState<number | null>(null);
 
   const save = (next: Routine) => setPlan({ ...plan, routines: { ...plan.routines, [id]: next } });
 
   if (!r) {
     return (
-      <View style={[styles.screen, { paddingTop: top(58), paddingHorizontal: 20 }]}>
+      <View style={[styles.screen, { paddingTop: top(58), paddingHorizontal: 16 }]}>
         <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
@@ -83,7 +87,10 @@ export default function RoutineEditor() {
     onSet: (v) => changeCardio(i, f, v - current),
   });
 
-  const move = (i: number, dir: -1 | 1) => save(withItemMoved(r, i, dir));
+  const move = (i: number, dir: -1 | 1) => {
+    save(withItemMoved(r, i, dir));
+    setOpen(i + dir);
+  };
 
   const deleteRoutine = async () => {
     if (!(await confirm('Delete this routine?', 'Delete'))) return;
@@ -91,8 +98,10 @@ export default function RoutineEditor() {
     setPlan(withoutRoutine(plan, id));
   };
 
-  const remove = (i: number) =>
+  const remove = (i: number) => {
+    setOpen(null);
     save(r.type === 'cardio' ? { ...r, items: r.items.filter((_, j) => j !== i) } : { ...r, items: r.items.filter((_, j) => j !== i) });
+  };
 
   const add = () => {
     if (cardio) router.push({ pathname: '/group/[k]', params: { k: 'cardio', pick: id } });
@@ -120,7 +129,16 @@ export default function RoutineEditor() {
       <View style={styles.items}>
         {r.type === 'cardio'
           ? r.items.map((it, i) => (
-              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
+              <ItemCard
+                key={i}
+                exId={it.ex}
+                summary={`${it.min} min, zone ${it.zone}`}
+                open={open === i}
+                onToggle={() => setOpen(open === i ? null : i)}
+                onRemove={() => remove(i)}
+                onMove={(dir) => move(i, dir)}
+                first={i === 0}
+                last={i === r.items.length - 1}>
                 <View style={styles.pair}>
                   <Pill
                     label="minutes"
@@ -137,13 +155,22 @@ export default function RoutineEditor() {
                     input={cardioInput(i, 'zone', it.zone, 1, 5)}
                   />
                 </View>
-                <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
                   {`Zone ${it.zone}: ${ZONES[it.zone]}`}
                 </UI>
               </ItemCard>
             ))
           : r.items.map((it, i) => (
-              <ItemCard key={i} exId={it.ex} onRemove={() => remove(i)} onMove={(dir) => move(i, dir)} first={i === 0} last={i === r.items.length - 1}>
+              <ItemCard
+                key={i}
+                exId={it.ex}
+                summary={`${it.sets} × ${repsText(it)}, rest ${restText(it.rest ?? settings.restSeconds)}`}
+                open={open === i}
+                onToggle={() => setOpen(open === i ? null : i)}
+                onRemove={() => remove(i)}
+                onMove={(dir) => move(i, dir)}
+                first={i === 0}
+                last={i === r.items.length - 1}>
                 <View style={styles.pair}>
                   <Pill
                     label="sets"
@@ -177,9 +204,6 @@ export default function RoutineEditor() {
                     input={strengthInput(i, 'rest', it.rest ?? settings.restSeconds, { min: REST_MIN, max: REST_MAX, kind: 'duration' })}
                   />
                 </View>
-                <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
-                  {`${it.sets} × ${repsText(it)}, rest ${restText(it.rest ?? settings.restSeconds)}`}
-                </UI>
               </ItemCard>
             ))}
       </View>
@@ -201,6 +225,9 @@ export default function RoutineEditor() {
 
 function ItemCard({
   exId,
+  summary,
+  open,
+  onToggle,
   onRemove,
   onMove,
   first,
@@ -208,28 +235,53 @@ function ItemCard({
   children,
 }: {
   exId: string;
+  /** The item on one line, e.g. "4 × 6–8, rest 2:30". */
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
   first: boolean;
   last: boolean;
   children: React.ReactNode;
 }) {
+  const name = exercise(exId)?.name ?? exId;
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHead}>
+    <View style={[styles.card, open && styles.cardOpen]}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`${name}, ${summary}`}
+        accessibilityState={{ expanded: open }}
+        style={({ pressed }) => [styles.cardHead, pressed && { opacity: 0.6 }]}>
         <Photo source={exPhoto(exId)} fill={colors.surface2} style={styles.thumb} />
-        <UI size={16} weight={600} style={{ flex: 1, minWidth: 0 }}>
-          {exercise(exId)?.name ?? exId}
-        </UI>
-        <MoveButton label="↑" hint="Move up" disabled={first} onPress={() => onMove(-1)} />
-        <MoveButton label="↓" hint="Move down" disabled={last} onPress={() => onMove(1)} />
-        <Pressable onPress={onRemove} accessibilityRole="button" style={styles.remove}>
-          <UI size={14} color={colors.muted}>
-            Remove
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <UI size={16} weight={600} numberOfLines={1}>
+            {name}
           </UI>
-        </Pressable>
-      </View>
-      {children}
+          <Mono size={15} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
+            {summary}
+          </Mono>
+        </View>
+        <UI size={15} weight={600} color={open ? colors.muted : colors.accent}>
+          {open ? 'Done' : 'Edit'}
+        </UI>
+      </Pressable>
+      {open && (
+        <>
+          {children}
+          <View style={styles.actions}>
+            <MoveButton label="↑" hint="Move up" disabled={first} onPress={() => onMove(-1)} />
+            <MoveButton label="↓" hint="Move down" disabled={last} onPress={() => onMove(1)} />
+            <View style={{ flex: 1 }} />
+            <Pressable onPress={onRemove} accessibilityRole="button" style={styles.remove}>
+              <UI size={15} weight={600} color={colors.red}>
+                Remove
+              </UI>
+            </Pressable>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -286,9 +338,9 @@ function Pill({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 28 },
+  content: { paddingHorizontal: 16, paddingBottom: 32 },
   cover: { height: 150, borderRadius: 22, marginTop: 16 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
   name: {
     marginTop: 8,
     borderBottomWidth: 2,
@@ -297,23 +349,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display900,
     fontSize: 44,
     textTransform: 'uppercase',
-    paddingTop: 2,
-    paddingBottom: 6,
+    paddingTop: 4,
+    paddingBottom: 8,
     paddingHorizontal: 0,
   },
-  items: { gap: 8, marginTop: 18 },
-  card: { backgroundColor: colors.surface, borderRadius: 20, padding: 12 },
-  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  items: { gap: 8, marginTop: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: 20, padding: 16, borderWidth: 1.5, borderColor: 'transparent' },
+  cardOpen: { borderColor: colors.border },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   thumb: { width: 44, height: 44, borderRadius: 11 },
-  remove: { height: 36, paddingHorizontal: 4, justifyContent: 'center' },
-  moveBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
+  remove: { height: 44, paddingHorizontal: 8, justifyContent: 'center' },
+  moveBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   delete: { height: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center' },
-  pair: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  pair: { flexDirection: 'row', gap: 8, marginTop: 16 },
   pill: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 50, borderRadius: 25, backgroundColor: colors.surface2 },
   pillBtn: { width: 46, height: 50, alignItems: 'center', justifyContent: 'center' },
   add: {
     height: 56,
-    marginTop: 12,
+    marginTop: 16,
     borderRadius: 28,
     borderWidth: 1.5,
     borderStyle: 'dashed',

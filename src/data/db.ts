@@ -6,7 +6,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 export type Db = Pick<SQLiteDatabase, 'execAsync' | 'runAsync' | 'getAllAsync' | 'getFirstAsync' | 'withTransactionAsync'>;
 
 export const DATABASE_NAME = 'liftlog.db';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const V1 = `
 CREATE TABLE profiles (
@@ -93,6 +93,9 @@ CREATE TABLE body_log (
 );
 `;
 
+/** v2: a free-text note on a finished workout ("shoulder felt off", "add 2.5 kg next time"). */
+const V2 = `ALTER TABLE workouts ADD COLUMN note TEXT NOT NULL DEFAULT '';`;
+
 /** Runs from SQLiteProvider's onInit, before any screen reads the database. */
 export async function migrate(db: Db) {
   // Connection settings must be applied outside the migration transaction.
@@ -106,6 +109,7 @@ export async function migrate(db: Db) {
 
   await db.withTransactionAsync(async () => {
     if (version < 1) await db.execAsync(V1);
+    if (version < 2) await db.execAsync(V2);
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   });
 }

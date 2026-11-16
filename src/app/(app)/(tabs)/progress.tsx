@@ -149,7 +149,8 @@ export default function Progress() {
                   {v.unit}
                 </UI>
               </View>
-              <UI size={15} weight={600} color={colors.green} style={{ marginTop: 8 }}>
+              {/* Green only for an actual change; "first entry" and "no change" stay quiet. */}
+              <UI size={15} weight={600} color={/^(First|No change)/.test(v.delta) ? colors.muted : colors.green} style={{ marginTop: 8 }}>
                 {v.delta}
               </UI>
             </>
@@ -173,7 +174,7 @@ export default function Progress() {
           <View style={styles.today}>
             <RoundButton sign="−" size={56} fontSize={24} onPress={() => setBwInput(r2(bw - 0.1))} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <UI size={13} color={bwError ? colors.red : colors.muted}>
+              <UI size={14} color={bwError ? colors.red : colors.muted}>
                 {bwError ?? 'Today, kg'}
               </UI>
               <NumberField
@@ -199,7 +200,7 @@ export default function Progress() {
 
       {v && (
         <>
-          <Display size={28} weight={800} style={{ marginTop: 28 }}>
+          <Display size={28} weight={800} style={{ marginTop: 32 }}>
             History
           </Display>
           {v.rows.map((r, i) => (
@@ -220,25 +221,25 @@ export default function Progress() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 24 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  content: { paddingHorizontal: 16, paddingBottom: 24 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   allBtn: { height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line, justifyContent: 'center' },
-  segment: { flexDirection: 'row', gap: 4, marginTop: 18, padding: 4, borderRadius: 26, backgroundColor: colors.surface },
+  segment: { flexDirection: 'row', gap: 4, marginTop: 16, padding: 4, borderRadius: 26, backgroundColor: colors.surface },
   segBtn: { flex: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  chips: { marginTop: 14, marginHorizontal: -20 },
-  chipsRow: { gap: 6, paddingHorizontal: 20 },
+  chips: { marginTop: 16, marginHorizontal: -20 },
+  chipsRow: { gap: 8, paddingHorizontal: 16 },
   chip: { height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line, justifyContent: 'center' },
-  bigRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginTop: 6 },
-  card: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 18, paddingHorizontal: 14, paddingBottom: 12, marginTop: 20 },
+  bigRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 8 },
+  card: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, marginTop: 24 },
   empty: { height: 190, alignItems: 'center', justifyContent: 'center' },
-  today: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 22, padding: 12, marginTop: 12 },
-  save: { height: 56, marginTop: 10, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  today: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 22, padding: 16, marginTop: 16 },
+  save: { height: 56, marginTop: 8, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    gap: 12,
-    paddingVertical: 14,
+    gap: 8,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },

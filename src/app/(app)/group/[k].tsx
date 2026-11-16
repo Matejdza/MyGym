@@ -7,8 +7,8 @@ import { BackPill } from '@/components/ui';
 import { ALL_GROUPS, EXERCISE_IDS, exercise } from '@/data/catalog';
 import { exPhoto, groupPhoto } from '@/data/photos';
 import { plural } from '@/domain/format';
-import { defaultReps } from '@/domain/plan';
-import type { GroupKey, Routine } from '@/domain/types';
+import { withExerciseAdded } from '@/domain/plan';
+import type { GroupKey } from '@/domain/types';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
@@ -33,13 +33,7 @@ export default function Group() {
       router.push(`/exercise/${id}`);
       return;
     }
-    const plan = profile.plan;
-    const r = plan.routines[pick];
-    const next: Routine =
-      r.type === 'cardio'
-        ? { ...r, items: [...r.items, { ex: id, min: 15, zone: 2 }] }
-        : { ...r, items: [...r.items, { ex: id, sets: 3, reps: defaultReps(id) }] };
-    setPlan({ ...plan, routines: { ...plan.routines, [pick]: next } });
+    setPlan(withExerciseAdded(profile.plan, pick, id));
     // Back to the routine editor, past the muscle-group picker if it was used.
     router.dismissTo({ pathname: '/routine/[id]', params: { id: pick } });
   };
@@ -61,7 +55,7 @@ export default function Group() {
           <Display size={60} weight={900} lh={0.9}>
             {g.label}
           </Display>
-          <UI size={15} style={{ marginTop: 6, opacity: 0.8 }}>
+          <UI size={15} style={{ marginTop: 8, opacity: 0.8 }}>
             {cardio ? `${ids.length} activities` : plural(ids.length, 'exercise')}
           </UI>
         </View>
@@ -77,15 +71,22 @@ export default function Group() {
                 <UI size={17} weight={600}>
                   {e.name}
                 </UI>
-                <UI size={14} color={colors.muted} style={{ marginTop: 3 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                   {e.equipment}
                 </UI>
               </View>
-              <View style={[styles.pill, { backgroundColor: picking ? colors.accentFill : colors.surface }]}>
-                <UI size={14} weight={700} color={picking ? colors.accentInk : colors.ink}>
-                  {picking ? 'Add' : 'View'}
+              {picking ? (
+                <View style={[styles.pill, { backgroundColor: colors.accentFill }]}>
+                  <UI size={14} weight={700} color={colors.accentInk}>
+                    Add
+                  </UI>
+                </View>
+              ) : (
+                // The whole row opens the exercise; a chevron says so without a button on every line.
+                <UI size={22} color={colors.muted}>
+                  ›
                 </UI>
-              </View>
+              )}
             </Pressable>
           );
         })}
@@ -96,13 +97,13 @@ export default function Group() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 20, bottom: 2 },
-  list: { paddingTop: 14, paddingHorizontal: 20, paddingBottom: 24 },
+  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
+  list: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 24 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 10,
+    gap: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },

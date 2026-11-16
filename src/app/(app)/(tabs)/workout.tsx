@@ -89,7 +89,7 @@ export default function Workout() {
                     <PlateBadge routineKey={k} size={24} fontSize={12} style={{ position: 'absolute', left: 8, bottom: 8 }} />
                   </View>
                   <View style={styles.text}>
-                    <UI size={13} weight={600} color={state === 'today' || state === 'progress' ? colors.accent : colors.muted}>
+                    <UI size={14} weight={600} color={state === 'today' || state === 'progress' ? colors.accent : colors.muted}>
                       {`${dayName}, ${date} · ${STATUS[state]}`}
                     </UI>
                     <Display size={22} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>

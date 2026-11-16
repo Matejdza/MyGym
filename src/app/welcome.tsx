@@ -15,7 +15,7 @@ export default function Welcome() {
     <View style={styles.screen} {...DARK_SCOPE}>
       <Photo source={IMAGES.hero} style={StyleSheet.absoluteFill} fill={colors.bg} />
       <Shade stops={heroStops(0.55, [0.22, 0.38], 0.72)} />
-      <View style={[styles.content, { paddingBottom: 20 + insets.bottom }]}>
+      <View style={[styles.content, { paddingBottom: 24 + insets.bottom }]}>
         <Display size={22} weight={900} spacing={0.14} color={colors.accent}>
           LIFTLOG
         </Display>
@@ -27,7 +27,7 @@ export default function Welcome() {
         </UI>
         <PrimaryButton
           label="CREATE PROFILE"
-          style={{ marginTop: 10 }}
+          style={{ marginTop: 8 }}
           onPress={() => router.push('/onboarding')}
         />
         <Pressable onPress={() => router.push('/profiles')} accessibilityRole="button" style={styles.link}>
@@ -42,6 +42,6 @@ export default function Welcome() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, gap: 14 },
+  content: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, gap: 16 },
   link: { height: 48, alignItems: 'center', justifyContent: 'center' },
 });

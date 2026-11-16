@@ -20,16 +20,16 @@ export default function History() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]}>
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 22 }}>
+      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 24 }}>
         All workouts
       </Display>
       {rows && (
-        <UI size={15} color={colors.muted} style={{ marginTop: 10 }}>
+        <UI size={15} color={colors.muted} style={{ marginTop: 8 }}>
           {rows.length ? `${plural(rows.length, 'workout')} logged` : 'No workouts logged yet.'}
         </UI>
       )}
 
-      <View style={{ marginTop: 18 }}>
+      <View style={{ marginTop: 16 }}>
         {rows?.map((w) => {
           const mins = Math.max(1, Math.round((w.finishedAt - w.startedAt) / 60000));
           const detail =
@@ -42,19 +42,24 @@ export default function History() {
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
               <PlateBadge routineKey={w.routineKey} size={36} fontSize={14} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <UI size={13} color={colors.muted}>
+                <UI size={14} color={colors.muted}>
                   {fullDate(new Date(w.finishedAt))}
                 </UI>
-                <UI size={17} weight={600} numberOfLines={1} style={{ marginTop: 3 }}>
+                <UI size={17} weight={600} numberOfLines={1} style={{ marginTop: 4 }}>
                   {w.routineName}
                 </UI>
-                <UI size={14} color={colors.muted} style={{ marginTop: 3 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                   {detail}
                 </UI>
+                {w.note.length > 0 && (
+                  <UI size={14} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
+                    {`“${w.note}”`}
+                  </UI>
+                )}
               </View>
               {w.prs > 0 && (
                 <View style={styles.pr}>
-                  <UI size={12} weight={700} color={colors.accentInk}>
+                  <UI size={14} weight={700} color={colors.accentInk}>
                     {w.prs === 1 ? 'PR' : `${w.prs} PRs`}
                   </UI>
                 </View>
@@ -72,12 +77,12 @@ export default function History() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 28 },
+  content: { paddingHorizontal: 16, paddingBottom: 32 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
+    gap: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },

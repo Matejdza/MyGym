@@ -61,6 +61,19 @@ home screen). The owner writes in Serbian; answer in Serbian.
 - Progress starts with an overview (Week / Month / Year, workouts done of planned, sets, volume,
   time); the Workout tab is a week timeline; Training plan → "Import from text" builds a routine from
   pasted lines (`src/domain/importText.ts`, library names only, unknown lines listed and skipped).
+- UX pass (2026-11-17): the app reopens in the profile used last (`src/state/lastProfile.ts`, localStorage
+  `liftlog-profile`; "Switch profile" clears it); "Discard workout" (was "End workout") says nothing is
+  saved; Finish with sets still open asks first; a finished day shows "Done for today. Next: …" and one
+  quiet "View workout" button instead of a yellow one; list rows use a chevron, not a "View" pill;
+  "Workout done" totals are one list card. Screen padding is 16; spacing follows 4/8/16/24/32; text is 14+
+  (chart ticks and the routine pill captions stay 11).
+- Approved 2026-11-17: set entry is buttons + typing only (Keypad and Scale removed; the
+  `input_variant` column stays and is ignored); Height is no longer asked or shown (stored as 0 for new
+  profiles); no "Home" title. Library and the Add-exercise picker have a search field
+  (`searchExercises`). Logging 0 kg on a weighted exercise asks once per exercise. A finished workout
+  can be deleted and has a note (summary screen; `workouts.note`, schema v2). Routine items are one
+  line with Edit, one open at a time. Tab bar: icons in a pill + labels, active = ink pill
+  (`src/components/TabBar.tsx`). Home also shows week totals, "Coming up" and "Last workout".
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

@@ -13,18 +13,12 @@ import { BODY_LIMITS } from '@/domain/numberEntry';
 import { pickProfilePhoto } from '@/data/profilePhoto';
 import { fmt, r2 } from '@/domain/format';
 import { REST_MAX, REST_MIN, REST_STEP, restText, workoutsText } from '@/domain/plan';
-import type { GoalKey, InputVariant, Settings } from '@/domain/types';
+import type { GoalKey, Settings } from '@/domain/types';
 import { planCells } from '@/domain/week';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { THEME_SWITCH, getThemePref, setThemePref, type ThemePref } from '@/theme/themePref';
 import { colors, fonts } from '@/theme/tokens';
-
-const VARIANTS: [InputVariant, string][] = [
-  ['stepper', 'Buttons'],
-  ['keypad', 'Keypad'],
-  ['scale', 'Scale'],
-];
 
 const STEPS: Settings['weightStep'][] = [1.25, 2.5, 5];
 type Step = `${Settings['weightStep']}`;
@@ -35,7 +29,7 @@ export default function Profile() {
   const { updateProfile, setSettings, leaveProfile, deleteProfile } = useStore();
   const top = useTop();
 
-  const step = (k: 'height' | 'weight' | 'target', d: number) => updateProfile({ [k]: r2(Math.max(0, profile[k] + d)) });
+  const step = (k: 'weight' | 'target', d: number) => updateProfile({ [k]: r2(Math.max(0, profile[k] + d)) });
 
   const changePhoto = async () => {
     try {
@@ -85,7 +79,7 @@ export default function Profile() {
             {profile.photoUri ? (
               <Photo source={{ uri: profile.photoUri }} style={StyleSheet.absoluteFill} />
             ) : (
-              <UI size={13} color={colors.muted}>
+              <UI size={14} color={colors.muted}>
                 Photo
               </UI>
             )}
@@ -96,7 +90,7 @@ export default function Profile() {
             {profile.name}
           </Display>
           <UI size={15} color={colors.muted} style={{ marginTop: 8 }}>
-            {`${profile.height} cm, ${fmt(profile.weight)} kg`}
+            {`${fmt(profile.weight)} kg, ${GOALS.find((g) => g.key === profile.goal)?.label.toLowerCase() ?? ''}`}
           </UI>
         </View>
       </View>
@@ -122,7 +116,6 @@ export default function Profile() {
         </View>
         {(
           [
-            ['Height', 'height', 'cm', 1],
             ['Weight', 'weight', 'kg', 0.1],
             ['Target weight', 'target', 'kg', 0.5],
           ] as const
@@ -130,7 +123,7 @@ export default function Profile() {
           <StepperCard
             key={k}
             label={label}
-            value={k === 'height' ? String(profile.height) : fmt(profile[k])}
+            value={fmt(profile[k])}
             unit={unit}
             onDec={() => step(k, -d)}
             onInc={() => step(k, d)}
@@ -147,7 +140,7 @@ export default function Profile() {
         ))}
       </View>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 22 }}>
+      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
         Goal
       </UI>
       <Segmented<GoalKey>
@@ -174,7 +167,7 @@ export default function Profile() {
         </Pressable>
       </View>
 
-      <Display size={28} weight={800} style={{ marginTop: 30 }}>
+      <Display size={28} weight={800} style={{ marginTop: 32 }}>
         Settings
       </Display>
       {THEME_SWITCH && (
@@ -195,22 +188,12 @@ export default function Profile() {
             }}
             style={{ marginTop: 8 }}
           />
-          <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+          <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
             {"Auto follows your phone's light or dark setting."}
           </UI>
         </>
       )}
-      <UI size={15} color={colors.muted} style={{ marginTop: THEME_SWITCH ? 24 : 12 }}>
-        Set entry
-      </UI>
-      <Segmented<InputVariant>
-        options={VARIANTS}
-        value={settings.inputVariant}
-        onChange={(inputVariant) => setSettings({ inputVariant })}
-        style={{ marginTop: 8 }}
-      />
-
-      <UI size={15} color={colors.muted} style={{ marginTop: 18 }}>
+      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
         Weight step
       </UI>
       <Segmented<Step>
@@ -220,7 +203,7 @@ export default function Profile() {
         style={{ marginTop: 8 }}
       />
 
-      <View style={{ marginTop: 18 }}>
+      <View style={{ marginTop: 24 }}>
         <StepperCard
           label="Rest between sets"
           value={restText(settings.restSeconds)}
@@ -244,11 +227,11 @@ export default function Profile() {
           gap={8}
         />
       </View>
-      <UI size={13} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+      <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
         Used when an exercise has no rest of its own.
       </UI>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 18 }}>
+      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
         Workout buttons
       </UI>
       <Segmented<Settings['handedness']>
@@ -260,6 +243,9 @@ export default function Profile() {
         onChange={(handedness) => setSettings({ handedness })}
         style={{ marginTop: 8 }}
       />
+      <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
+        Which side the + button sits on during a workout.
+      </UI>
 
       <Pressable onPress={removeProfile} accessibilityRole="button" style={styles.delete}>
         <UI size={15} weight={600} color={colors.red}>
@@ -272,10 +258,10 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 28 },
+  content: { paddingHorizontal: 16, paddingBottom: 32 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   switch: { height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line, justifyContent: 'center' },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 22 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 24 },
   avatarRing: { width: 104, height: 104, borderRadius: 52, padding: 4 },
   avatar: {
     width: 96,
@@ -286,10 +272,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rows: { gap: 8, marginTop: 26 },
+  rows: { gap: 8, marginTop: 24 },
   nameCard: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 10, paddingBottom: 6, paddingHorizontal: 18 },
   nameInput: { color: colors.ink, fontFamily: fonts.ui600, fontSize: 22, paddingVertical: 4, paddingHorizontal: 0 },
-  planCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 20, marginTop: 26 },
-  delete: { height: 48, marginTop: 28, alignItems: 'center', justifyContent: 'center' },
+  planCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 16, marginTop: 24 },
+  delete: { height: 48, marginTop: 32, alignItems: 'center', justifyContent: 'center' },
   planBtn: { height: 48, marginTop: 16, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
 });

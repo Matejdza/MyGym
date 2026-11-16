@@ -32,13 +32,15 @@ export function useEndWorkout(s: Session, emptyPrompt: string) {
     toWorkoutTab();
   };
 
-  const finish = async (logged: { sets: LoggedSet[]; cardio: LoggedCardio[] }) => {
+  /** `left`: what is still open (e.g. "5 sets"); finishing early asks first so a stray tap can't end the workout. */
+  const finish = async (logged: { sets: LoggedSet[]; cardio: LoggedCardio[] }, left?: string) => {
     if (!logged.sets.length && !logged.cardio.length) {
       if (!(await confirm(emptyPrompt, 'Finish'))) return;
       setSession(null);
       toWorkoutTab();
       return;
     }
+    if (left && !(await confirm(`Finish now? ${left} not logged yet.`, 'Finish', 'What you logged is saved.'))) return;
     const id = await finishWorkout({
       routineKey: s.routineKey,
       routineName: s.routineName,

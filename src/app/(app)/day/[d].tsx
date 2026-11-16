@@ -62,7 +62,7 @@ export default function DayDetail() {
             <UI size={15} weight={600}>
               {DAYS_FULL[day]}
             </UI>
-            <Display size={56} weight={900} lh={0.9} style={{ marginTop: 10 }}>
+            <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
               Rest day
             </Display>
           </Hero>
@@ -93,7 +93,7 @@ export default function DayDetail() {
             <PlateBadge routineKey={key} size={28} fontSize={13} />
             <UI size={15} weight={600}>{`${DAYS_FULL[day]}, ${dateLabel}`}</UI>
           </View>
-          <Display size={56} weight={900} lh={0.9} style={{ marginTop: 10 }}>
+          <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
             {r.name}
           </Display>
           <UI size={16} style={{ marginTop: 8, opacity: 0.8 }}>
@@ -163,7 +163,7 @@ function ItemRow({ exId, name, last, scheme }: { exId: string; name: string; las
           {name}
         </UI>
         {last != null && (
-          <UI size={14} color={colors.muted} style={{ marginTop: 3 }}>
+          <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
             {last}
           </UI>
         )}
@@ -186,19 +186,19 @@ function EditLink({ label, onPress }: { label: string; onPress: () => void }) {
 }
 
 function Footer({ bottom, children }: { bottom: number; children: React.ReactNode }) {
-  return <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 14 + bottom }}>{children}</View>;
+  return <View style={{ paddingTop: 8, paddingHorizontal: 16, paddingBottom: 16 + bottom }}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 20, right: 20, bottom: 4 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  list: { paddingTop: 18, paddingHorizontal: 20, paddingBottom: 20 },
+  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  list: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 24 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 10,
+    gap: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },

@@ -28,11 +28,11 @@ export default function Profiles() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingTop: top(74), paddingBottom: 20 + insets.bottom }]}>
+      contentContainerStyle={[styles.content, { paddingTop: top(74), paddingBottom: 24 + insets.bottom }]}>
       <Display size={18} weight={900} spacing={0.14} color={colors.accent} align="center">
         LIFTLOG
       </Display>
-      <Display size={52} weight={900} lh={0.92} align="center" style={{ marginTop: 18 }}>
+      <Display size={52} weight={900} lh={0.92} align="center" style={{ marginTop: 16 }}>
         {"Who's lifting today?"}
       </Display>
 
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, paddingHorizontal: SIDE },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 28, columnGap: COL_GAP, marginTop: 44 },
-  cell: { alignItems: 'center', gap: 12 },
+  cell: { alignItems: 'center', gap: 8 },
   avatar: {
     width: AVATAR,
     height: AVATAR,
@@ -98,5 +98,5 @@ const styles = StyleSheet.create({
   },
   add: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.line },
   meta: { marginTop: -8 },
-  footer: { marginTop: 'auto', paddingTop: 28 },
+  footer: { marginTop: 'auto', paddingTop: 32 },
 });

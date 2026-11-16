@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { confirm } from '@/components/confirm';
 import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { InkDisplayButton } from '@/components/ui';
@@ -9,11 +11,11 @@ import { IMAGES } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { cardioSummary, strengthSummary } from '@/domain/cardio';
 import { shortDate } from '@/domain/dates';
-import { useActive, useDbQuery } from '@/state/store';
+import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
-import { colors } from '@/theme/tokens';
+import { colors, fonts } from '@/theme/tokens';
 
-/** "Workout done": stat tiles and new records (strength) or activities (cardio). */
+/** "Workout done": the totals as one list card and new records (strength) or activities (cardio). */
 export default function Summary() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   // Opened from All workouts: show when it was and go back to the list.
@@ -23,7 +25,29 @@ export default function Summary() {
   const insets = useSafeAreaInsets();
   const data = useDbQuery((db) => repo.getWorkout(db, Number(id)), [id]);
 
+  const { deleteWorkout, setWorkoutNote } = useStore();
+
   const w = data?.workout;
+  // The note is typed locally and saved when the field loses focus.
+  const [note, setNote] = useState<string | null>(null);
+  const [noteFocused, setNoteFocused] = useState(false);
+  const saved = w?.note ?? '';
+  const noteText = note ?? saved;
+  const saveNote = () => {
+    setNoteFocused(false);
+    if (w && noteText.trim() !== saved) setWorkoutNote(w.id, noteText);
+  };
+
+  const remove = async () => {
+    if (!w) return;
+    if (!(await confirm('Delete this workout?', 'Delete', 'Its sets are removed from your history and progress. This cannot be undone.'))) return;
+    await deleteWorkout(w.id);
+    if (past) router.back();
+    else {
+      if (router.canDismiss()) router.dismissAll();
+      router.navigate('/');
+    }
+  };
   let summary = null;
   if (data && w) {
     if (w.type === 'cardio') {
@@ -35,13 +59,13 @@ export default function Summary() {
   }
 
   const home = () => {
-    router.dismissAll();
+    if (router.canDismiss()) router.dismissAll();
     router.navigate('/');
   };
 
   return (
     <View style={styles.screen}>
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         <View style={{ height: top(300) }} {...DARK_SCOPE}>
           <Photo source={IMAGES.workoutDone} style={StyleSheet.absoluteFill} />
           <Shade
@@ -64,14 +88,13 @@ export default function Summary() {
 
         {summary && (
           <View style={styles.body}>
-            <View style={styles.tiles}>
-              {summary.rows.map((r) => (
-                <View key={r.k} style={styles.tile}>
-                  <UI size={13} color={colors.muted}>
+            <View style={styles.stats}>
+              {summary.rows.map((r, i) => (
+                <View key={r.k} style={[styles.stat, i < summary.rows.length - 1 && styles.statLine]}>
+                  <UI size={16} color={colors.muted}>
                     {r.k}
                   </UI>
-                  {/* Long values ("2,740 kg") step down a size so they fit a third of the width. */}
-                  <Mono size={r.v.length > 7 ? 16 : 19} weight={500} spacing={-0.04} numberOfLines={1} style={{ marginTop: 8 }}>
+                  <Mono size={20} weight={500} numberOfLines={1}>
                     {r.v}
                   </Mono>
                 </View>
@@ -79,7 +102,7 @@ export default function Summary() {
             </View>
             {summary.list.length > 0 && (
               <>
-                <Display size={28} weight={800} style={{ marginTop: 28 }}>
+                <Display size={28} weight={800} style={{ marginTop: 32 }}>
                   {summary.listTitle}
                 </Display>
                 {summary.list.map((p, i) => (
@@ -96,10 +119,33 @@ export default function Summary() {
                 ))}
               </>
             )}
+
+            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
+              Note
+            </UI>
+            <TextInput
+              value={noteText}
+              onChangeText={setNote}
+              onFocus={() => setNoteFocused(true)}
+              onBlur={saveNote}
+              multiline
+              maxLength={repo.NOTE_MAX}
+              placeholder="How did it go? Anything to remember next time."
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Workout note"
+              textAlignVertical="top"
+              style={[styles.note, { borderColor: noteFocused ? colors.accent : colors.line }]}
+            />
+
+            <Pressable onPress={remove} accessibilityRole="button" style={({ pressed }) => [styles.delete, pressed && { opacity: 0.6 }]}>
+              <UI size={15} weight={600} color={colors.red}>
+                Delete workout
+              </UI>
+            </Pressable>
           </View>
         )}
       </ScrollView>
-      <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 14 + insets.bottom }}>
+      <View style={{ paddingTop: 8, paddingHorizontal: 16, paddingBottom: 16 + insets.bottom }}>
         <InkDisplayButton label={past ? 'BACK' : 'BACK TO HOME'} onPress={past ? () => router.back() : home} />
       </View>
     </View>
@@ -108,18 +154,32 @@ export default function Summary() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 20, right: 20, bottom: 0 },
-  body: { padding: 20 },
-  tiles: { flexDirection: 'row', gap: 8 },
-  tile: { flex: 1, minWidth: 0, backgroundColor: colors.surface, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12 },
+  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
+  body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 24 },
+  stats: { backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 16 },
+  stat: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingVertical: 16 },
+  statLine: { borderBottomWidth: 1, borderBottomColor: colors.line },
   item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
+    gap: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  pill: { backgroundColor: colors.accentFill, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 },
+  note: {
+    minHeight: 96,
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    backgroundColor: colors.surface,
+    color: colors.ink,
+    fontFamily: fonts.ui400,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  delete: { height: 48, marginTop: 16, alignItems: 'center', justifyContent: 'center' },
+  pill: { backgroundColor: colors.accentFill, paddingVertical: 8, paddingHorizontal: 8, borderRadius: 12 },
 });

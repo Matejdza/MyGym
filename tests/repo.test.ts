@@ -32,7 +32,7 @@ test('migrations are idempotent', async () => {
   const db = await freshDb();
   await migrate(db);
   const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  assert.equal(v?.user_version, 1);
+  assert.equal(v?.user_version, 2);
 });
 
 test('new install has no profiles', async () => {
@@ -263,4 +263,46 @@ test('workout list: newest first, with sets, records and cardio minutes', async 
     ],
   );
   assert.equal(list[1].finishedAt - list[1].startedAt, 60000);
+});
+
+test('workout note and deleting one workout', async () => {
+  const db = await freshDb();
+  await repo.createProfile(db, profile('p1'), '2026-11-01');
+  await repo.createProfile(db, profile('p2', 'Other'), '2026-11-01');
+  const base = { routineKey: 'A', routineName: 'Push', type: 'strength' as const, weekStart: '2026-11-02', day: 0, cardio: [] };
+  const set = { exId: 'bench', setNo: 1, kg: 60, reps: 6, pr: false };
+  const a = await repo.recordWorkout(db, { ...base, profileId: 'p1', startedAt: 1000, finishedAt: 2000, sets: [set] });
+  const b = await repo.recordWorkout(db, { ...base, profileId: 'p1', startedAt: 3000, finishedAt: 4000, sets: [set, { ...set, setNo: 2 }] });
+
+  assert.equal((await repo.getWorkout(db, a))?.workout.note, '');
+  await repo.setWorkoutNote(db, a, '  Shoulder felt off  ');
+  assert.equal((await repo.getWorkout(db, a))?.workout.note, 'Shoulder felt off');
+  await repo.setWorkoutNote(db, a, 'x'.repeat(repo.NOTE_MAX + 50));
+  assert.equal((await repo.getWorkout(db, a))?.workout.note?.length, repo.NOTE_MAX);
+
+  // Another profile cannot delete it.
+  await repo.deleteWorkout(db, 'p2', b);
+  assert.equal((await repo.workoutList(db, 'p1')).length, 2);
+
+  await repo.deleteWorkout(db, 'p1', b);
+  const list = await repo.workoutList(db, 'p1');
+  assert.deepEqual(list.map((w) => [w.id, w.sets]), [[a, 1]]);
+  assert.equal(await repo.getWorkout(db, b), null);
+  const left = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM workout_sets');
+  assert.equal(left?.n, 1);
+});
+
+test('upgrade from schema 1 keeps workouts and adds an empty note', async () => {
+  const db = await freshDb();
+  await repo.createProfile(db, profile('p1'), '2026-11-01');
+  const id = await repo.recordWorkout(db, {
+    profileId: 'p1', routineKey: 'A', routineName: 'Push', type: 'strength', weekStart: '2026-11-02', day: 0,
+    startedAt: 1, finishedAt: 2, cardio: [], sets: [{ exId: 'bench', setNo: 1, kg: 60, reps: 6, pr: false }],
+  });
+  // Back to the version 1 shape, then migrate again.
+  await db.execAsync('ALTER TABLE workouts DROP COLUMN note; PRAGMA user_version = 1;');
+  await migrate(db);
+  const w = await repo.getWorkout(db, id);
+  assert.equal(w?.workout.note, '');
+  assert.equal(w?.sets.length, 1);
 });

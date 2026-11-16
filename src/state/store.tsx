@@ -20,6 +20,7 @@ import * as repo from '@/data/repo';
 import type { NewWorkout, ProfileFields } from '@/data/repo';
 import { removeProfilePhoto } from '@/data/profilePhoto';
 import { isoDate, weekStartOf } from '@/domain/dates';
+import { getLastProfile, setLastProfile } from '@/state/lastProfile';
 import { withWeeklyFromDays } from '@/domain/plan';
 import { makeSession, routineExercises } from '@/domain/session';
 import type { Plan, Profile, Session, Settings } from '@/domain/types';
@@ -58,6 +59,9 @@ type Actions = {
   /** Stores a finished workout, clears the session and returns the workout id. */
   finishWorkout: (w: Omit<NewWorkout, 'profileId'>) => Promise<number>;
   saveBodyWeight: (date: string, kg: number) => Promise<void>;
+  /** Removes a finished workout of the active profile from the history. */
+  deleteWorkout: (workoutId: number) => Promise<void>;
+  setWorkoutNote: (workoutId: number, note: string) => Promise<void>;
 };
 
 type Store = State & Actions & { db: Db };
@@ -93,7 +97,8 @@ function StoreProvider({ children }: PropsWithChildren) {
       ready: true,
       order: loaded.map((l) => l.profile.id),
       byId: Object.fromEntries(loaded.map((l) => [l.profile.id, l])),
-      activeId: s.activeId && loaded.some((l) => l.profile.id === s.activeId) ? s.activeId : null,
+      // Keep the open profile; on a fresh start reopen the one used last.
+      activeId: [s.activeId, getLastProfile()].find((id) => id && loaded.some((l) => l.profile.id === id)) ?? null,
     }));
   }, [db, commit]);
 
@@ -128,12 +133,19 @@ function StoreProvider({ children }: PropsWithChildren) {
     const bumpHistory = () => commit((s) => ({ ...s, historyVersion: s.historyVersion + 1 }));
 
     return {
-      selectProfile: (id) => commit((s) => ({ ...s, activeId: id })),
-      leaveProfile: () => commit((s) => ({ ...s, activeId: null })),
+      selectProfile: (id) => {
+        setLastProfile(id);
+        commit((s) => ({ ...s, activeId: id }));
+      },
+      leaveProfile: () => {
+        setLastProfile(null);
+        commit((s) => ({ ...s, activeId: null }));
+      },
 
       createProfile: async (input) => {
         const profile: Profile = { ...input, id: `p${Date.now()}`, createdAt: Date.now(), photoUri: null };
         await write(() => repo.createProfile(db, profile, isoDate(new Date())));
+        setLastProfile(profile.id);
         commit((s) => ({
           ...s,
           order: [...s.order, profile.id],
@@ -148,6 +160,7 @@ function StoreProvider({ children }: PropsWithChildren) {
         const photo = ref.current.byId[id].profile.photoUri;
         await write(() => repo.deleteProfile(db, id));
         removeProfilePhoto(photo);
+        setLastProfile(null);
         // Leaving the profile sends the router back to the picker (or Welcome when none is left).
         commit((s) => {
           const { [id]: _removed, ...byId } = s.byId;
@@ -209,6 +222,17 @@ function StoreProvider({ children }: PropsWithChildren) {
         const id = active();
         await write(() => repo.saveBodyWeight(db, id, date, kg));
         patchActive((e) => ({ ...e, profile: { ...e.profile, weight: kg } }));
+        bumpHistory();
+      },
+
+      deleteWorkout: async (workoutId) => {
+        const id = active();
+        await write(() => repo.deleteWorkout(db, id, workoutId));
+        bumpHistory();
+      },
+
+      setWorkoutNote: async (workoutId, note) => {
+        await write(() => repo.setWorkoutNote(db, workoutId, note));
         bumpHistory();
       },
     };

@@ -63,7 +63,7 @@ export function liftProgress(exId: string, sets: LiftSetRow[], weeks: string[]):
     title: `${exercise(exId).name}, best set`,
     big: fmt(best.kg),
     unit: 'kg',
-    delta: `${d < 0 ? '−' : '+'}${fmt(Math.abs(d))} kg in 12 weeks`,
+    delta: d === 0 ? (vals.length < 2 ? 'First entry. The trend starts with your next workout.' : 'No change in 12 weeks') : `${d < 0 ? '−' : '+'}${fmt(Math.abs(d))} kg in 12 weeks`,
     vals,
     labels: points.map((p) => weekLabel(p.ws)),
     rows: [

@@ -73,11 +73,11 @@ export default function ExerciseDetail() {
           )}
         </View>
 
-        <UI size={17} lh={1.5} style={{ marginTop: 22 }}>
+        <UI size={17} lh={1.5} style={{ marginTop: 24 }}>
           {e.description}
         </UI>
 
-        <Display size={28} weight={800} style={{ marginTop: 28 }}>
+        <Display size={28} weight={800} style={{ marginTop: 32 }}>
           How to do it
         </Display>
         <View style={styles.steps}>
@@ -97,7 +97,7 @@ export default function ExerciseDetail() {
 
         {stats && (
           <>
-            <Display size={28} weight={800} style={{ marginTop: 28 }}>
+            <Display size={28} weight={800} style={{ marginTop: 32 }}>
               Your numbers
             </Display>
             {stats.map((r) => (
@@ -136,17 +136,17 @@ function Shot({ source, height, caption }: { source: ReturnType<typeof exPhoto>;
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   heroText: { position: 'absolute', left: 20, right: 20, bottom: 0 },
-  body: { paddingTop: 20, paddingHorizontal: 20, paddingBottom: 28 },
-  photos: { flexDirection: 'row', gap: 10 },
-  steps: { gap: 8, marginTop: 12 },
-  step: { flexDirection: 'row', gap: 14, backgroundColor: colors.surface, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16 },
+  body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 32 },
+  photos: { flexDirection: 'row', gap: 8 },
+  steps: { gap: 8, marginTop: 16 },
+  step: { flexDirection: 'row', gap: 16, backgroundColor: colors.surface, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 16 },
   stepNo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.accentFill, alignItems: 'center', justifyContent: 'center' },
   stat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    gap: 12,
-    paddingVertical: 14,
+    gap: 8,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },

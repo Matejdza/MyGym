@@ -152,3 +152,20 @@ test('routine equipment: first use order, no duplicates, aliases merged', () => 
   assert.equal(routineEquipment({ name: 'Dips', items: [{ ex: 'dips', sets: 3, reps: 8 }] }), 'Parallel bars');
   assert.ok(routineEquipment(plan.routines.A).length > 0);
 });
+
+test('search and adding an exercise to a routine', async () => {
+  const { searchExercises, withExerciseAdded, mkPlan } = await import('@/domain/plan');
+  const { EXERCISE_IDS, exercise } = await import('@/data/catalog');
+  const describe = (id: string) => `${exercise(id).name} ${exercise(id).group} ${exercise(id).equipment}`;
+  assert.deepEqual(searchExercises('  ', EXERCISE_IDS, describe), []);
+  assert.ok(searchExercises('bench', EXERCISE_IDS, describe).includes('bench'));
+  assert.ok(searchExercises('BARBELL chest', EXERCISE_IDS, describe).includes('bench'));
+  assert.deepEqual(searchExercises('zzzz', EXERCISE_IDS, describe), []);
+
+  const plan = mkPlan(3);
+  const before = plan.routines.A.items.length;
+  const next = withExerciseAdded(plan, 'A', 'bench');
+  assert.equal(next.routines.A.items.length, before + 1);
+  assert.equal(plan.routines.A.items.length, before, 'original untouched');
+  assert.equal(withExerciseAdded(plan, 'Z', 'bench'), plan);
+});

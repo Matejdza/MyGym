@@ -54,7 +54,7 @@ export function ExerciseSwitcher({
       <Pressable onPress={() => router.push(`/exercise/${exId}`)} accessibilityRole="button" style={styles.current}>
         <Photo source={exPhoto(exId)} style={styles.thumb} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <UI size={13} color={colors.muted}>
+          <UI size={14} color={colors.muted}>
             {position}
           </UI>
           <Display size={25} weight={800} lh={1.02} numberOfLines={1} style={{ marginTop: 2 }}>
@@ -85,12 +85,12 @@ export function ProgressSegments({ states }: { states: ('done' | 'current' | 'to
   );
 }
 
-/** "End workout" → "Tap again to end" (red), resets after 3 s. */
+/** "Discard workout" → "Tap again to discard" (red), resets after 3 s. Says what it does: nothing is saved. */
 export function EndWorkoutButton({ confirming, onPress }: { confirming: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={styles.textBtn}>
       <UI size={14} color={confirming ? colors.red : colors.muted}>
-        {confirming ? 'Tap again to end' : 'End workout'}
+        {confirming ? 'Tap again to discard' : 'Discard workout'}
       </UI>
     </Pressable>
   );

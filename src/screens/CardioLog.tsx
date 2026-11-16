@@ -71,7 +71,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
               Activity timer
             </UI>
             <View style={[styles.zone, { backgroundColor: ZONE_COLORS[a.zone] }]}>
-              <UI size={13} weight={700} color={colors.onPlate}>{`Zone ${a.zone}`}</UI>
+              <UI size={14} weight={700} color={colors.onPlate}>{`Zone ${a.zone}`}</UI>
             </View>
           </View>
           <View style={styles.timerRow}>
@@ -111,7 +111,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
                 accessibilityRole="button"
                 style={[styles.row, { backgroundColor: act || x.done ? colors.surface : 'transparent' }]}>
                 {act ? <Ring width={2} color={colors.accent} radius={14} /> : !x.done && <Ring width={1} color={colors.line} radius={14} />}
-                <Mono size={13} color={colors.muted} style={{ width: 22 }}>
+                <Mono size={14} color={colors.muted} style={{ width: 22 }}>
                   {String(i + 1)}
                 </Mono>
                 <UI size={15} weight={600} numberOfLines={1} color={x.done || act ? colors.ink : colors.muted} style={{ flex: 1 }}>
@@ -120,7 +120,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
                 <Mono size={14} weight={500} color={x.done || act ? colors.ink : colors.muted}>
                   {x.done ? `${x.min} min, ${fmt(x.v)} ${ee.unit === 'km' ? 'km' : 'fl'}` : `${x.target} min`}
                 </Mono>
-                <UI size={13} weight={700} align="right" color={act ? colors.accent : colors.muted} style={{ minWidth: 34 }}>
+                <UI size={14} weight={700} align="right" color={act ? colors.accent : colors.muted} style={{ minWidth: 34 }}>
                   {x.done ? 'Done' : act ? 'Now' : ''}
                 </UI>
               </Pressable>

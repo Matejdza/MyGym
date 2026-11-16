@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EndWorkoutButton, ExerciseSwitcher, LogTopBar, ProgressSegments, logStyles } from '@/components/LogChrome';
-import { KeypadInput, ScaleRuler, StepRow, rulerConf } from '@/components/SetInputs';
+import { confirm } from '@/components/confirm';
+import { StepRow } from '@/components/SetInputs';
 import { Mono, UI } from '@/components/Txt';
 import { PrimaryButton, Ring } from '@/components/ui';
 import { exercise } from '@/data/catalog';
 import * as repo from '@/data/repo';
 import { fmt, mmss } from '@/domain/format';
-import { isTimed, maxReps, repsStep, repsUnit } from '@/domain/plan';
+import { isTimed, maxReps, repsStep } from '@/domain/plan';
 import * as S from '@/domain/strength';
 import type { StrengthSession } from '@/domain/types';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
@@ -31,9 +32,8 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   const insets = useSafeAreaInsets();
   const now = useNow(500);
 
-  // Keypad typing state; cleared whenever the selection or value changes another way.
-  const [field, setField] = useState<S.Field>('w');
-  const [padText, setPadText] = useState<string | null>(null);
+  // Exercises where logging 0 kg was confirmed, so the question is asked once per exercise.
+  const zeroOk = useRef(new Set<string>());
   const { confirming, endWorkout, finish: finishWith } = useEndWorkout(s, 'Finish without logging any sets?');
 
   const e = s.ex[s.cur];
@@ -52,28 +52,25 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
 
   const lastTime = useDbQuery((db) => repo.lastSets(db, profile.id, e.id), [profile.id, e.id]);
 
-  const update = (next: StrengthSession, keepPad = false) => {
-    if (!keepPad) setPadText(null);
-    setSession(next);
+  const update = (next: StrengthSession) => setSession(next);
+
+  const finish = () => {
+    const open = s.ex.reduce((n, x) => n + x.sets.filter((y) => !y.done).length, 0);
+    return finishWith({ sets: S.loggedSets(s), cardio: [] }, open ? `${open} ${open === 1 ? 'set' : 'sets'}` : undefined);
   };
 
-  const finish = () => finishWith({ sets: S.loggedSets(s), cardio: [] });
-
-  const main = () => {
+  const main = async () => {
     if (set) {
-      setField('w');
       primeRestSignal();
+      // A weighted exercise left at 0 kg is usually a forgotten weight, not a real set.
+      if (set.w === 0 && !ex.bodyweight && !timed && !zeroOk.current.has(e.id)) {
+        if (!(await confirm('Log this set with 0 kg?', 'Log set', 'Set the weight first if you lifted something.'))) return;
+        zeroOk.current.add(e.id);
+      }
       // Rest set on this exercise in the routine, otherwise the profile setting.
       update(S.logSet(s, Date.now(), e.rest ?? settings.restSeconds));
     } else if (last) finish();
     else update(S.goExercise(s, 1));
-  };
-
-  const onKey = (k: string) => {
-    const res = S.keypad(padText, k, field);
-    if (!res) return;
-    setPadText(res.text);
-    update(S.setValue(s, field, res.value), true);
   };
 
   let lastLine: string | null = null;
@@ -121,13 +118,13 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               ) : (
                 !x.done && <Ring width={1} color={colors.line} radius={14} />
               )}
-              <Mono size={13} color={colors.muted} style={{ width: 28 }}>
+              <Mono size={14} color={colors.muted} style={{ width: 28 }}>
                 {String(i + 1)}
               </Mono>
               <Mono size={18} weight={500} color={x.done || active ? colors.ink : colors.muted} style={{ flex: 1 }}>
                 {timed && x.w === 0 ? `${x.r} s` : `${fmt(x.w)} kg × ${x.r}${timed ? ' s' : ''}`}
               </Mono>
-              <UI size={13} weight={700} color={x.pr || active ? colors.accent : colors.muted}>
+              <UI size={14} weight={700} color={x.pr || active ? colors.accent : colors.muted}>
                 {status}
               </UI>
             </Pressable>
@@ -153,7 +150,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               {mmss(restLeft)}
             </Mono>
             <Pressable onPress={() => update(S.addRest(s, 30000))} accessibilityRole="button" style={styles.plus30}>
-              <Mono size={13}>+30 s</Mono>
+              <Mono size={14}>+30 s</Mono>
             </Pressable>
             <Pressable onPress={() => update(S.skipRest(s))} accessibilityRole="button" style={styles.skip}>
               <UI size={15} weight={600}>
@@ -166,7 +163,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
           </View>
         )}
 
-        {set && settings.inputVariant === 'stepper' && (
+        {set && (
           <>
             <StepRow
               value={fmt(set.w)}
@@ -184,27 +181,6 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               onInc={() => update(S.adjust(s, 'r', repsStep(e.id)))}
               input={{ min: 1, max: maxReps(e.id), value: set.r, onSet: (v) => update(S.setValue(s, 'r', v)) }}
             />
-          </>
-        )}
-
-        {set && settings.inputVariant === 'keypad' && (
-          <KeypadInput
-            field={field}
-            wShown={field === 'w' && padText != null ? padText || '0' : fmt(set.w)}
-            rShown={field === 'r' && padText != null ? padText || '0' : String(set.r)}
-            onFocus={(f) => {
-              setField(f);
-              setPadText(null);
-            }}
-            onKey={onKey}
-            rLabel={repsUnit(e.id)}
-          />
-        )}
-
-        {set && settings.inputVariant === 'scale' && (
-          <>
-            <ScaleRuler f="w" label="kg" value={set.w} conf={rulerConf('w', settings.weightStep)} onChange={(v) => update(S.setValue(s, 'w', v))} />
-            <ScaleRuler f="r" label={repsUnit(e.id)} value={set.r} conf={rulerConf('r', settings.weightStep)} onChange={(v) => update(S.setValue(s, 'r', v))} />
           </>
         )}
 

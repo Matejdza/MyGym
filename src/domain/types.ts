@@ -137,6 +137,8 @@ export type WorkoutRecord = {
   weekStart: string;
   startedAt: number;
   finishedAt: number;
+  /** Free text added on the summary screen; empty when there is none. */
+  note?: string;
 };
 
 export type LoggedSet = { exId: string; setNo: number; kg: number; reps: number; pr: boolean };

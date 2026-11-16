@@ -31,11 +31,11 @@ export default function Plan() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]}>
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 18 }}>
+      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 16 }}>
         Training plan
       </Display>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 22 }}>
+      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
         Schedule
       </UI>
       <View style={styles.days}>
@@ -43,7 +43,7 @@ export default function Plan() {
           const k = plan.days[i];
           return (
             <Pressable key={d} onPress={() => setPlan(withDayCycled(plan, i))} accessibilityRole="button" style={styles.day}>
-              <UI size={13} weight={600} color={colors.muted}>
+              <UI size={14} weight={600} color={colors.muted}>
                 {d}
               </UI>
               <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
@@ -56,11 +56,11 @@ export default function Plan() {
           );
         })}
       </View>
-      <UI size={14} color={colors.muted} style={{ marginTop: 12 }}>
+      <UI size={14} color={colors.muted} style={{ marginTop: 16 }}>
         {`${workoutsText(plan)}. Tap a day to change its routine or make it a rest day.`}
       </UI>
 
-      <Display size={28} weight={800} style={{ marginTop: 30 }}>
+      <Display size={28} weight={800} style={{ marginTop: 32 }}>
         Routines
       </Display>
       <View style={styles.list}>
@@ -73,7 +73,7 @@ export default function Plan() {
                 <UI size={17} weight={600}>
                   {r.name}
                 </UI>
-                <UI size={14} color={colors.muted} style={{ marginTop: 3 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                   {routineMeta(r).list}
                 </UI>
               </View>
@@ -107,22 +107,22 @@ export default function Plan() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 28 },
-  days: { flexDirection: 'row', gap: 5, marginTop: 10 },
+  content: { paddingHorizontal: 16, paddingBottom: 32 },
+  days: { flexDirection: 'row', gap: 8, marginTop: 8 },
   day: { flex: 1, alignItems: 'center', gap: 8 },
   dayCircle: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  list: { gap: 8, marginTop: 12 },
+  list: { gap: 8, marginTop: 16 },
   routine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
     backgroundColor: colors.surface,
     borderRadius: 20,
-    paddingVertical: 10,
-    paddingLeft: 10,
+    paddingVertical: 8,
+    paddingLeft: 8,
     paddingRight: 16,
   },
-  newRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  newRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   newBtn: {
     flex: 1,
     height: 56,
