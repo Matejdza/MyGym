@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
+import { Hero } from '@/components/Hero';
+import { Photo, heroStops } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
 import { PrimaryButton } from '@/components/ui';
@@ -17,7 +18,6 @@ import { canStart } from '@/domain/session';
 import type { Plan } from '@/domain/types';
 import { homeWeekCells } from '@/domain/week';
 import { useActive, useDbQuery, useStore } from '@/state/store';
-import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 const RECORDS_SHOWN = 4;
@@ -43,7 +43,6 @@ function nextLine(plan: Plan, today: number): string {
 export default function Home() {
   const { profile, session } = useActive();
   const { startWorkout } = useStore();
-  const top = useTop();
   const plan = profile.plan;
 
   const now = new Date();
@@ -107,10 +106,13 @@ export default function Home() {
 
   return (
     <ScrollView style={styles.screen} showsVerticalScrollIndicator={false}>
-      <View style={{ height: top(500) }} {...DARK_SCOPE}>
-        <Photo source={IMAGES.hero} style={StyleSheet.absoluteFill} />
-        <Shade stops={heroStops(0.7, [0.24, 0.42], 0.88)} />
-        <View style={[styles.topBar, { top: top(54) }]}>
+      <Hero
+        source={IMAGES.hero}
+        height={500}
+        cardHeight={280}
+        photoTop
+        stops={heroStops(0.7, [0.24, 0.42], 0.88)}
+        bar={
           <Pressable
             onPress={() => router.push('/profile')}
             accessibilityRole="button"
@@ -120,30 +122,28 @@ export default function Home() {
               {(profile.name[0] || '?').toUpperCase()}
             </Display>
           </Pressable>
+        }>
+        <UI size={15} weight={600} color={colors.accent}>
+          {fullDate(now)}
+        </UI>
+        <Display size={64} weight={900} lh={0.88} style={{ marginTop: 8 }}>
+          {title}
+        </Display>
+        <UI size={16} style={{ marginTop: 8, opacity: 0.8 }}>
+          {meta}
+        </UI>
+        <View style={styles.ctaRow}>
+          {!finished && <PrimaryButton label={ctaLabel} onPress={ctaGo} height={52} fontSize={20} style={{ flex: 1 }} />}
+          <Pressable
+            onPress={viewGo}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.viewPill, finished && { flex: 1 }, pressed && { backgroundColor: colors.surface }]}>
+            <UI size={16} weight={600}>
+              {viewLabel}
+            </UI>
+          </Pressable>
         </View>
-        <View style={styles.heroText}>
-          <UI size={15} weight={600} color={colors.accent}>
-            {fullDate(now)}
-          </UI>
-          <Display size={64} weight={900} lh={0.88} style={{ marginTop: 8 }}>
-            {title}
-          </Display>
-          <UI size={16} style={{ marginTop: 8, opacity: 0.8 }}>
-            {meta}
-          </UI>
-          <View style={styles.ctaRow}>
-            {!finished && <PrimaryButton label={ctaLabel} onPress={ctaGo} height={52} fontSize={20} style={{ flex: 1 }} />}
-            <Pressable
-              onPress={viewGo}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.viewPill, finished && { flex: 1 }, pressed && { backgroundColor: colors.surface }]}>
-              <UI size={16} weight={600}>
-                {viewLabel}
-              </UI>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+      </Hero>
 
       <View style={styles.week}>
         <View style={styles.sectionHead}>
@@ -304,16 +304,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
   ctaRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   viewPill: {
     height: 52,

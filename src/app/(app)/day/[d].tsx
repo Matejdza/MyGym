@@ -3,9 +3,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlateBadge } from '@/components/Cover';
-import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
+import { Hero } from '@/components/Hero';
+import { Photo } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
-import { BackPill, PrimaryButton } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
 import { coverPhoto, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
@@ -14,7 +15,6 @@ import { fmt } from '@/domain/format';
 import { routineMeta, schemeText } from '@/domain/plan';
 import { canStart } from '@/domain/session';
 import { useActive, useDbQuery, useStore } from '@/state/store';
-import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 /** One day of the plan: cover, exercise list and the start button. */
@@ -23,7 +23,6 @@ export default function DayDetail() {
   const day = Math.min(6, Math.max(0, Number(d) || 0));
   const { profile, session } = useActive();
   const { startWorkout } = useStore();
-  const top = useTop();
   const insets = useSafeAreaInsets();
 
   const plan = profile.plan;
@@ -58,14 +57,14 @@ export default function DayDetail() {
     return (
       <View style={styles.screen}>
         <ScrollView style={{ flex: 1 }}>
-          <Hero top={top} source={null} onBack={back}>
+          <DayHero source={null} onBack={back}>
             <UI size={15} weight={600}>
               {DAYS_FULL[day]}
             </UI>
             <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
               Rest day
             </Display>
-          </Hero>
+          </DayHero>
           <View style={styles.list}>
             <EditLink label="Edit this routine" onPress={() => router.push('/plan')} />
           </View>
@@ -88,7 +87,7 @@ export default function DayDetail() {
   return (
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }}>
-        <Hero top={top} source={coverPhoto(r)} onBack={back}>
+        <DayHero source={coverPhoto(r)} onBack={back}>
           <View style={styles.badgeRow}>
             <PlateBadge routineKey={key} size={28} fontSize={13} />
             <UI size={15} weight={600}>{`${DAYS_FULL[day]}, ${dateLabel}`}</UI>
@@ -99,7 +98,7 @@ export default function DayDetail() {
           <UI size={16} style={{ marginTop: 8, opacity: 0.8 }}>
             {routineMeta(r).long}
           </UI>
-        </Hero>
+        </DayHero>
 
         <View style={styles.list}>
           {r.type === 'cardio'
@@ -133,24 +132,11 @@ export default function DayDetail() {
   );
 }
 
-function Hero({
-  top,
-  source,
-  onBack,
-  children,
-}: {
-  top: (n: number) => number;
-  source: ReturnType<typeof coverPhoto>;
-  onBack: () => void;
-  children: React.ReactNode;
-}) {
+function DayHero({ source, onBack, children }: { source: ReturnType<typeof coverPhoto>; onBack: () => void; children: React.ReactNode }) {
   return (
-    <View style={{ height: top(330) }} {...DARK_SCOPE}>
-      <Photo source={source} style={StyleSheet.absoluteFill} />
-      <Shade stops={heroStops(0.7, [0.3, 0.45], 0.96)} />
-      <BackPill onPress={onBack} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />
-      <View style={styles.heroText}>{children}</View>
-    </View>
+    <Hero source={source} height={330} cardHeight={200} onBack={onBack}>
+      {children}
+    </Hero>
   );
 }
 
@@ -191,7 +177,6 @@ function Footer({ bottom, children }: { bottom: number; children: React.ReactNod
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   list: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 24 },
   row: {

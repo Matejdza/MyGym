@@ -24,6 +24,8 @@ home screen). The owner writes in Serbian; answer in Serbian.
   photos go in `assets/photos/` and the `PHOTOS` map in `src/data/photos.ts`.
 
 ## Product decisions (from the owner)
+- Audience: very busy people (profile and plan in a few steps, everything clear at a glance) and
+  gym beginners who need guidance. Prefer fewer steps and settings, plain words, a clear next step.
 - First launch is empty (Welcome → onboarding), no demo profiles.
 - Exercises without history start at 0 kg; later sessions start from the last working weight.
 - No history → hide "Last time" lines and "Your numbers"; charts say "No workouts logged yet."
@@ -74,6 +76,10 @@ home screen). The owner writes in Serbian; answer in Serbian.
   can be deleted and has a note (summary screen; `workouts.note`, schema v2). Routine items are one
   line with Edit, one open at a time. Tab bar: icons in a pill + labels, active = ink pill
   (`src/components/TabBar.tsx`). Home also shows week totals, "Coming up" and "Last workout".
+- Photos (2026-11-18): the home photo (`assets/photos/hero.jpg`, owner's photo of a man and a woman) is
+  also on Welcome and the profile picker. Big photos go through `src/components/Hero.tsx`: dark theme =
+  full-bleed photo with text over it; light theme = rounded photo card with the text below on the
+  page (`useIsLight` in `src/theme/themePref.ts`), because all photos are dark gym shots.
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirm } from '@/components/confirm';
-import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
+import { Hero } from '@/components/Hero';
+import { dark } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { InkDisplayButton } from '@/components/ui';
 import { IMAGES } from '@/data/photos';
@@ -12,7 +13,6 @@ import * as repo from '@/data/repo';
 import { cardioSummary, strengthSummary } from '@/domain/cardio';
 import { shortDate } from '@/domain/dates';
 import { useActive, useDbQuery, useStore } from '@/state/store';
-import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
 
 /** "Workout done": the totals as one list card and new records (strength) or activities (cardio). */
@@ -21,7 +21,6 @@ export default function Summary() {
   // Opened from All workouts: show when it was and go back to the list.
   const past = from === 'history';
   const { profile } = useActive();
-  const top = useTop();
   const insets = useSafeAreaInsets();
   const data = useDbQuery((db) => repo.getWorkout(db, Number(id)), [id]);
 
@@ -66,25 +65,24 @@ export default function Summary() {
   return (
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={{ height: top(300) }} {...DARK_SCOPE}>
-          <Photo source={IMAGES.workoutDone} style={StyleSheet.absoluteFill} />
-          <Shade
-            stops={[
-              [0, dark(0.6)],
-              [0.3, dark(0)],
-              [0.96, colors.bg],
-              [1, colors.bg],
-            ]}
-          />
-          <View style={styles.heroText}>
-            <UI size={15} weight={600} color={colors.accent}>
-              {w ? (past ? `${w.routineName}, ${shortDate(new Date(w.finishedAt))}` : w.routineName) : ''}
-            </UI>
-            <Display size={68} weight={900} lh={0.88} style={{ marginTop: 8 }}>
-              Workout done
-            </Display>
-          </View>
-        </View>
+        <Hero
+          source={IMAGES.workoutDone}
+          height={300}
+          cardHeight={200}
+          photoTop
+          stops={[
+            [0, dark(0.6)],
+            [0.3, dark(0)],
+            [0.96, colors.bg],
+            [1, colors.bg],
+          ]}>
+          <UI size={15} weight={600} color={colors.accent}>
+            {w ? (past ? `${w.routineName}, ${shortDate(new Date(w.finishedAt))}` : w.routineName) : ''}
+          </UI>
+          <Display size={68} weight={900} lh={0.88} style={{ marginTop: 8 }}>
+            Workout done
+          </Display>
+        </Hero>
 
         {summary && (
           <View style={styles.body}>
@@ -154,7 +152,6 @@ export default function Summary() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
   body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 24 },
   stats: { backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 16 },
   stat: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingVertical: 16 },

@@ -1,15 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Photo, Shade, heroStops, DARK_SCOPE } from '@/components/Photo';
+import { Hero } from '@/components/Hero';
+import { Photo, heroStops } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
-import { BackPill } from '@/components/ui';
 import { ALL_GROUPS, EX, exercise } from '@/data/catalog';
 import { PHOTOS, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { exerciseStats } from '@/domain/stats';
 import { useActive, useDbQuery } from '@/state/store';
-import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
 
 /** Exercise page: hero photo, position photos, how-to steps and "Your numbers". */
@@ -18,7 +17,6 @@ export default function ExerciseDetail() {
   const id = raw && raw in EX ? raw : 'bench';
   const e = exercise(id);
   const { profile } = useActive();
-  const top = useTop();
   const cardio = e.kind === 'cardio';
 
   const stats = useDbQuery(
@@ -46,17 +44,12 @@ export default function ExerciseDetail() {
 
   return (
     <ScrollView style={styles.screen}>
-      <View style={{ height: top(340) }} {...DARK_SCOPE}>
-        <Photo source={exPhoto(id, 0)} style={StyleSheet.absoluteFill} top />
-        <Shade stops={heroStops(0.7, [0.28, 0.5], 0.97)} />
-        <BackPill onPress={() => router.back()} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />
-        <View style={styles.heroText}>
-          <UI size={15} weight={600} color={colors.accent}>{`${group}, ${e.equipment}`}</UI>
-          <Display size={54} weight={900} lh={0.9} style={{ marginTop: 8 }}>
-            {e.name}
-          </Display>
-        </View>
-      </View>
+      <Hero source={exPhoto(id, 0)} height={340} cardHeight={240} photoTop stops={heroStops(0.7, [0.28, 0.5], 0.97)} onBack={() => router.back()}>
+        <UI size={15} weight={600} color={colors.accent}>{`${group}, ${e.equipment}`}</UI>
+        <Display size={54} weight={900} lh={0.9} style={{ marginTop: 8 }}>
+          {e.name}
+        </Display>
+      </Hero>
 
       <View style={styles.body}>
         <View style={styles.photos}>
@@ -135,7 +128,6 @@ function Shot({ source, height, caption }: { source: ReturnType<typeof exPhoto>;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  heroText: { position: 'absolute', left: 20, right: 20, bottom: 0 },
   body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 32 },
   photos: { flexDirection: 'row', gap: 8 },
   steps: { gap: 8, marginTop: 16 },

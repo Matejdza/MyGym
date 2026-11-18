@@ -3,6 +3,7 @@
 // CSS variables (see tokens.ts and public/index.html). Web only: the native
 // build stays dark.
 
+import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
@@ -21,6 +22,30 @@ export function getThemePref(): ThemePref {
   }
 }
 
+const listeners = new Set<() => void>();
+const LIGHT_QUERY = '(prefers-color-scheme: light)';
+
+/** True when the app is showing the light theme (the choice, or the phone's setting on Auto). */
+function lightNow(): boolean {
+  if (!THEME_SWITCH) return false;
+  const pref = getThemePref();
+  return pref === 'light' || (pref === 'auto' && !!window.matchMedia?.(LIGHT_QUERY).matches);
+}
+
+function subscribe(onChange: () => void) {
+  if (!THEME_SWITCH) return () => {};
+  listeners.add(onChange);
+  const mq = window.matchMedia?.(LIGHT_QUERY);
+  mq?.addEventListener?.('change', onChange);
+  return () => {
+    listeners.delete(onChange);
+    mq?.removeEventListener?.('change', onChange);
+  };
+}
+
+/** Re-renders when the theme changes (switch in Profile, or the phone on Auto). */
+export const useIsLight = () => useSyncExternalStore(subscribe, lightNow, () => false);
+
 export function setThemePref(pref: ThemePref) {
   if (!THEME_SWITCH) return;
   try {
@@ -33,4 +58,5 @@ export function setThemePref(pref: ThemePref) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1C1C1A' : '#F4F2EC');
   // iOS only reads this when the home-screen app opens; it takes effect next launch.
   document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute('content', dark ? 'black-translucent' : 'default');
+  listeners.forEach((l) => l());
 }
