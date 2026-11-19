@@ -3,23 +3,23 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Photo } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
-import { exPhoto } from '@/data/photos';
+import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** Back · elapsed timer · Finish. */
 export function LogTopBar({ elapsed, onFinish }: { elapsed: string; onFinish: () => void }) {
   return (
     <View style={styles.topBar}>
       <BackPill onPress={() => router.back()} />
-      <Mono size={17} weight={500}>
+      <Mono size={20} weight={500}>
         {elapsed}
       </Mono>
       <Pressable onPress={onFinish} accessibilityRole="button" style={styles.finish}>
-        <UI size={15} weight={600}>
-          Finish
+        <UI size={16} weight={600}>
+          {t('Finish')}
         </UI>
       </Pressable>
     </View>
@@ -46,24 +46,24 @@ export function ExerciseSwitcher({
 }) {
   return (
     <View style={styles.switcher}>
-      <Pressable onPress={onPrev} accessibilityRole="button" accessibilityLabel="Previous" style={styles.arrow}>
-        <UI size={22} color={canPrev ? colors.ink : colors.muted}>
+      <Pressable onPress={onPrev} accessibilityRole="button" accessibilityLabel={t('Previous')} style={styles.arrow}>
+        <UI size={24} color={canPrev ? colors.ink : colors.muted}>
           ‹
         </UI>
       </Pressable>
       <Pressable onPress={() => router.push(`/exercise/${exId}`)} accessibilityRole="button" style={styles.current}>
-        <Photo source={exPhoto(exId)} style={styles.thumb} />
+        <ExerciseThumb id={exId} size={52} radius={12} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <UI size={14} color={colors.muted}>
             {position}
           </UI>
-          <Display size={25} weight={800} lh={1.02} numberOfLines={1} style={{ marginTop: 2 }}>
+          <Display size={24} weight={800} lh={1.02} numberOfLines={1} style={{ marginTop: 2 }}>
             {name}
           </Display>
         </View>
       </Pressable>
-      <Pressable onPress={onNext} accessibilityRole="button" accessibilityLabel="Next" style={styles.arrow}>
-        <UI size={22} color={canNext ? colors.ink : colors.muted}>
+      <Pressable onPress={onNext} accessibilityRole="button" accessibilityLabel={t('Next')} style={styles.arrow}>
+        <UI size={24} color={canNext ? colors.ink : colors.muted}>
           ›
         </UI>
       </Pressable>
@@ -90,7 +90,7 @@ export function EndWorkoutButton({ confirming, onPress }: { confirming: boolean;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={styles.textBtn}>
       <UI size={14} color={confirming ? colors.red : colors.muted}>
-        {confirming ? 'Tap again to discard' : 'Discard workout'}
+        {confirming ? t('Tap again to discard') : t('Discard workout')}
       </UI>
     </Pressable>
   );

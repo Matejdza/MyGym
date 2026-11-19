@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirm } from '@/components/confirm';
 import { Hero } from '@/components/Hero';
+import { Confetti } from '@/components/Confetti';
+import { Appear } from '@/components/Motion';
 import { dark } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { InkDisplayButton } from '@/components/ui';
@@ -13,7 +15,9 @@ import * as repo from '@/data/repo';
 import { cardioSummary, strengthSummary } from '@/domain/cardio';
 import { shortDate } from '@/domain/dates';
 import { useActive, useDbQuery, useStore } from '@/state/store';
+import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** "Workout done": the totals as one list card and new records (strength) or activities (cardio). */
 export default function Summary() {
@@ -22,6 +26,8 @@ export default function Summary() {
   const past = from === 'history';
   const { profile } = useActive();
   const insets = useSafeAreaInsets();
+  const top = useTop();
+  const { width } = useWindowDimensions();
   const data = useDbQuery((db) => repo.getWorkout(db, Number(id)), [id]);
 
   const { deleteWorkout, setWorkoutNote } = useStore();
@@ -39,13 +45,9 @@ export default function Summary() {
 
   const remove = async () => {
     if (!w) return;
-    if (!(await confirm('Delete this workout?', 'Delete', 'Its sets are removed from your history and progress. This cannot be undone.'))) return;
+    if (!(await confirm(t('Delete this workout?'), t('Delete'), t('Its sets are removed from your history and progress. This cannot be undone.'), true))) return;
     await deleteWorkout(w.id);
-    if (past) router.back();
-    else {
-      if (router.canDismiss()) router.dismissAll();
-      router.navigate('/');
-    }
+    router.back();
   };
   let summary = null;
   if (data && w) {
@@ -68,58 +70,63 @@ export default function Summary() {
         <Hero
           source={IMAGES.workoutDone}
           height={300}
-          cardHeight={200}
+          cardHeight={240}
           photoTop
           stops={[
             [0, dark(0.6)],
             [0.3, dark(0)],
             [0.96, colors.bg],
             [1, colors.bg],
-          ]}>
-          <UI size={15} weight={600} color={colors.accent}>
-            {w ? (past ? `${w.routineName}, ${shortDate(new Date(w.finishedAt))}` : w.routineName) : ''}
-          </UI>
-          <Display size={68} weight={900} lh={0.88} style={{ marginTop: 8 }}>
-            Workout done
-          </Display>
-        </Hero>
+          ]}
+          caption={
+            <>
+              <UI size={16} weight={600} color={colors.accent}>
+                {w ? (past ? `${w.routineName}, ${shortDate(new Date(w.finishedAt))}` : w.routineName) : ''}
+              </UI>
+              {/* One line on every phone width (the design's 68 pt wrapped to two lines). */}
+              <Display size={56} weight={900} lh={0.9} numberOfLines={1} style={{ marginTop: 8 }}>
+                {t('Workout done')}
+              </Display>
+            </>
+          }
+        />
 
         {summary && (
           <View style={styles.body}>
             <View style={styles.stats}>
               {summary.rows.map((r, i) => (
-                <View key={r.k} style={[styles.stat, i < summary.rows.length - 1 && styles.statLine]}>
+                <Appear key={r.k} index={i + 1} style={[styles.stat, i < summary.rows.length - 1 && styles.statLine]}>
                   <UI size={16} color={colors.muted}>
                     {r.k}
                   </UI>
                   <Mono size={20} weight={500} numberOfLines={1}>
                     {r.v}
                   </Mono>
-                </View>
+                </Appear>
               ))}
             </View>
             {summary.list.length > 0 && (
               <>
-                <Display size={28} weight={800} style={{ marginTop: 32 }}>
+                <Display size={32} weight={800} style={{ marginTop: 32 }}>
                   {summary.listTitle}
                 </Display>
                 {summary.list.map((p, i) => (
-                  <View key={i} style={styles.item}>
-                    <UI size={17} weight={600} style={{ flexShrink: 1 }}>
+                  <Appear key={i} index={i + 4} style={styles.item}>
+                    <UI size={20} weight={600} style={{ flexShrink: 1 }}>
                       {p.n}
                     </UI>
                     <View style={styles.pill}>
-                      <Mono size={15} weight={500} color={colors.accentInk}>
+                      <Mono size={16} weight={500} color={colors.accentInk}>
                         {p.v}
                       </Mono>
                     </View>
-                  </View>
+                  </Appear>
                 ))}
               </>
             )}
 
-            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
-              Note
+            <UI size={16} color={colors.muted} style={{ marginTop: 32 }}>
+              {t('Note')}
             </UI>
             <TextInput
               value={noteText}
@@ -128,23 +135,33 @@ export default function Summary() {
               onBlur={saveNote}
               multiline
               maxLength={repo.NOTE_MAX}
-              placeholder="How did it go? Anything to remember next time."
+              placeholder={t('How did it go? Anything to remember next time.')}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Workout note"
+              accessibilityLabel={t('Workout note')}
               textAlignVertical="top"
               style={[styles.note, { borderColor: noteFocused ? colors.accent : colors.line }]}
             />
 
-            <Pressable onPress={remove} accessibilityRole="button" style={({ pressed }) => [styles.delete, pressed && { opacity: 0.6 }]}>
-              <UI size={15} weight={600} color={colors.red}>
-                Delete workout
-              </UI>
-            </Pressable>
+            {/* Not right after finishing (owner, 2026-11-20); only when opened from All workouts. */}
+            {past && (
+              <Pressable onPress={remove} accessibilityRole="button" style={({ pressed }) => [styles.delete, pressed && { opacity: 0.6 }]}>
+                <UI size={16} weight={600} color={colors.red}>
+                  {t('Delete workout')}
+                </UI>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>
-      <View style={{ paddingTop: 8, paddingHorizontal: 16, paddingBottom: 16 + insets.bottom }}>
-        <InkDisplayButton label={past ? 'BACK' : 'BACK TO HOME'} onPress={past ? () => router.back() : home} />
+      {/* A finished workout gets a small celebration; one opened from the list does not. */}
+      {!past && data && <Confetti x={width / 2} y={top(270)} />}
+      <View
+        style={{
+          paddingTop: 8,
+          paddingHorizontal: 16,
+          paddingBottom: 16 + insets.bottom,
+        }}>
+        <InkDisplayButton label={past ? t('BACK') : t('BACK TO HOME')} onPress={past ? () => router.back() : home} />
       </View>
     </View>
   );
@@ -153,8 +170,18 @@ export default function Summary() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 24 },
-  stats: { backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 16 },
-  stat: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingVertical: 16 },
+  stats: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+  },
+  stat: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 16,
+  },
   statLine: { borderBottomWidth: 1, borderBottomColor: colors.line },
   item: {
     flexDirection: 'row',
@@ -177,6 +204,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
-  delete: { height: 48, marginTop: 16, alignItems: 'center', justifyContent: 'center' },
-  pill: { backgroundColor: colors.accentFill, paddingVertical: 8, paddingHorizontal: 8, borderRadius: 12 },
+  delete: {
+    height: 48,
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pill: {
+    backgroundColor: colors.accentFill,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
 });

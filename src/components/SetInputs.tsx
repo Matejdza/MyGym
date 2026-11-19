@@ -36,13 +36,13 @@ export function StepRow({
       <RoundButton sign="−" size={74} fitHeight fontSize={28} onPress={onDec} />
       <View style={styles.stepValue}>
         {input ? (
-          <NumberField input={input} display={value} size={42} label={label} onError={setError} />
+          <NumberField input={input} display={value} size={40} label={label} onError={setError} />
         ) : (
-          <Mono size={42} weight={500} lh={1} spacing={-0.05}>
+          <Mono size={40} weight={500} lh={1} spacing={-0.05}>
             {value}
           </Mono>
         )}
-        <UI size={13} color={error ? colors.red : colors.muted} numberOfLines={1} style={{ marginTop: input ? 2 : 6 }}>
+        <UI size={14} color={error ? colors.red : colors.muted} numberOfLines={1} style={{ marginTop: input ? 2 : 6 }}>
           {error ?? label}
         </UI>
       </View>

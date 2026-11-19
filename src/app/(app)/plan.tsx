@@ -10,6 +10,7 @@ import { newRoutine, nextRoutineKey, routineMeta, sortedKeys, withDayCycled, wor
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, plate } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /**
  * The 7-day schedule and the routine list. Workouts a week follow the days that
@@ -31,12 +32,12 @@ export default function Plan() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]}>
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 16 }}>
-        Training plan
+      <Display size={56} weight={900} lh={0.9} style={{ marginTop: 16 }}>
+        {t('Training plan')}
       </Display>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
-        Schedule
+      <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
+        {t('Schedule')}
       </UI>
       <View style={styles.days}>
         {DAYS.map((d, i) => {
@@ -57,27 +58,27 @@ export default function Plan() {
         })}
       </View>
       <UI size={14} color={colors.muted} style={{ marginTop: 16 }}>
-        {`${workoutsText(plan)}. Tap a day to change its routine or make it a rest day.`}
+        {`${workoutsText(plan)}. ${t('Tap a day to change its routine or make it a rest day.')}`}
       </UI>
 
-      <Display size={28} weight={800} style={{ marginTop: 32 }}>
-        Routines
+      <Display size={32} weight={800} style={{ marginTop: 32 }}>
+        {t('Routines')}
       </Display>
       <View style={styles.list}>
         {sortedKeys(plan).map((k) => {
           const r = plan.routines[k];
           return (
             <Pressable key={k} onPress={() => router.push(`/routine/${k}`)} accessibilityRole="button" style={styles.routine}>
-              <CoverThumb source={coverPhoto(r)} routineKey={k} size={58} radius={13} badge={22} badgeFont={11} inset={5} />
+              <CoverThumb source={coverPhoto(r)} size={58} radius={13} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <UI size={17} weight={600}>
+                <UI size={20} weight={600}>
                   {r.name}
                 </UI>
                 <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                   {routineMeta(r).list}
                 </UI>
               </View>
-              <UI size={22} color={colors.muted}>
+              <UI size={24} color={colors.muted}>
                 ›
               </UI>
             </Pressable>
@@ -87,18 +88,18 @@ export default function Plan() {
       <View style={styles.newRow}>
         <Pressable onPress={() => addRoutine('strength')} accessibilityRole="button" style={styles.newBtn}>
           <UI size={16} weight={700}>
-            New strength
+            {t('New strength')}
           </UI>
         </Pressable>
         <Pressable onPress={() => addRoutine('cardio')} accessibilityRole="button" style={styles.newBtn}>
           <UI size={16} weight={700}>
-            New cardio
+            {t('New cardio')}
           </UI>
         </Pressable>
       </View>
       <Pressable onPress={() => router.push('/import')} accessibilityRole="button" style={[styles.newBtn, { flex: 0, marginTop: 8 }]}>
         <UI size={16} weight={700}>
-          Import from text
+          {t('Import from text')}
         </UI>
       </Pressable>
     </ScrollView>

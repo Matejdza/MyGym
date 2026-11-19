@@ -6,6 +6,9 @@
 // The one thing they encoded is kept as `bodyweight: true` (exercises with `cur: 0`).
 
 import type { Exercise, GoalKey, GroupKey, Routine } from '@/domain/types';
+import { EX_MORE, ORDER } from '@/data/catalog.more';
+import { EXERCISES_SR } from '@/i18n/exercises.sr';
+import { getLang, onLang, t } from '@/i18n';
 
 export const EX = {
   bench: {
@@ -440,9 +443,25 @@ export const EX = {
 
 export type ExerciseId = keyof typeof EX;
 
-export const exercise = (id: string): Exercise => (EX as Record<string, Exercise>)[id];
+const localized = new Map<string, Exercise>();
 
-export const EXERCISE_IDS = Object.keys(EX) as ExerciseId[];
+/** The exercise with its texts in the current language (Serbian from i18n/exercises.sr.ts). */
+export const exercise = (id: string): Exercise => {
+  const base = ALL_EX[id];
+  if (!base || getLang() !== 'sr' || !EXERCISES_SR[id]) return base;
+  let e = localized.get(id);
+  if (!e) {
+    e = { ...base, ...EXERCISES_SR[id] };
+    localized.set(id, e);
+  }
+  return e;
+};
+
+/** The 34 exercises above plus the ones added from the owner's list (catalog.more.ts). */
+const ALL_EX: Record<string, Exercise> = { ...(EX as Record<string, Exercise>), ...EX_MORE };
+
+/** Every exercise id, in the owner's library order (grouped by muscle). */
+export const EXERCISE_IDS: string[] = [...ORDER.filter((id) => id in ALL_EX), ...Object.keys(ALL_EX).filter((id) => !ORDER.includes(id))];
 
 /** Strength muscle groups in display order. */
 export const GROUPS: { key: GroupKey; label: string }[] = [
@@ -455,10 +474,15 @@ export const GROUPS: { key: GroupKey; label: string }[] = [
 ];
 
 /** Strength groups plus Cardio. */
-export const ALL_GROUPS: { key: GroupKey; label: string }[] = [...GROUPS, { key: 'cardio', label: 'Cardio' }];
+export const ALL_GROUPS: { key: GroupKey; label: string }[] = [
+  ...GROUPS,
+  { key: 'cardio', label: 'Cardio' },
+  { key: 'functional', label: 'Functional' },
+  { key: 'mobility', label: 'Warm-up & stretching' },
+];
 
 /** Heart-rate zone copy. Index 0 is unused. */
-export const ZONES = ["","Recovery, very easy","Easy, you can hold a conversation","Steady, short sentences only","Hard, a few words at a time","All out"] as const;
+export const ZONES: string[] = ["","Recovery, very easy","Easy, you can hold a conversation","Steady, short sentences only","Hard, a few words at a time","All out"];
 
 export const GOALS: { key: GoalKey; label: string; description: string; color: string }[] = [
   { key: "muscle", label: "Build muscle", description: "More size, steady weight gain", color: "#ff5a3c" },
@@ -469,15 +493,50 @@ export const GOALS: { key: GoalKey; label: string; description: string; color: s
 /** Workouts per week → weekday indexes (0 = Monday). */
 export const PATTERNS: Record<number, number[]> = {"2":[0,3],"3":[0,2,4],"4":[0,1,3,4],"5":[0,1,2,4,5],"6":[0,1,2,3,4,5]};
 
-export const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] as const;
-export const DAYS_FULL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"] as const;
-export const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] as const;
+export const DAYS: string[] = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+export const DAYS_FULL: string[] = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+export const MONTHS: string[] = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-/** Default routines from `routinesDefault()`. Returns a fresh copy each call. */
+// The lists above are shown on screen; their entries are swapped in place when
+// the language changes (the screens remount, so they read the new values).
+const LISTS = {
+  en: {
+    groups: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Functional', 'Warm-up & stretching'],
+    zones: [...ZONES],
+    goals: GOALS.map((g) => [g.label, g.description]),
+    days: [...DAYS],
+    daysFull: [...DAYS_FULL],
+    months: [...MONTHS],
+  },
+  sr: {
+    groups: ['Grudi', 'Leđa', 'Noge', 'Ramena', 'Ruke', 'Trup', 'Kardio', 'Funkcionalno', 'Zagrevanje i istezanje'],
+    zones: ['', 'Oporavak, veoma lako', 'Lako, možeš da pričaš', 'Ujednačeno, samo kratke rečenice', 'Teško, tek po koja reč', 'Maksimalno'],
+    goals: [
+      ['Mišićna masa', 'Više mišića, postepen rast težine'],
+      ['Veća snaga', 'Teži tegovi na glavnim vežbama'],
+      ['Mršavljenje', 'Snaga ostaje dok težina pada'],
+    ],
+    days: ['Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub', 'Ned'],
+    daysFull: ['Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Petak', 'Subota', 'Nedelja'],
+    months: ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'avg', 'sep', 'okt', 'nov', 'dec'],
+  },
+};
+
+onLang((l) => {
+  const L = LISTS[l];
+  ALL_GROUPS.forEach((g, i) => (g.label = L.groups[i]));
+  L.zones.forEach((z, i) => (ZONES[i] = z));
+  GOALS.forEach((g, i) => ([g.label, g.description] = L.goals[i]));
+  L.days.forEach((d, i) => (DAYS[i] = d));
+  L.daysFull.forEach((d, i) => (DAYS_FULL[i] = d));
+  L.months.forEach((m, i) => (MONTHS[i] = m));
+});
+
+/** Default routines from `routinesDefault()`. Returns a fresh copy each call, named in the current language. */
 export function routinesDefault(): Record<string, Routine> {
   return {
     A: {
-      name: "Chest & triceps",
+      name: t('Chest & triceps'),
       items: [
         { ex: "bench", sets: 4, reps: 6 },
         { ex: "incline", sets: 3, reps: 10 },
@@ -486,7 +545,7 @@ export function routinesDefault(): Record<string, Routine> {
       ],
     },
     B: {
-      name: "Back & biceps",
+      name: t('Back & biceps'),
       items: [
         { ex: "deadlift", sets: 3, reps: 5 },
         { ex: "row", sets: 4, reps: 8 },
@@ -495,7 +554,7 @@ export function routinesDefault(): Record<string, Routine> {
       ],
     },
     C: {
-      name: "Legs",
+      name: t('Legs'),
       items: [
         { ex: "squat", sets: 4, reps: 6 },
         { ex: "rdl", sets: 3, reps: 8 },
@@ -504,7 +563,7 @@ export function routinesDefault(): Record<string, Routine> {
       ],
     },
     D: {
-      name: "Shoulders & arms",
+      name: t('Shoulders & arms'),
       items: [
         { ex: "ohp", sets: 4, reps: 6 },
         { ex: "lateral", sets: 3, reps: 15 },
@@ -514,7 +573,7 @@ export function routinesDefault(): Record<string, Routine> {
       ],
     },
     E: {
-      name: "Cardio",
+      name: t('Cardio'),
       type: 'cardio',
       items: [
         { ex: "treadmill", min: 20, zone: 2 },

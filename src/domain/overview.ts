@@ -1,7 +1,7 @@
 // Progress overview (top of the Progress tab): a week, month or year at a glance.
 // Only numbers the app really records: workouts, sets, volume and time.
 
-import { MONTHS_FULL, dayIndex, longDate, mondayOf } from './dates';
+import { MONTHS_FULL, dayIndex, isoDate, longDate, mondayOf } from './dates';
 import { thou } from './format';
 import type { Plan } from './types';
 
@@ -31,10 +31,13 @@ export function periodRange(period: Period, now: Date): Range {
   return { from, to: new Date(now.getFullYear() + 1, 0, 1), label: String(now.getFullYear()) };
 }
 
-/** Workouts the plan schedules in the range (every day that has a routine). */
-export function plannedWorkouts(plan: Plan, range: Range): number {
+/**
+ * Workouts the plan schedules in the range (every day that has a routine),
+ * counting only days on or after `since` (yyyy-mm-dd, the day the profile was made).
+ */
+export function plannedWorkouts(plan: Plan, range: Range, since = ''): number {
   let n = 0;
-  for (const d = new Date(range.from); d < range.to; d.setDate(d.getDate() + 1)) if (plan.days[dayIndex(d)]) n++;
+  for (const d = new Date(range.from); d < range.to; d.setDate(d.getDate() + 1)) if (plan.days[dayIndex(d)] && isoDate(d) >= since) n++;
   return n;
 }
 

@@ -32,7 +32,7 @@ test('migrations are idempotent', async () => {
   const db = await freshDb();
   await migrate(db);
   const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  assert.equal(v?.user_version, 2);
+  assert.equal(v?.user_version, 5);
 });
 
 test('new install has no profiles', async () => {
@@ -300,9 +300,20 @@ test('upgrade from schema 1 keeps workouts and adds an empty note', async () => 
     startedAt: 1, finishedAt: 2, cardio: [], sets: [{ exId: 'bench', setNo: 1, kg: 60, reps: 6, pr: false }],
   });
   // Back to the version 1 shape, then migrate again.
-  await db.execAsync('ALTER TABLE workouts DROP COLUMN note; PRAGMA user_version = 1;');
+  await db.execAsync('ALTER TABLE workouts DROP COLUMN note; ALTER TABLE settings DROP COLUMN language; ALTER TABLE profiles DROP COLUMN setup; ALTER TABLE routines DROP COLUMN extra; ALTER TABLE profiles DROP COLUMN avatar; PRAGMA user_version = 1;');
   await migrate(db);
   const w = await repo.getWorkout(db, id);
   assert.equal(w?.workout.note, '');
   assert.equal(w?.sets.length, 1);
+});
+
+test('each profile keeps its language (English by default)', async () => {
+  const db = await freshDb();
+  await repo.createProfile(db, profile('p1'), '2026-11-01');
+  await repo.createProfile(db, profile('p2', 'Mila'), '2026-11-01', { ...DEFAULT_SETTINGS, language: 'sr' });
+  const [a, b] = await repo.loadProfiles(db);
+  assert.equal(a.settings.language, 'en');
+  assert.equal(b.settings.language, 'sr');
+  await repo.saveSettings(db, 'p1', { ...a.settings, language: 'sr' });
+  assert.equal((await repo.loadProfiles(db))[0].settings.language, 'sr');
 });

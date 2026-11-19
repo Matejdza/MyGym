@@ -1,6 +1,6 @@
 // Data model from README "State and data model", adapted for on-device storage.
 
-export type GroupKey = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'cardio';
+export type GroupKey = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'cardio' | 'functional' | 'mobility';
 export type GoalKey = 'muscle' | 'strength' | 'fat';
 export type Zone = 1 | 2 | 3 | 4 | 5;
 
@@ -20,6 +20,8 @@ export type Exercise = {
   bodyweight?: boolean;
   /** Holds logged in seconds instead of reps (plank). */
   timed?: boolean;
+  /** Warm-up or stretching move: done for a time at the start or end of a workout, never logged. */
+  mobility?: 'warmup' | 'stretch';
 };
 
 export type StrengthItem = {
@@ -34,9 +36,38 @@ export type StrengthItem = {
 };
 export type CardioItem = { ex: string; min: number; zone: number };
 
+/** A warm-up or stretching move done for a time (seconds). */
+export type TimedItem = { ex: string; sec: number };
+
+/** Warm-up before the first exercise and stretching after the last; absent = picked from the routine's muscles. */
+type Mobility = { warmup?: TimedItem[]; stretch?: TimedItem[] };
+
 export type Routine =
-  | { name: string; type?: undefined; items: StrengthItem[] }
-  | { name: string; type: 'cardio'; items: CardioItem[] };
+  | ({ name: string; type?: undefined; items: StrengthItem[] } & Mobility)
+  | ({ name: string; type: 'cardio'; items: CardioItem[] } & Mobility);
+
+// ── Plan builder answers (onboarding) ───────────────────────────────────────
+
+export type Sex = 'male' | 'female';
+export type MainGoal = 'muscle' | 'strength' | 'fat' | 'tone' | 'fitness';
+export type Focus = 'full' | 'chest' | 'back' | 'shoulders' | 'arms' | 'glutes' | 'legs' | 'core';
+export type Experience = 'beginner' | 'intermediate' | 'advanced';
+export type Equipment = 'gym' | 'dumbbells' | 'none';
+
+/** What the plan was built from. Kept with the profile so it can be rebuilt. */
+export type Setup = {
+  sex: Sex;
+  goal: MainGoal;
+  /** Optional second goal. */
+  goal2: MainGoal | null;
+  focus: Focus[];
+  experience: Experience;
+  equipment: Equipment;
+  /** Typical length of a strength workout: up to 45 min, about an hour, or longer. */
+  minutes: 45 | 60 | 90;
+  strengthDays: number;
+  cardioDays: number;
+};
 
 /** Routine keys are single letters A–H. */
 export type RoutineKey = string;
@@ -59,6 +90,10 @@ export type Profile = {
   photoUri: string | null;
   plan: Plan;
   createdAt: number;
+  /** Profile icon shown instead of the initial when there is no photo (see ProfileIcon.tsx). */
+  avatar?: string | null;
+  /** Answers the plan was built from (profiles made before the plan builder have none). */
+  setup?: Setup | null;
 };
 
 export type InputVariant = 'stepper' | 'keypad' | 'scale';
@@ -68,6 +103,8 @@ export type Settings = {
   weightStep: 1.25 | 2.5 | 5;
   restSeconds: number;
   handedness: 'right' | 'left';
+  /** App language for this profile (chosen when the profile is created). */
+  language: 'en' | 'sr';
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -75,6 +112,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weightStep: 2.5,
   restSeconds: 120,
   handedness: 'right',
+  language: 'en',
 };
 
 // ── Live session (persisted so it survives an app restart) ──────────────────
@@ -104,7 +142,16 @@ type SessionBase = {
   startedAt: number;
   /** Index of the current exercise / activity. */
   cur: number;
+  /** Where the workout is: warm-up, the exercises, or stretching. Absent (older sessions) = main. */
+  phase?: 'warmup' | 'main' | 'stretch';
+  warmup?: MobilityItem[];
+  stretch?: MobilityItem[];
+  /** Timer of the current warm-up / stretch move: which one, when it ends while running, ms left while paused. */
+  mob?: { cur: number; end: number | null; left: number };
 };
+
+/** A warm-up or stretching move in a live workout. */
+export type MobilityItem = { ex: string; sec: number; done: boolean };
 
 export type StrengthSession = SessionBase & {
   type: 'strength';

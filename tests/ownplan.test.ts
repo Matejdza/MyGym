@@ -169,3 +169,20 @@ test('search and adding an exercise to a routine', async () => {
   assert.equal(plan.routines.A.items.length, before, 'original untouched');
   assert.equal(withExerciseAdded(plan, 'Z', 'bench'), plan);
 });
+
+test('every library exercise has its muscles; routines list them by sets', async () => {
+  const { MUSCLES, routineMuscles } = await import('@/domain/muscles');
+  const { EXERCISE_IDS } = await import('@/data/catalog');
+  for (const id of EXERCISE_IDS) assert.ok(MUSCLES[id]?.primary.length, `muscles for ${id}`);
+  const m = routineMuscles({
+    name: 'Push',
+    items: [
+      { ex: 'bench', sets: 4, reps: 6 },
+      { ex: 'pushdown', sets: 3, reps: 12 },
+      { ex: 'lateral', sets: 2, reps: 15 },
+    ],
+  });
+  assert.deepEqual(m.primary, ['chest', 'triceps', 'shoulders']);
+  assert.deepEqual(m.secondary, []);
+  assert.deepEqual(routineMuscles({ name: 'Empty', items: [] }), { primary: [], secondary: [] });
+});

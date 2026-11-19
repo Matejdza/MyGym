@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { UI } from '@/components/Txt';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** One line icon per tab, drawn on a 24 × 24 grid with a 2 pt round stroke. */
 const ICONS: Record<string, string> = {
@@ -26,7 +27,7 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: BottomTab
       {state.routes.map((route, i) => {
         const focused = state.index === i;
         const { options } = descriptors[route.key];
-        const label = typeof options.title === 'string' ? options.title : route.name;
+        const label = t(typeof options.title === 'string' ? options.title : route.name);
         const onPress = () => {
           const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!focused && !event.defaultPrevented) navigateToTab(route.key);
@@ -41,7 +42,8 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: BottomTab
             style={styles.item}>
             {({ pressed }) => (
               <>
-                <View style={[styles.pill, { backgroundColor: focused ? colors.ink : pressed ? colors.surface2 : 'transparent' }]}>
+                <View
+                  style={[styles.pill, { backgroundColor: focused ? colors.ink : pressed ? colors.surface2 : 'transparent' }]}>
                   <Svg width={24} height={24} viewBox="0 0 24 24">
                     <Path
                       d={ICONS[route.name] ?? ICONS.index}

@@ -9,6 +9,7 @@ import { EXERCISE_IDS, exercise } from '@/data/catalog';
 
 import { REST_MAX, REST_MIN, isTimed, maxReps, nextRoutineKey, withWeeklyFromDays } from './plan';
 import type { Plan, RoutineKey, StrengthItem } from './types';
+import { t as tr } from '@/i18n';
 
 export type ImportResult = {
   name: string | null;
@@ -34,7 +35,7 @@ const ALIASES: Record<string, string> = {
   squat: 'squat',
   'pull up': 'pullup',
   pullup: 'pullup',
-  'chin up': 'pullup',
+  'chin up': 'chinup',
   rdl: 'rdl',
   ohp: 'ohp',
   'military press': 'ohp',
@@ -195,6 +196,6 @@ export function withImportedRoutine(plan: Plan, r: ImportResult): { plan: Plan; 
   for (const d of r.days) days[d] = key;
   return {
     key,
-    plan: withWeeklyFromDays({ ...plan, days, routines: { ...plan.routines, [key]: { name: r.name ?? 'Imported routine', items: r.items } } }),
+    plan: withWeeklyFromDays({ ...plan, days, routines: { ...plan.routines, [key]: { name: r.name ?? tr('Imported routine'), items: r.items } } }),
   };
 }

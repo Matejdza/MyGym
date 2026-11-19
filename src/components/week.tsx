@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { Mono, UI } from '@/components/Txt';
 import { Ring } from '@/components/ui';
@@ -16,9 +17,15 @@ export function DayCircle({ cell, size, fontSize }: { cell: WeekCell; size: numb
       {cell.ring.kind === 'outer' && (
         <Ring width={cell.ring.width} color={cell.ring.color} radius={r} offset={cell.ring.gap + cell.ring.width} />
       )}
-      <Mono size={fontSize} weight={500} color={cell.text}>
-        {cell.letter}
-      </Mono>
+      {cell.check ? (
+        <Svg width={d * 0.45} height={d * 0.45} viewBox="0 0 18 18" accessibilityLabel={cell.letter}>
+          <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={cell.text} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      ) : (
+        <Mono size={fontSize} weight={500} color={cell.text}>
+          {cell.letter}
+        </Mono>
+      )}
     </View>
   );
 }
@@ -31,7 +38,7 @@ export function WeekStrip({
   cells,
   size,
   fontSize,
-  labelSize = 13,
+  labelSize = 14,
   labelWeight = 600,
   gap = 6,
   innerGap = 8,

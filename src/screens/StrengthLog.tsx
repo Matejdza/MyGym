@@ -4,12 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EndWorkoutButton, ExerciseSwitcher, LogTopBar, ProgressSegments, logStyles } from '@/components/LogChrome';
 import { confirm } from '@/components/confirm';
+import { Pop } from '@/components/Motion';
+import { enterPhase } from '@/domain/mobilitySession';
 import { StepRow } from '@/components/SetInputs';
 import { Mono, UI } from '@/components/Txt';
 import { PrimaryButton, Ring } from '@/components/ui';
 import { exercise } from '@/data/catalog';
 import * as repo from '@/data/repo';
-import { fmt, mmss } from '@/domain/format';
+import { fmt, mmss, plural } from '@/domain/format';
 import { isTimed, maxReps, repsStep } from '@/domain/plan';
 import * as S from '@/domain/strength';
 import type { StrengthSession } from '@/domain/types';
@@ -19,6 +21,7 @@ import { playRestSignal, primeRestSignal } from '@/hooks/restSignal';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useScale, useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** A rest that ended more than this long ago (app was closed) ends silently. */
 const SIGNAL_GRACE = 3000;
@@ -34,7 +37,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
 
   // Exercises where logging 0 kg was confirmed, so the question is asked once per exercise.
   const zeroOk = useRef(new Set<string>());
-  const { confirming, endWorkout, finish: finishWith } = useEndWorkout(s, 'Finish without logging any sets?');
+  const { confirming, endWorkout, finish: finishWith } = useEndWorkout(s, t('Finish without logging any sets?'));
 
   const e = s.ex[s.cur];
   const ex = exercise(e.id);
@@ -56,7 +59,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
 
   const finish = () => {
     const open = s.ex.reduce((n, x) => n + x.sets.filter((y) => !y.done).length, 0);
-    return finishWith({ sets: S.loggedSets(s), cardio: [] }, open ? `${open} ${open === 1 ? 'set' : 'sets'}` : undefined);
+    return finishWith({ sets: S.loggedSets(s), cardio: [] }, open ? plural(open, 'set') : undefined);
   };
 
   const main = async () => {
@@ -64,12 +67,15 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
       primeRestSignal();
       // A weighted exercise left at 0 kg is usually a forgotten weight, not a real set.
       if (set.w === 0 && !ex.bodyweight && !timed && !zeroOk.current.has(e.id)) {
-        if (!(await confirm('Log this set with 0 kg?', 'Log set', 'Set the weight first if you lifted something.'))) return;
+        if (!(await confirm(t('Log this set with 0 kg?'), t('Log set'), t('Set the weight first if you lifted something.')))) return;
         zeroOk.current.add(e.id);
       }
       // Rest set on this exercise in the routine, otherwise the profile setting.
       update(S.logSet(s, Date.now(), e.rest ?? settings.restSeconds));
-    } else if (last) finish();
+    } else if (last) {
+      if (s.stretch?.length) update(enterPhase(s, 'stretch') as StrengthSession);
+      else finish();
+    }
     else update(S.goExercise(s, 1));
   };
 
@@ -77,8 +83,8 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
   if (lastTime && lastTime.length) {
     const kg = Math.max(...lastTime.map((x) => x.kg));
     lastLine = ex.bodyweight
-      ? `Last time: ${lastTime.length} × ${lastTime[0].reps}${timed ? ' s' : ''}`
-      : `Last time: ${lastTime.length} × ${lastTime[0].reps} × ${fmt(kg)} kg`;
+      ? `${t('Last time:')} ${lastTime.length} × ${lastTime[0].reps}${timed ? ' s' : ''}`
+      : `${t('Last time:')} ${lastTime.length} × ${lastTime[0].reps} × ${fmt(kg)} kg`;
   }
 
   const restLeft = s.rest ? Math.max(0, s.rest.end - now) : 0;
@@ -89,7 +95,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
       <LogTopBar elapsed={mmss(now - s.startedAt)} onFinish={finish} />
       <ExerciseSwitcher
         exId={e.id}
-        position={`Exercise ${s.cur + 1} of ${s.ex.length}`}
+        position={t('Exercise {n} of {total}', { n: s.cur + 1, total: s.ex.length })}
         name={ex.name}
         canPrev={s.cur > 0}
         canNext={!last}
@@ -106,7 +112,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.rows}>
         {e.sets.map((x, i) => {
           const active = i === s.sel;
-          const status = x.pr ? 'PR' : x.done ? 'Done' : active ? 'Now' : '';
+          const status = x.pr ? t('PR') : x.done ? t('Done') : active ? t('Now') : '';
           return (
             <Pressable
               key={i}
@@ -121,19 +127,21 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
               <Mono size={14} color={colors.muted} style={{ width: 28 }}>
                 {String(i + 1)}
               </Mono>
-              <Mono size={18} weight={500} color={x.done || active ? colors.ink : colors.muted} style={{ flex: 1 }}>
+              <Mono size={20} weight={500} color={x.done || active ? colors.ink : colors.muted} style={{ flex: 1 }}>
                 {timed && x.w === 0 ? `${x.r} s` : `${fmt(x.w)} kg × ${x.r}${timed ? ' s' : ''}`}
               </Mono>
-              <UI size={14} weight={700} color={x.pr || active ? colors.accent : colors.muted}>
-                {status}
-              </UI>
+              <Pop key={status} off={!x.done}>
+                <UI size={14} weight={700} color={x.pr || active ? colors.accent : colors.muted}>
+                  {status}
+                </UI>
+              </Pop>
             </Pressable>
           );
         })}
         <View style={styles.rowActions}>
           <Pressable onPress={() => update(S.addSet(s))} accessibilityRole="button" style={logStyles.textBtn}>
-            <UI size={15} weight={600} color={colors.accent}>
-              Add set
+            <UI size={16} weight={600} color={colors.accent}>
+              {t('Add set')}
             </UI>
           </Pressable>
           <EndWorkoutButton confirming={confirming} onPress={endWorkout} />
@@ -144,17 +152,17 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
         {s.rest && (
           <View style={[styles.rest, { height: fit(46) }]}>
             <UI size={14} color={colors.muted}>
-              Rest
+              {t('Rest')}
             </UI>
-            <Mono size={22} weight={500} color={colors.accent} style={{ flex: 1 }}>
+            <Mono size={24} weight={500} color={colors.accent} style={{ flex: 1 }}>
               {mmss(restLeft)}
             </Mono>
             <Pressable onPress={() => update(S.addRest(s, 30000))} accessibilityRole="button" style={styles.plus30}>
               <Mono size={14}>+30 s</Mono>
             </Pressable>
             <Pressable onPress={() => update(S.skipRest(s))} accessibilityRole="button" style={styles.skip}>
-              <UI size={15} weight={600}>
-                Skip
+              <UI size={16} weight={600}>
+                {t('Skip')}
               </UI>
             </Pressable>
             <View style={styles.restTrack}>
@@ -167,7 +175,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
           <>
             <StepRow
               value={fmt(set.w)}
-              label={`kg, step ${fmt(settings.weightStep)} kg`}
+              label={t('kg, step {step} kg', { step: fmt(settings.weightStep) })}
               mirrored={mirrored}
               onDec={() => update(S.adjust(s, 'w', -settings.weightStep))}
               onInc={() => update(S.adjust(s, 'w', settings.weightStep))}
@@ -185,7 +193,7 @@ export function StrengthLog({ session: s }: { session: StrengthSession }) {
         )}
 
         <PrimaryButton
-          label={(set ? `Log set ${s.sel + 1}` : last ? 'Finish workout' : 'Next exercise').toUpperCase()}
+          label={(set ? t('Log set {n}', { n: s.sel + 1 }) : last ? (s.stretch?.length ? t('Stretching') : t('Finish workout')) : t('Next exercise')).toUpperCase()}
           onPress={main}
           height={fit(56)}
         />

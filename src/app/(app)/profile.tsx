@@ -7,10 +7,13 @@ import { confirm } from '@/components/confirm';
 import { Segmented } from '@/components/Segmented';
 import { Display, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
-import { BackPill, StepperCard } from '@/components/ui';
+import { AvatarPicker } from '@/components/AvatarPicker';
+import { Avatar, BackPill, StepperCard } from '@/components/ui';
 import { GOALS } from '@/data/catalog';
+import { GOAL_OPTIONS, legacyGoal } from '@/domain/generate';
 import { BODY_LIMITS } from '@/domain/numberEntry';
 import { pickProfilePhoto } from '@/data/profilePhoto';
+import { isoDate } from '@/domain/dates';
 import { fmt, r2 } from '@/domain/format';
 import { REST_MAX, REST_MIN, REST_STEP, restText, workoutsText } from '@/domain/plan';
 import type { GoalKey, Settings } from '@/domain/types';
@@ -19,6 +22,7 @@ import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { THEME_SWITCH, getThemePref, setThemePref, type ThemePref } from '@/theme/themePref';
 import { colors, fonts } from '@/theme/tokens';
+import { LANGS, t, type Lang } from '@/i18n';
 
 const STEPS: Settings['weightStep'][] = [1.25, 2.5, 5];
 type Step = `${Settings['weightStep']}`;
@@ -26,10 +30,13 @@ type Step = `${Settings['weightStep']}`;
 /** Profile: name, photo, body numbers, goal, plan summary and workout settings. */
 export default function Profile() {
   const { profile, settings } = useActive();
-  const { updateProfile, setSettings, leaveProfile, deleteProfile } = useStore();
+  const setup = profile.setup ?? null;
+  const { updateProfile, setSettings, leaveProfile, deleteProfile, saveBodyWeight } = useStore();
   const top = useTop();
 
-  const step = (k: 'weight' | 'target', d: number) => updateProfile({ [k]: r2(Math.max(0, profile[k] + d)) });
+  // A weight change here is a weigh-in for today too, so Home's goal bar and Progress see it.
+  const setBody = (k: 'weight' | 'target', v: number) => (k === 'weight' ? saveBodyWeight(isoDate(new Date()), v) : updateProfile({ [k]: v }));
+  const step = (k: 'weight' | 'target', d: number) => setBody(k, r2(Math.max(0, profile[k] + d)));
 
   const changePhoto = async () => {
     try {
@@ -51,9 +58,10 @@ export default function Profile() {
 
   const removeProfile = async () => {
     const ok = await confirm(
-      `Delete ${profile.name}?`,
-      'Delete',
-      'Every workout, record and body weight entry for this profile will be removed from this phone. This cannot be undone.',
+      t('Delete {name}?', { name: profile.name }),
+      t('Delete'),
+      t('Every workout, record and body weight entry for this profile will be removed from this phone. This cannot be undone.'),
+      true,
     );
     if (ok) await deleteProfile();
   };
@@ -63,8 +71,8 @@ export default function Profile() {
       <View style={styles.topRow}>
         <BackPill onPress={() => router.back()} />
         <Pressable onPress={leaveProfile} accessibilityRole="button" style={styles.switch}>
-          <UI size={15} weight={600} numberOfLines={1}>
-            Switch profile
+          <UI size={16} weight={600} numberOfLines={1}>
+            {t('Switch profile')}
           </UI>
         </Pressable>
       </View>
@@ -73,24 +81,23 @@ export default function Profile() {
         <Pressable
           onPress={changePhoto}
           accessibilityRole="button"
-          accessibilityLabel="Change profile photo"
+          accessibilityLabel={t('Change profile photo')}
           style={[styles.avatarRing, { backgroundColor: profile.color }]}>
           <View style={styles.avatar}>
             {profile.photoUri ? (
               <Photo source={{ uri: profile.photoUri }} style={StyleSheet.absoluteFill} />
             ) : (
-              <UI size={14} color={colors.muted}>
-                Photo
-              </UI>
+              // No photo: the profile icon or letter on the profile color (tap to add a photo).
+              <Avatar size={96} color={profile.color} initial={(profile.name[0] || '?').toUpperCase()} fontSize={48} icon={profile.avatar} />
             )}
           </View>
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Display size={48} weight={900} lh={0.9}>
+          <Display size={40} weight={900} lh={0.9}>
             {profile.name}
           </Display>
-          <UI size={15} color={colors.muted} style={{ marginTop: 8 }}>
-            {`${fmt(profile.weight)} kg, ${GOALS.find((g) => g.key === profile.goal)?.label.toLowerCase() ?? ''}`}
+          <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+            {`${fmt(profile.weight)} kg, ${(setup ? t(GOAL_OPTIONS.find((g) => g.key === setup.goal)!.label) : (GOALS.find((g) => g.key === profile.goal)?.label ?? '')).toLowerCase()}`}
           </UI>
         </View>
       </View>
@@ -98,7 +105,7 @@ export default function Profile() {
       <View style={styles.rows}>
         <View style={styles.nameCard}>
           <UI size={14} color={colors.muted}>
-            Name
+            {t('Name')}
           </UI>
           <TextInput
             value={nameDraft ?? profile.name}
@@ -110,14 +117,24 @@ export default function Profile() {
             returnKeyType="done"
             maxLength={24}
             maxFontSizeMultiplier={1.2}
-            accessibilityLabel="Profile name"
+            accessibilityLabel={t('Profile name')}
             style={styles.nameInput}
+          />
+        </View>
+        <View style={styles.pickerCard}>
+          <AvatarPicker
+            preview={false}
+            color={profile.color}
+            icon={profile.avatar ?? null}
+            initial={(profile.name[0] || '?').toUpperCase()}
+            onColor={(color) => updateProfile({ color })}
+            onIcon={(avatar) => updateProfile({ avatar })}
           />
         </View>
         {(
           [
-            ['Weight', 'weight', 'kg', 0.1],
-            ['Target weight', 'target', 'kg', 0.5],
+            [t('Weight'), 'weight', 'kg', 0.1],
+            [t('Target weight'), 'target', 'kg', 0.5],
           ] as const
         ).map(([label, k, unit, d]) => (
           <StepperCard
@@ -127,8 +144,8 @@ export default function Profile() {
             unit={unit}
             onDec={() => step(k, -d)}
             onInc={() => step(k, d)}
-            input={{ ...BODY_LIMITS[k], value: profile[k], onSet: (v) => updateProfile({ [k]: v }) }}
-            valueSize={26}
+            input={{ ...BODY_LIMITS[k], value: profile[k], onSet: (v) => setBody(k, v) }}
+            valueSize={24}
             button={52}
             buttonFont={22}
             labelSize={14}
@@ -140,40 +157,65 @@ export default function Profile() {
         ))}
       </View>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
-        Goal
+      <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
+        {t('Goal')}
       </UI>
-      <Segmented<GoalKey>
-        options={GOALS.map((g) => [g.key, g.label])}
-        value={profile.goal}
-        onChange={(goal) => updateProfile({ goal })}
-        style={{ marginTop: 8 }}
-      />
+      {setup ? (
+        // Profiles made with the plan builder have five goals; the second goal stays as chosen.
+        <View style={styles.goalChips}>
+          {GOAL_OPTIONS.map((g) => {
+            const on = g.key === setup.goal;
+            return (
+              <Pressable
+                key={g.key}
+                onPress={() => updateProfile({ goal: legacyGoal(g.key), setup: { ...setup, goal: g.key, goal2: setup.goal2 === g.key ? null : setup.goal2 } })}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                style={[styles.goalChip, on && styles.goalChipOn]}>
+                <UI size={16} weight={600} color={on ? colors.accentInk : colors.ink}>
+                  {t(g.label)}
+                </UI>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <Segmented<GoalKey>
+          options={GOALS.map((g) => [g.key, g.label])}
+          value={profile.goal}
+          onChange={(goal) => updateProfile({ goal })}
+          style={{ marginTop: 8 }}
+        />
+      )}
 
       <View style={styles.planCard}>
-        <UI size={15} color={colors.muted}>
-          Training plan
+        <UI size={16} color={colors.muted}>
+          {t('Training plan')}
         </UI>
-        <Display size={36} weight={900} lh={0.95} style={{ marginTop: 6 }}>
+        <Display size={40} weight={900} lh={0.95} style={{ marginTop: 6 }}>
           {workoutsText(profile.plan)}
         </Display>
         <View style={{ marginTop: 16 }}>
-          <WeekStrip cells={planCells(profile.plan)} size={34} fontSize={13} labelSize={12} labelWeight={400} gap={4} innerGap={6} />
+          <WeekStrip cells={planCells(profile.plan)} size={34} fontSize={14} labelSize={14} labelWeight={400} gap={4} innerGap={6} />
         </View>
         <Pressable onPress={() => router.push('/plan')} accessibilityRole="button" style={styles.planBtn}>
           <UI size={16} weight={600}>
-            Edit plan and routines
+            {t('Edit plan and routines')}
           </UI>
         </Pressable>
       </View>
 
-      <Display size={28} weight={800} style={{ marginTop: 32 }}>
-        Settings
+      <Display size={32} weight={800} style={{ marginTop: 32 }}>
+        {t('Settings')}
       </Display>
+      <UI size={16} color={colors.muted} style={{ marginTop: 16 }}>
+        {t('Language')}
+      </UI>
+      <Segmented<Lang> options={LANGS} value={settings.language} onChange={(language) => setSettings({ language })} style={{ marginTop: 8 }} />
       {THEME_SWITCH && (
         <>
-          <UI size={15} color={colors.muted} style={{ marginTop: 16 }}>
-            Appearance
+          <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
+            {t('Appearance')}
           </UI>
           <Segmented<ThemePref>
             options={[
@@ -189,12 +231,12 @@ export default function Profile() {
             style={{ marginTop: 8 }}
           />
           <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
-            {"Auto follows your phone's light or dark setting."}
+            {t("Auto follows your phone's light or dark setting.")}
           </UI>
         </>
       )}
-      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
-        Weight step
+      <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
+        {t('Weight step')}
       </UI>
       <Segmented<Step>
         options={STEPS.map((v) => [String(v) as Step, `${fmt(v)} kg`])}
@@ -205,7 +247,7 @@ export default function Profile() {
 
       <View style={{ marginTop: 24 }}>
         <StepperCard
-          label="Rest between sets"
+          label={t('Rest between sets')}
           value={restText(settings.restSeconds)}
           unit=""
           onDec={() => setSettings({ restSeconds: Math.max(REST_MIN, settings.restSeconds - REST_STEP) })}
@@ -217,7 +259,7 @@ export default function Profile() {
             value: settings.restSeconds,
             onSet: (restSeconds) => setSettings({ restSeconds }),
           }}
-          valueSize={26}
+          valueSize={24}
           button={52}
           buttonFont={22}
           labelSize={14}
@@ -228,11 +270,11 @@ export default function Profile() {
         />
       </View>
       <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
-        Used when an exercise has no rest of its own.
+        {t('Used when an exercise has no rest of its own.')}
       </UI>
 
-      <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
-        Workout buttons
+      <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
+        {t('Workout buttons')}
       </UI>
       <Segmented<Settings['handedness']>
         options={[
@@ -244,12 +286,12 @@ export default function Profile() {
         style={{ marginTop: 8 }}
       />
       <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
-        Which side the + button sits on during a workout.
+        {t('Which side the + button sits on during a workout.')}
       </UI>
 
       <Pressable onPress={removeProfile} accessibilityRole="button" style={styles.delete}>
-        <UI size={15} weight={600} color={colors.red}>
-          Delete profile
+        <UI size={16} weight={600} color={colors.red}>
+          {t('Delete profile')}
         </UI>
       </Pressable>
     </ScrollView>
@@ -273,8 +315,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rows: { gap: 8, marginTop: 24 },
+  pickerCard: { backgroundColor: colors.surface, borderRadius: 22, paddingHorizontal: 16 },
   nameCard: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 10, paddingBottom: 6, paddingHorizontal: 18 },
-  nameInput: { color: colors.ink, fontFamily: fonts.ui600, fontSize: 22, paddingVertical: 4, paddingHorizontal: 0 },
+  nameInput: { color: colors.ink, fontFamily: fonts.ui600, fontSize: 24, paddingVertical: 4, paddingHorizontal: 0 },
+  goalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  goalChip: { height: 44, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5, borderColor: colors.border, justifyContent: 'center' },
+  goalChipOn: { backgroundColor: colors.accentFill, borderColor: colors.accentFill },
   planCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 16, marginTop: 24 },
   delete: { height: 48, marginTop: 32, alignItems: 'center', justifyContent: 'center' },
   planBtn: { height: 48, marginTop: 16, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },

@@ -1,13 +1,15 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, router, usePathname, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { setLang, useLang } from '@/i18n';
 import { AppDataProvider, useStore } from '@/state/store';
 import { fontAssets } from '@/theme/fonts';
+import { ConfirmHost } from '@/components/ConfirmHost';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -40,6 +42,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <AppDataProvider>
           <RootStack />
+          <ConfirmHost />
         </AppDataProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
@@ -53,18 +56,41 @@ export default function RootLayout() {
  * - a profile picked → the app. Picking or creating a profile moves there,
  *   "Switch profile" moves back to the picker.
  */
+/** Screens every stack starts on; after a language change the app returns to any other screen it was on. */
+const START_PATHS = new Set(['/', '/welcome', '/profiles']);
+
 function RootStack() {
-  const { ready, order, activeId } = useStore();
+  const { ready, order, activeId, byId } = useStore();
+  const lang = useLang();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // The open profile's language is the app's language.
+  const profileLang = activeId ? byId[activeId]?.settings.language : undefined;
+  useEffect(() => {
+    if (profileLang) setLang(profileLang);
+  }, [profileLang]);
+
+  // Changing the language remounts the stack (key below) so every screen reads
+  // the new texts; then the screen that was open is opened again.
+  const path = useRef(pathname);
+  const shownLang = useRef(lang);
+  useEffect(() => {
+    if (shownLang.current !== lang) {
+      shownLang.current = lang;
+      const back = path.current;
+      if (!START_PATHS.has(back)) requestAnimationFrame(() => router.push(back as never));
+    } else path.current = pathname;
+  }, [lang, pathname]);
+
   if (!ready) return null;
 
   const signedIn = activeId !== null;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+    <Stack key={lang} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Protected guard={!signedIn}>
         <Stack.Protected guard={order.length === 0}>
           <Stack.Screen name="welcome" />

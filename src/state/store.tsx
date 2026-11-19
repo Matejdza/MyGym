@@ -43,7 +43,7 @@ type Actions = {
   selectProfile: (id: string) => void;
   /** "Switch profile": back to the profile picker. */
   leaveProfile: () => void;
-  createProfile: (p: Omit<Profile, 'id' | 'createdAt' | 'photoUri'>) => Promise<string>;
+  createProfile: (p: Omit<Profile, 'id' | 'createdAt' | 'photoUri'>, language?: Settings['language']) => Promise<string>;
   /** Deletes the active profile and all its history, then returns to the profile picker. */
   deleteProfile: () => Promise<void>;
   updateProfile: (fields: ProfileFields) => void;
@@ -142,14 +142,15 @@ function StoreProvider({ children }: PropsWithChildren) {
         commit((s) => ({ ...s, activeId: null }));
       },
 
-      createProfile: async (input) => {
+      createProfile: async (input, language = 'en') => {
         const profile: Profile = { ...input, id: `p${Date.now()}`, createdAt: Date.now(), photoUri: null };
-        await write(() => repo.createProfile(db, profile, isoDate(new Date())));
+        const settings: Settings = { ...DEFAULT_SETTINGS, language };
+        await write(() => repo.createProfile(db, profile, isoDate(new Date()), settings));
         setLastProfile(profile.id);
         commit((s) => ({
           ...s,
           order: [...s.order, profile.id],
-          byId: { ...s.byId, [profile.id]: { profile, settings: DEFAULT_SETTINGS, session: null } },
+          byId: { ...s.byId, [profile.id]: { profile, settings, session: null } },
           activeId: profile.id,
         }));
         return profile.id;

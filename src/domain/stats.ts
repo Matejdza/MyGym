@@ -2,6 +2,7 @@
 
 import { estimated1RM, fmt, mmss } from './format';
 import type { Exercise } from './types';
+import { t } from '@/i18n';
 
 export type StatRow = { k: string; v: string };
 
@@ -22,19 +23,19 @@ export function exerciseStats(e: Exercise, h: ExerciseHistory): StatRow[] | null
     if (!L) return null;
     const km = e.unit === 'km';
     const rows: StatRow[] = [
-      { k: 'Last time', v: `${L.minutes} min, ${fmt(L.value)} ${e.unit}` },
-      { k: km ? 'Best distance' : 'Best session', v: `${fmt(h.bestCardio)} ${e.unit}` },
+      { k: t('Last time'), v: `${L.minutes} min, ${fmt(L.value)} ${t(e.unit ?? '')}` },
+      { k: km ? t('Best distance') : t('Best session'), v: `${fmt(h.bestCardio)} ${t(e.unit ?? '')}` },
     ];
     // Pace needs a distance; rate needs minutes.
-    if (km && L.value > 0) rows.push({ k: 'Average pace', v: `${mmss((L.minutes * 60000) / L.value)} per km` });
-    if (!km && L.minutes > 0) rows.push({ k: 'Average rate', v: `${fmt(Math.round((L.value / L.minutes) * 10) / 10)} floors per min` });
+    if (km && L.value > 0) rows.push({ k: t('Average pace'), v: t('{pace} per km', { pace: mmss((L.minutes * 60000) / L.value) }) });
+    if (!km && L.minutes > 0) rows.push({ k: t('Average rate'), v: t('{rate} floors per min', { rate: fmt(Math.round((L.value / L.minutes) * 10) / 10) }) });
     return rows;
   }
   if (e.bodyweight || !h.best || !h.last.length) return null;
   const lastKg = Math.max(...h.last.map((x) => x.kg));
   return [
-    { k: 'Best set', v: `${fmt(h.best.kg)} kg × ${h.best.reps}` },
-    { k: 'Last time', v: `${h.last.length} × ${h.last[0].reps} × ${fmt(lastKg)} kg` },
-    { k: 'Estimated 1RM', v: `${fmt(estimated1RM(h.best.kg, h.best.reps))} kg` },
+    { k: t('Best set'), v: `${fmt(h.best.kg)} kg × ${h.best.reps}` },
+    { k: t('Last time'), v: `${h.last.length} × ${h.last[0].reps} × ${fmt(lastKg)} kg` },
+    { k: t('Estimated 1RM'), v: `${fmt(estimated1RM(h.best.kg, h.best.reps))} kg` },
   ];
 }

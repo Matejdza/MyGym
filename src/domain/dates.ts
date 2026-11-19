@@ -2,11 +2,17 @@
 // the app uses the real date, with weeks running Monday → Sunday.
 
 import { DAYS_FULL, MONTHS } from '@/data/catalog';
+import { getLang, onLang } from '@/i18n';
 
 export const MONTHS_FULL = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+const MONTHS_EN = [...MONTHS_FULL];
+const MONTHS_SR = ['januar', 'februar', 'mart', 'april', 'maj', 'jun', 'jul', 'avgust', 'septembar', 'oktobar', 'novembar', 'decembar'];
+onLang((l) => (l === 'sr' ? MONTHS_SR : MONTHS_EN).forEach((m, i) => (MONTHS_FULL[i] = m)));
+
+const sr = () => getLang() === 'sr';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -40,10 +46,10 @@ export function dateInWeek(weekStart: string, i: number): Date {
 }
 
 /** "Nov 6" */
-export const shortDate = (d: Date) => `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+export const shortDate = (d: Date) => (sr() ? `${d.getDate()}. ${MONTHS[d.getMonth()]}` : `${MONTHS[d.getMonth()]} ${d.getDate()}`);
 
 /** "November 2" */
-export const longDate = (d: Date) => `${MONTHS_FULL[d.getMonth()]} ${d.getDate()}`;
+export const longDate = (d: Date) => (sr() ? `${d.getDate()}. ${MONTHS_FULL[d.getMonth()]}` : `${MONTHS_FULL[d.getMonth()]} ${d.getDate()}`);
 
 /** "Friday, November 6" */
 export const fullDate = (d: Date) => `${DAYS_FULL[dayIndex(d)]}, ${longDate(d)}`;

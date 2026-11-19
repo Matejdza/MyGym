@@ -11,13 +11,16 @@ import { colors } from '@/theme/tokens';
 import { mkPlan, nextRoutineKey, routineMeta, schedule, withDayCycled, withWeekly } from '@/domain/plan';
 
 test('catalog matches the prototype', () => {
-  assert.equal(EXERCISE_IDS.length, 34); // 26 from the prototype + 8 added for the owner's plan
-  assert.equal(EXERCISE_IDS.filter((id) => EX[id].group === 'cardio').length, 5);
+  const proto = Object.keys(EX) as (keyof typeof EX)[];
+  assert.equal(proto.length, 34); // 26 from the prototype + 8 added for the owner's plan
+  assert.equal(EXERCISE_IDS.length, 126, 'plus 70 from the owner\'s list and 22 warm-up and stretching moves');
+  assert.equal(new Set(EXERCISE_IDS).size, EXERCISE_IDS.length, 'no duplicates');
+  assert.equal(proto.filter((id) => EX[id].group === 'cardio').length, 5);
   assert.equal(EX.bench.steps[1], 'Grip slightly wider than your shoulders. Lower the bar to the lower chest, elbows at about 45°.');
   assert.equal(EX.stairs.unit, 'floors');
   assert.equal(EX.stairs.step, 1);
   assert.deepEqual(
-    EXERCISE_IDS.filter((id) => 'bodyweight' in EX[id]),
+    proto.filter((id) => 'bodyweight' in EX[id]),
     ['legraise', 'abwheel', 'plank'],
   );
   assert.equal(ZONES[2], 'Easy, you can hold a conversation');
@@ -83,8 +86,9 @@ test('weekCells: done, planned, today', () => {
   const plan = mkPlan(5); // A B C · D E ·
   const cells = weekCells(plan, [0, 1, 4], 4);
   assert.deepEqual(cells.map((c) => c.day), ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']);
-  assert.equal(cells[0].fill, '#ff5a3c'); // A done
-  assert.deepEqual(cells[2].ring, { kind: 'inset', width: 1.5, color: '#ffc531' }); // C planned
+  assert.equal(cells[0].fill, colors.green); // A done: green with a check
+  assert.equal(cells[0].check, true);
+  assert.deepEqual(cells[2].ring, { kind: 'inset', width: 1.5, color: colors.border }); // C planned: neutral
   assert.equal(cells[3].letter, '·');
   assert.deepEqual(cells[4].ring, { kind: 'outer', width: 2, gap: 2, color: colors.accent }); // today, done
   assert.deepEqual(weekCells(plan, [], 4)[4].ring, { kind: 'inset', width: 2, color: colors.accent });
@@ -134,13 +138,14 @@ test('exercise stats from history', async () => {
   assert.equal(exerciseStats(EX.treadmill, { ...none, lastCardio: { minutes: 20, value: 0 }, bestCardio: 0 })?.length, 2);
 });
 
-test('home week strip: day inside the circle, date above it', async () => {
+test('home week strip: day initial above, date inside the circle', async () => {
   const { homeWeekCells } = await import('@/domain/week');
   const cells = homeWeekCells(mkPlan(5), [0, 1, 4], 4, '2026-11-02');
-  assert.deepEqual(cells.map((c) => c.letter), ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']);
-  assert.deepEqual(cells.map((c) => c.day), ['2', '3', '4', '5', '6', '7', '8']);
-  assert.equal(cells[0].fill, '#ff5a3c', 'routine color kept');
+  assert.deepEqual(cells.map((c) => c.day), ['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+  assert.deepEqual(cells.map((c) => c.letter), ['2', '3', '4', '5', '6', '7', '8']);
+  assert.equal(cells[0].fill, colors.green, 'done day green');
+  assert.equal(homeWeekCells(mkPlan(5), [], 4, '2026-11-02', 2)[0].ring.kind, 'none', 'no ring before the profile existed');
   assert.equal(cells[3].text, colors.muted, 'rest day muted');
   assert.equal(cells[4].dayColor, colors.accent, 'today highlighted');
-  assert.equal(homeWeekCells(mkPlan(3), [], 0, '2026-12-28')[6].day, '3', 'crosses into the next month');
+  assert.equal(homeWeekCells(mkPlan(3), [], 0, '2026-12-28')[6].letter, '3', 'crosses into the next month');
 });

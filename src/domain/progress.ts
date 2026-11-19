@@ -6,6 +6,7 @@ import { exercise } from '@/data/catalog';
 import { addDays, parseIso, shortDate, weekStartOf } from './dates';
 import { estimated1RM, fmt, r2 } from './format';
 import type { BodyEntry } from './types';
+import { t } from '@/i18n';
 
 export const WEEKS = 12;
 
@@ -60,14 +61,14 @@ export function liftProgress(exId: string, sets: LiftSetRow[], weeks: string[]):
   const best = points.reduce((a, b) => (b.kg > a.kg ? b : a));
   const d = r2(vals[vals.length - 1] - vals[0]);
   return {
-    title: `${exercise(exId).name}, best set`,
+    title: t('{name}, best set', { name: exercise(exId).name }),
     big: fmt(best.kg),
     unit: 'kg',
-    delta: d === 0 ? (vals.length < 2 ? 'First entry. The trend starts with your next workout.' : 'No change in 12 weeks') : `${d < 0 ? '−' : '+'}${fmt(Math.abs(d))} kg in 12 weeks`,
+    delta: d === 0 ? (vals.length < 2 ? t('First entry. The trend starts with your next workout.') : t('No change in 12 weeks')) : t('{change} kg in 12 weeks', { change: `${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}` }),
     vals,
     labels: points.map((p) => weekLabel(p.ws)),
     rows: [
-      { k: 'Estimated 1RM', v: `${fmt(estimated1RM(best.kg, best.reps))} kg` },
+      { k: t('Estimated 1RM'), v: `${fmt(estimated1RM(best.kg, best.reps))} kg` },
       ...points
         .slice(-4)
         .reverse()
@@ -101,16 +102,16 @@ export function cardioProgress(entries: CardioRow[], weeks: string[]): ProgressV
   const n = vals.length;
   const d = vals[n - 1] - vals[0];
   return {
-    title: 'Cardio minutes per week',
+    title: t('Cardio minutes per week'),
     big: String(vals[n - 1]),
     unit: 'min',
-    delta: `${d < 0 ? '−' : '+'}${Math.abs(d)} min a week since ${labels[0]}`,
+    delta: t('{change} min a week since {date}', { change: `${d < 0 ? '−' : '+'}${Math.abs(d)}`, date: labels[0] }),
     vals,
     labels,
     rows: span
       .slice(-4)
       .reverse()
-      .map((ws) => ({ k: `Week of ${weekLabel(ws)}`, v: `${mins.get(ws) ?? 0} min, ${fmt(r2(km.get(ws) ?? 0))} km` })),
+      .map((ws) => ({ k: t('Week of {date}', { date: weekLabel(ws) }), v: `${mins.get(ws) ?? 0} min, ${fmt(r2(km.get(ws) ?? 0))} km` })),
   };
 }
 
@@ -124,10 +125,10 @@ export function bodyProgress(entries: BodyEntry[], target: number, from: string)
   const labels = recent.map((e) => shortDate(parseIso(e.date)));
   const cur = vals[vals.length - 1];
   return {
-    title: 'Body weight',
+    title: t('Body weight'),
     big: fmt(cur),
     unit: 'kg',
-    delta: `${fmt(Math.abs(r2(cur - target)))} kg to your goal of ${fmt(target)} kg`,
+    delta: t('{left} kg to your goal of {goal} kg', { left: fmt(Math.abs(r2(cur - target))), goal: fmt(target) }),
     vals,
     labels,
     target,
@@ -182,6 +183,6 @@ export function chart(vals: number[], labels: string[], w: number, target?: numb
     xl,
     last: pts[n - 1],
   };
-  if (target != null) geo.target = { y: round1(Y(target)), label: `goal ${fmt(target)}` };
+  if (target != null) geo.target = { y: round1(Y(target)), label: t('goal {kg}', { kg: fmt(target) }) };
   return geo;
 }

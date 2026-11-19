@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { PlateBadge } from '@/components/Cover';
 import { Display, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import * as repo from '@/data/repo';
@@ -10,6 +9,7 @@ import { plural } from '@/domain/format';
 import { useActive, useDbQuery } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** Every finished workout, newest first. A row opens that workout's summary. */
 export default function History() {
@@ -20,12 +20,12 @@ export default function History() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]}>
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-      <Display size={52} weight={900} lh={0.9} style={{ marginTop: 24 }}>
-        All workouts
+      <Display size={56} weight={900} lh={0.9} style={{ marginTop: 24 }}>
+        {t('All workouts')}
       </Display>
       {rows && (
-        <UI size={15} color={colors.muted} style={{ marginTop: 8 }}>
-          {rows.length ? `${plural(rows.length, 'workout')} logged` : 'No workouts logged yet.'}
+        <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+          {rows.length ? t('{count} logged', { count: plural(rows.length, 'workout') }) : t('No workouts logged yet.')}
         </UI>
       )}
 
@@ -33,19 +33,18 @@ export default function History() {
         {rows?.map((w) => {
           const mins = Math.max(1, Math.round((w.finishedAt - w.startedAt) / 60000));
           const detail =
-            w.type === 'cardio' ? `${w.minutes} min of cardio` : `${plural(w.sets, 'set')}, ${mins} min`;
+            w.type === 'cardio' ? t('{min} min of cardio', { min: w.minutes }) : `${plural(w.sets, 'set')}, ${mins} min`;
           return (
             <Pressable
               key={w.id}
               onPress={() => router.push({ pathname: '/summary/[id]', params: { id: String(w.id), from: 'history' } })}
               accessibilityRole="button"
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
-              <PlateBadge routineKey={w.routineKey} size={36} fontSize={14} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <UI size={14} color={colors.muted}>
                   {fullDate(new Date(w.finishedAt))}
                 </UI>
-                <UI size={17} weight={600} numberOfLines={1} style={{ marginTop: 4 }}>
+                <UI size={20} weight={600} numberOfLines={1} style={{ marginTop: 4 }}>
                   {w.routineName}
                 </UI>
                 <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
@@ -60,11 +59,11 @@ export default function History() {
               {w.prs > 0 && (
                 <View style={styles.pr}>
                   <UI size={14} weight={700} color={colors.accentInk}>
-                    {w.prs === 1 ? 'PR' : `${w.prs} PRs`}
+                    {w.prs === 1 ? t('PR') : t('{n} PRs', { n: w.prs })}
                   </UI>
                 </View>
               )}
-              <UI size={22} color={colors.muted}>
+              <UI size={24} color={colors.muted}>
                 ›
               </UI>
             </Pressable>

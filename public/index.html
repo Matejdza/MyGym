@@ -19,12 +19,17 @@
     <!-- Color themes. Values are generated from src/theme/tokens.ts; tests/theme.test.ts keeps them equal. -->
     <style id="liftlog-theme">
       :root { --c-bg: #1C1C1A; --c-surface: #272724; --c-surface2: #32322E; --c-ink: #F2F0EA; --c-muted: #A39F96; --c-line: rgba(242,240,234,0.13); --c-border: rgba(242,240,234,0.26); --c-accent: #F2B92A; --c-accent-fill: #F2B92A; --c-accent-ink: #1C1C1A; --c-press: #D9A41F; --c-red: #FF6A4D; --c-green: #3DDC84; --c-placeholder: #6E6A63; --c-scrim: rgba(28,28,26,0.72); --c-on-plate: #1C1C1A; --c-plate-d: #E9E6DF; --c-plate-h: #C7C2B8; }
-      :root[data-theme="light"] { --c-bg: #F4F2EC; --c-surface: #E7E3DA; --c-surface2: #DAD5CA; --c-ink: #1C1C1A; --c-muted: #5E5A52; --c-line: rgba(28,28,26,0.12); --c-border: rgba(28,28,26,0.28); --c-accent: #7A5800; --c-accent-fill: #F2B92A; --c-accent-ink: #1C1C1A; --c-press: #D9A41F; --c-red: #B8391F; --c-green: #187241; --c-placeholder: #8C877E; --c-scrim: rgba(28,28,26,0.72); --c-on-plate: #1C1C1A; --c-plate-d: #B5B0A6; --c-plate-h: #A39E93; }
+      :root[data-theme="light"] { --c-bg: #E8EAEE; --c-surface: #DADEE5; --c-surface2: #CBD0D9; --c-ink: #141922; --c-muted: #4F5867; --c-line: rgba(20,25,34,0.12); --c-border: rgba(20,25,34,0.28); --c-accent: #1E47B3; --c-accent-fill: #2457D6; --c-accent-ink: #FFFFFF; --c-press: #1D48B8; --c-red: #B3261E; --c-green: #146B3A; --c-placeholder: #8A93A2; --c-scrim: rgba(20,25,34,0.72); --c-on-plate: #141922; --c-plate-d: #B4BCC8; --c-plate-h: #A3ACBA; }
       @media (prefers-color-scheme: light) {
-        :root[data-theme="auto"] { --c-bg: #F4F2EC; --c-surface: #E7E3DA; --c-surface2: #DAD5CA; --c-ink: #1C1C1A; --c-muted: #5E5A52; --c-line: rgba(28,28,26,0.12); --c-border: rgba(28,28,26,0.28); --c-accent: #7A5800; --c-accent-fill: #F2B92A; --c-accent-ink: #1C1C1A; --c-press: #D9A41F; --c-red: #B8391F; --c-green: #187241; --c-placeholder: #8C877E; --c-scrim: rgba(28,28,26,0.72); --c-on-plate: #1C1C1A; --c-plate-d: #B5B0A6; --c-plate-h: #A39E93; }
+        :root[data-theme="auto"] { --c-bg: #E8EAEE; --c-surface: #DADEE5; --c-surface2: #CBD0D9; --c-ink: #141922; --c-muted: #4F5867; --c-line: rgba(20,25,34,0.12); --c-border: rgba(20,25,34,0.28); --c-accent: #1E47B3; --c-accent-fill: #2457D6; --c-accent-ink: #FFFFFF; --c-press: #1D48B8; --c-red: #B3261E; --c-green: #146B3A; --c-placeholder: #8A93A2; --c-scrim: rgba(20,25,34,0.72); --c-on-plate: #141922; --c-plate-d: #B4BCC8; --c-plate-h: #A3ACBA; }
       }
       /* Photo sections (heroes) stay dark in both themes. */
       [data-scope="dark"] { --c-bg: #1C1C1A; --c-surface: #272724; --c-surface2: #32322E; --c-ink: #F2F0EA; --c-muted: #A39F96; --c-line: rgba(242,240,234,0.13); --c-border: rgba(242,240,234,0.26); --c-accent: #F2B92A; --c-accent-fill: #F2B92A; --c-accent-ink: #1C1C1A; --c-press: #D9A41F; --c-red: #FF6A4D; --c-green: #3DDC84; --c-placeholder: #6E6A63; --c-scrim: rgba(28,28,26,0.72); --c-on-plate: #1C1C1A; --c-plate-d: #E9E6DF; --c-plate-h: #C7C2B8; }
+      /* Light theme: no yellow text, even in the dark photo strips; light cobalt instead. */
+      :root[data-theme="light"] [data-scope="dark"] { --c-accent: #A9C0FF; }
+      @media (prefers-color-scheme: light) {
+        :root[data-theme="auto"] [data-scope="dark"] { --c-accent: #A9C0FF; }
+      }
     </style>
     <!-- Applies the saved theme before the app draws, so there is no flash.
          iOS reads the status bar style when the home-screen app opens: light text
@@ -38,7 +43,7 @@
         var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
         if (bar) bar.setAttribute('content', dark ? 'black-translucent' : 'default');
         var tint = document.querySelector('meta[name="theme-color"]');
-        if (tint) tint.setAttribute('content', dark ? '#1C1C1A' : '#F4F2EC');
+        if (tint) tint.setAttribute('content', dark ? '#1C1C1A' : '#E8EAEE');
       })();
     </script>
 
@@ -65,6 +70,15 @@
         display: flex;
         height: 100%;
         flex: 1;
+      }
+      /* Light theme: the dark gym photos get a little lighter and softer, with a
+         faint warm tone (owner, 2026-11-20: the cobalt tint felt too cold).
+         Photos are marked with data-photo. */
+      :root[data-theme="light"] [data-photo] img { filter: brightness(1.12) contrast(0.92) saturate(1.05) sepia(0.12); }
+      :root[data-theme="light"] [data-photo]::after { content: ""; position: absolute; inset: 0; background: #FFB27A; opacity: 0.12; mix-blend-mode: soft-light; pointer-events: none; }
+      @media (prefers-color-scheme: light) {
+        :root[data-theme="auto"] [data-photo] img { filter: brightness(1.12) contrast(0.92) saturate(1.05) sepia(0.12); }
+        :root[data-theme="auto"] [data-photo]::after { content: ""; position: absolute; inset: 0; background: #FFB27A; opacity: 0.12; mix-blend-mode: soft-light; pointer-events: none; }
       }
     </style>
   </head>

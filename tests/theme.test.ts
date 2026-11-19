@@ -36,3 +36,13 @@ for (const [name, p] of [['dark', DARK], ['light', LIGHT]] as [string, Palette][
     for (const g of [p.plateD, p.plateH]) assert.ok(ratio(p.onPlate, g) >= 4.5, `text on gray plate ${g}`);
   });
 }
+
+test('dark text is readable on every profile color', async () => {
+  const { PROFILE_COLORS } = await import('@/theme/tokens');
+  for (const c of PROFILE_COLORS) assert.ok(ratio(DARK.onPlate, c) >= 4.5, `text on ${c}: ${ratio(DARK.onPlate, c).toFixed(2)}`);
+});
+
+test('every color from the color strip keeps dark text readable', async () => {
+  const { toneColors } = await import('@/theme/profileColor');
+  for (let h = 0; h < 360; h += 5) for (const c of toneColors(h)) assert.ok(ratio(DARK.onPlate, c) >= 4.5, `hue ${h}: ${c}`);
+});

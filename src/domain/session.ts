@@ -1,6 +1,7 @@
 // Starting a workout (`makeSession` in the prototype), using real history
 // instead of the prototype's demo weights.
 
+import { routineStretch, routineWarmup } from './mobility';
 import type { Plan, Session } from './types';
 
 /** What history a new session needs per exercise: last working weight and best weight (absent = never logged). */
@@ -10,7 +11,21 @@ export function makeSession(plan: Plan, day: number, weekStart: string, now: num
   const key = plan.days[day];
   const r = key ? plan.routines[key] : null;
   if (!key || !r) return null;
-  const base = { routineKey: key, routineName: r.name, day, weekStart, startedAt: now, cur: 0 };
+  // Warm-up first (when the routine has one), stretching after the last exercise.
+  const warmup = routineWarmup(r).map((x) => ({ ...x, done: false }));
+  const stretch = routineStretch(r).map((x) => ({ ...x, done: false }));
+  const base = {
+    routineKey: key,
+    routineName: r.name,
+    day,
+    weekStart,
+    startedAt: now,
+    cur: 0,
+    warmup,
+    stretch,
+    phase: warmup.length ? ('warmup' as const) : ('main' as const),
+    mob: warmup.length ? { cur: 0, end: null, left: warmup[0].sec * 1000 } : undefined,
+  };
 
   if (r.type === 'cardio') {
     return {

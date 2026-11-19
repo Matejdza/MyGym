@@ -7,6 +7,7 @@ import { Display, UI } from '@/components/Txt';
 import { PrimaryButton } from '@/components/ui';
 import { IMAGES } from '@/data/photos';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** First launch: full-screen photo, wordmark, headline and the two ways in. */
 export default function Welcome() {
@@ -16,23 +17,23 @@ export default function Welcome() {
       <Photo source={IMAGES.hero} style={StyleSheet.absoluteFill} fill={colors.bg} />
       <Shade stops={heroStops(0.55, [0.22, 0.38], 0.72)} />
       <View style={[styles.content, { paddingBottom: 24 + insets.bottom }]}>
-        <Display size={22} weight={900} spacing={0.14} color={colors.accent}>
-          LIFTLOG
+        <Display size={24} weight={900} spacing={0.14} color={colors.accent}>
+          {t('LIFTLOG')}
         </Display>
-        <Display size={70} weight={900} lh={0.88}>
-          Every set counts.
+        <Display size={56} weight={900} lh={0.88}>
+          {t('Every set counts.')}
         </Display>
-        <UI size={17} lh={1.45} color={colors.muted} style={{ maxWidth: 310 }}>
-          Plan your week, log each set and watch your lifts go up.
+        <UI size={20} lh={1.45} color={colors.muted} style={{ maxWidth: 310 }}>
+          {t('Plan your week, log each set and watch your lifts go up.')}
         </UI>
         <PrimaryButton
-          label="CREATE PROFILE"
+          label={t('CREATE PROFILE')}
           style={{ marginTop: 8 }}
           onPress={() => router.push('/onboarding')}
         />
         <Pressable onPress={() => router.push('/profiles')} accessibilityRole="button" style={styles.link}>
           <UI size={16} weight={600}>
-            I already have a profile
+            {t('I already have a profile')}
           </UI>
         </Pressable>
       </View>

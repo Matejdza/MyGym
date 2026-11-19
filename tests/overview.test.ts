@@ -58,3 +58,22 @@ test('period totals count only that profile and period', async () => {
   const empty = await repo.periodStats(db, 'p1', at(1, 0), at(2, 0));
   assert.deepEqual(empty, { workouts: 0, sets: 0, volume: 0, minutes: 0, days: [] });
 });
+
+test('a profile made mid-week: days before it are not planned or missed', async () => {
+  const { firstPlanDay, plannedFrom } = await import('@/domain/week');
+  const { plannedWorkouts, periodRange } = await import('@/domain/overview');
+  const plan = { ...emptyPlanForTest(), days: ['A', null, 'B', null, 'C', 'D', null] } as never;
+  // Week of Monday 2026-11-16; profile made on Friday the 20th.
+  const made = new Date(2026, 10, 20, 9).getTime();
+  assert.equal(firstPlanDay(made, '2026-11-16'), 4);
+  assert.equal(plannedFrom(plan, 4), 2);
+  assert.equal(firstPlanDay(made, '2026-11-23'), 0);
+  assert.equal(firstPlanDay(made, '2026-11-09'), 7);
+  const week = periodRange('week', new Date(2026, 10, 20));
+  assert.equal(plannedWorkouts(plan, week), 4);
+  assert.equal(plannedWorkouts(plan, week, '2026-11-20'), 2);
+});
+
+function emptyPlanForTest() {
+  return { routines: {}, days: [null, null, null, null, null, null, null], weekly: 3 };
+}

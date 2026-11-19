@@ -3,10 +3,13 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Pressy } from '@/components/Motion';
+import { ProfileGlyph } from '@/components/ProfileIcon';
 import { NumberField, type NumberInput } from '@/components/NumberField';
 import { Display, Mono, UI } from '@/components/Txt';
 import { useScale } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 type PressProps = { onPress?: () => void; disabled?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string };
 
@@ -20,11 +23,11 @@ export function PrimaryButton({
   disabled,
   dimmed,
   height = 52,
-  fontSize = 22,
+  fontSize = 24,
   style,
 }: PressProps & { label: string; dimmed?: boolean; height?: number; fontSize?: number }) {
   return (
-    <Pressable
+    <Pressy
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -36,21 +39,21 @@ export function PrimaryButton({
       <Display size={fontSize} weight={900} spacing={0.02} color={colors.accentInk}>
         {label}
       </Display>
-    </Pressable>
+    </Pressy>
   );
 }
 
 /** Secondary CTA: outlined, ink label (e.g. "BACK TO HOME"). Only the main action is yellow. */
 export function InkDisplayButton({ label, onPress, style }: PressProps & { label: string }) {
   return (
-    <Pressable
+    <Pressy
       onPress={onPress}
       accessibilityRole="button"
       style={({ pressed }) => [styles.center, { height: 52, borderRadius: 26, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border }, pressed && { backgroundColor: colors.surface }, style]}>
-      <Display size={22} weight={900} spacing={0.02}>
+      <Display size={24} weight={900} spacing={0.02}>
         {label}
       </Display>
-    </Pressable>
+    </Pressy>
   );
 }
 
@@ -71,10 +74,10 @@ export function RoundButton({
   // Log-sheet buttons also shrink on short screens; the rest only follow the width.
   const d = fitHeight ? fit(size) : sz(size);
   return (
-    <Pressable
+    <Pressy
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={plus ? 'Increase' : 'Decrease'}
+      accessibilityLabel={plus ? t('Increase') : t('Decrease')}
       style={({ pressed }) => [
         styles.center,
         {
@@ -90,7 +93,7 @@ export function RoundButton({
       <Mono size={fontSize}>
         {sign}
       </Mono>
-    </Pressable>
+    </Pressy>
   );
 }
 
@@ -107,7 +110,7 @@ export function StepperCard({
   valueSize = 40,
   button = 58,
   buttonFont = 24,
-  labelSize = 15,
+  labelSize = 16,
   unitSize = 16,
   valueGap = 4,
   padding = [14, 14, 14, 18],
@@ -140,7 +143,7 @@ export function StepperCard({
         </UI>
         <View style={[styles.baseline, { marginTop: valueGap }]}>
           {input ? (
-            <NumberField input={input} display={value} size={valueSize} label={`${label}${unit ? ` in ${unit}` : ''}`} onError={setError} />
+            <NumberField input={input} display={value} size={valueSize} label={unit ? t('{what} in {unit}', { what: label, unit }) : label} onError={setError} />
           ) : (
             <Mono size={valueSize} weight={500} spacing={-0.05}>
               {value}
@@ -160,21 +163,21 @@ export function StepperCard({
 /** Circular back button with "‹" (onboarding header). */
 export function BackCircle({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Back" style={[styles.center, styles.backCircle]}>
-      <UI size={22}>‹</UI>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t('Back')} style={[styles.center, styles.backCircle]}>
+      <UI size={24}>‹</UI>
     </Pressable>
   );
 }
 
 /** "‹ Back" pill. `onPhoto` uses the translucent fill used over hero photos. */
-export function BackPill({ onPress, label = '‹ Back', onPhoto, style }: PressProps & { label?: string; onPhoto?: boolean }) {
+export function BackPill({ onPress, label, onPhoto, style }: PressProps & { label?: string; onPhoto?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       style={[styles.center, styles.backPill, { backgroundColor: onPhoto ? colors.scrim : colors.surface, paddingHorizontal: onPhoto ? 16 : 14 }, style]}>
-      <UI size={15} weight={600}>
-        {label}
+      <UI size={16} weight={600}>
+        {label ?? `‹ ${t('Back')}`}
       </UI>
     </Pressable>
   );
@@ -208,20 +211,27 @@ export function Avatar({
   color,
   initial,
   fontSize,
+  icon,
   children,
 }: {
   size: number;
   color: string;
   initial: string;
   fontSize: number;
+  /** A profile icon (see ProfileIcon.tsx) shown instead of the letter. */
+  icon?: string | null;
   children?: ReactNode;
 }) {
   const d = useScale().sz(size);
   return (
-    <View style={[styles.center, { width: d, height: d, borderRadius: d / 2, backgroundColor: color }]}>
-      <Display size={fontSize} weight={900} color={colors.onPlate}>
-        {initial}
-      </Display>
+    <View style={[styles.center, { width: d, height: d, borderRadius: d / 2, backgroundColor: color, overflow: 'hidden' }]}>
+      {icon ? (
+        <ProfileGlyph icon={icon} circle={d} />
+      ) : (
+        <Display size={fontSize} weight={900} color={colors.onPlate}>
+          {initial}
+        </Display>
+      )}
       {children}
     </View>
   );

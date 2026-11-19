@@ -1,6 +1,7 @@
 // Image map ported from PHOTOS / COVERS / gSrc / coverSrc in design_handoff_liftlog/LiftLog.dc.html.
 // Metro needs every image as a static require().
 
+import { exercise } from '@/data/catalog';
 import type { GroupKey, Routine } from '@/domain/types';
 
 /** A bundled image (require) or a file/remote URI. */
@@ -80,8 +81,13 @@ export const COVERS: Record<string, Img> = {
   "Legs": require('@/assets/photos/routine-legs.jpg'),
   "Shoulders & arms": require('@/assets/photos/routine-shoulders-arms.jpg'),
 };
+// The same covers for the default routines created in Serbian.
+COVERS['Grudi i triceps'] = COVERS['Chest & triceps'];
+COVERS['Leđa i biceps'] = COVERS['Back & biceps'];
+COVERS['Noge'] = COVERS['Legs'];
+COVERS['Ramena i ruke'] = COVERS['Shoulders & arms'];
 
-const GROUP_PHOTOS: Record<Exclude<GroupKey, 'cardio'>, Img> = {
+const GROUP_PHOTOS: Record<Exclude<GroupKey, 'cardio' | 'functional' | 'mobility'>, Img> = {
   chest: require('@/assets/photos/group-chest.jpg'),
   back: require('@/assets/photos/group-back.jpg'),
   legs: require('@/assets/photos/group-legs.jpg'),
@@ -105,7 +111,9 @@ export const IMAGES = {
 export const exPhoto = (id: string, n = 0): Img | null => PHOTOS[id]?.[n] ?? null;
 
 /** Muscle-group photo (`gSrc` in the prototype). */
-export const groupPhoto = (key: GroupKey): Img => (key === 'cardio' ? IMAGES.cardioHero : GROUP_PHOTOS[key]);
+/** Functional training uses the home photo until it has one of its own. */
+export const groupPhoto = (key: GroupKey): Img =>
+  key === 'cardio' ? IMAGES.cardioHero : key === 'functional' || key === 'mobility' ? IMAGES.hero : GROUP_PHOTOS[key];
 
 /**
  * Routine cover (`coverSrc`). `wide` is the routine editor banner. Routines the
@@ -114,5 +122,9 @@ export const groupPhoto = (key: GroupKey): Img => (key === 'cardio' ? IMAGES.car
 export function coverPhoto(r: Routine | null | undefined, wide = false): Img | null {
   if (!r) return null;
   if (r.type === 'cardio') return wide ? IMAGES.cardioBanner : IMAGES.cardioHero;
-  return COVERS[r.name] ?? r.items.map((it) => exPhoto(it.ex)).find((p) => p != null) ?? null;
+  const own = COVERS[r.name] ?? r.items.map((it) => exPhoto(it.ex)).find((p) => p != null);
+  if (own) return own;
+  // No exercise photo yet (new library exercises): the first exercise's muscle-group photo.
+  const first = r.items[0] ? exercise(r.items[0].ex) : null;
+  return first ? groupPhoto(first.group) : null;
 }

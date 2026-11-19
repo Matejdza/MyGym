@@ -5,6 +5,7 @@ import { exercise } from '@/data/catalog';
 
 import { fmt, mmss, r2, thou } from './format';
 import type { CardioSession, LoggedCardio, LoggedSet } from './types';
+import { t } from '@/i18n';
 
 const clone = (s: CardioSession): CardioSession => JSON.parse(JSON.stringify(s));
 
@@ -19,7 +20,7 @@ export function toggleTimer(s: CardioSession, now: number): CardioSession {
 
 export const resetTimer = (s: CardioSession): CardioSession => ({ ...s, accumulatedMs: 0, runningSince: null });
 
-export const timerLabel = (s: CardioSession) => (s.runningSince != null ? 'Pause' : s.accumulatedMs > 0 ? 'Resume' : 'Start timer');
+export const timerLabel = (s: CardioSession) => (s.runningSince != null ? t('Pause') : s.accumulatedMs > 0 ? t('Resume') : t('Start timer'));
 
 /** Switches to activity `i`; the timer starts over for it. */
 export function goActivity(s: CardioSession, i: number): CardioSession {
@@ -70,11 +71,11 @@ export function strengthSummary(sets: LoggedSet[], durationMs: number): Summary 
   const vol = sets.reduce((a, x) => a + x.kg * x.reps, 0);
   return {
     rows: [
-      { k: 'Time', v: mmss(durationMs) },
-      { k: 'Sets', v: String(sets.length) },
-      { k: 'Volume', v: `${thou(vol)} kg` },
+      { k: t('Time'), v: mmss(durationMs) },
+      { k: t('Sets'), v: String(sets.length) },
+      { k: t('Volume'), v: `${thou(vol)} kg` },
     ],
-    listTitle: 'New records',
+    listTitle: t('New records'),
     list: sets.filter((x) => x.pr).map((x) => ({ n: exercise(x.exId)?.name ?? x.exId, v: `${fmt(x.kg)} kg × ${x.reps}` })),
   };
 }
@@ -85,11 +86,11 @@ export function cardioSummary(entries: LoggedCardio[], planned: number): Summary
   const km = entries.filter((x) => exercise(x.exId)?.unit === 'km').reduce((a, x) => a + x.value, 0);
   return {
     rows: [
-      { k: 'Time', v: `${mins} min` },
-      { k: 'Distance', v: `${fmt(r2(km))} km` },
-      { k: 'Activities', v: `${entries.length} of ${planned}` },
+      { k: t('Time'), v: `${mins} min` },
+      { k: t('Distance'), v: `${fmt(r2(km))} km` },
+      { k: t('Activities'), v: t('{done} of {total}', { done: entries.length, total: planned }) },
     ],
-    listTitle: 'Activities',
-    list: entries.map((x) => ({ n: exercise(x.exId)?.name ?? x.exId, v: `${x.minutes} min, ${fmt(x.value)} ${exercise(x.exId)?.unit ?? ''}` })),
+    listTitle: t('Activities'),
+    list: entries.map((x) => ({ n: exercise(x.exId)?.name ?? x.exId, v: `${x.minutes} min, ${fmt(x.value)} ${t(exercise(x.exId)?.unit ?? '')}` })),
   };
 }

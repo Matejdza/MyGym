@@ -21,11 +21,14 @@ export function Photo({
   top?: boolean;
 }) {
   return (
-    <View style={[{ overflow: 'hidden', backgroundColor: fill }, style]}>
+    <View style={[{ overflow: 'hidden', backgroundColor: fill }, style]} {...PHOTO_MARK}>
       {source != null && <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={top ? 'top' : 'center'} transition={0} />}
     </View>
   );
 }
+
+/** Marks a photo for the light-theme photo treatment in public/index.html (web only). */
+const PHOTO_MARK = (Platform.OS === 'web' ? { dataSet: { photo: 'on' } } : {}) as object;
 
 /** One gradient stop: [position 0–1, color]. */
 export type Stop = [number, string];

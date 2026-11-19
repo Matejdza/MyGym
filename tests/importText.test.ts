@@ -14,7 +14,9 @@ test('exercise names: exact, plural, aliases and unknown', () => {
   assert.equal(matchExercise('RDL'), 'rdl');
   assert.equal(matchExercise('Calf raises'), 'calf');
   assert.equal(matchExercise('Seated dumbbell press'), 'dbpress', 'the most specific name wins');
-  assert.equal(matchExercise('Leg extension'), null);
+  assert.equal(matchExercise('Leg extension'), 'legext');
+  assert.equal(matchExercise('Chin-ups'), 'chinup');
+  assert.equal(matchExercise('Nordic curl'), null);
   assert.equal(matchExercise('Push day'), null);
 });
 
@@ -27,7 +29,7 @@ test('one exercise per line, with name and days', () => {
       '- Incline dumbbell press 3x10-12 @ 24 kg',
       'Lateral raise 3 sets, 15 reps, rest 1:15',
       'Plank 3 x 45',
-      'Leg extension 3 x 12',
+      'Nordic curl 3 x 12',
       'Treadmill run 20 min',
     ].join('\n'),
   );

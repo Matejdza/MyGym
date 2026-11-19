@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { UI } from '@/components/Txt';
+import { t } from '@/i18n';
 import { colors } from '@/theme/tokens';
 
 /** Pill segmented control (`seg` in the prototype). Active segment: ink fill by default. */
@@ -33,7 +34,7 @@ export function Segmented<K extends string>({
             accessibilityState={{ selected: on }}
             style={[styles.btn, { backgroundColor: on ? active : 'transparent' }]}>
             <UI size={fontSize} weight={700} color={on ? activeText : colors.ink} numberOfLines={1}>
-              {label}
+              {t(label)}
             </UI>
           </Pressable>
         );

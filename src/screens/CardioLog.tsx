@@ -10,11 +10,13 @@ import * as repo from '@/data/repo';
 import * as C from '@/domain/cardio';
 import { fmt, mmss } from '@/domain/format';
 import type { CardioSession } from '@/domain/types';
+import { enterPhase } from '@/domain/mobilitySession';
 import { useEndWorkout } from '@/hooks/useEndWorkout';
 import { useNow } from '@/hooks/useNow';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useScale, useTop } from '@/theme/layout';
 import { ZONE_COLORS, colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** Cardio workout: activity timer, activity rows, minutes and distance steppers. */
 export function CardioLog({ session: s }: { session: CardioSession }) {
@@ -24,7 +26,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
   const { fit } = useScale();
   const insets = useSafeAreaInsets();
   const now = useNow(500);
-  const { confirming, endWorkout, finish } = useEndWorkout(s, 'Finish without logging any activities?');
+  const { confirming, endWorkout, finish } = useEndWorkout(s, t('Finish without logging any activities?'));
 
   const a = s.ex[s.cur];
   const e = exercise(a.id);
@@ -41,7 +43,10 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
   const done = () => finish({ sets: [], cardio: C.loggedCardio(s) });
   const main = () => {
     if (!a.done) setSession(C.logActivity(s));
-    else if (C.allDone(s)) done();
+    else if (C.allDone(s)) {
+      if (s.stretch?.length) setSession(enterPhase(s, 'stretch'));
+      else done();
+    }
     else setSession(C.goActivity(s, s.ex.findIndex((x) => !x.done)));
   };
 
@@ -50,7 +55,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
       <LogTopBar elapsed={mmss(now - s.startedAt)} onFinish={done} />
       <ExerciseSwitcher
         exId={a.id}
-        position={`Activity ${s.cur + 1} of ${s.ex.length}`}
+        position={t('Activity {n} of {total}', { n: s.cur + 1, total: s.ex.length })}
         name={e.name}
         canPrev={s.cur > 0}
         canNext={!last}
@@ -60,7 +65,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
       <ProgressSegments states={s.ex.map((x, i) => (x.done ? 'done' : i === s.cur ? 'current' : 'todo'))} />
       {lastTime && (
         <UI size={14} color={colors.muted} style={logStyles.prevText}>
-          {`Last time: ${lastTime.minutes} min, ${fmt(lastTime.value)} ${e.unit}`}
+          {t('Last time: {min} min, {value}', { min: lastTime.minutes, value: `${fmt(lastTime.value)} ${t(e.unit ?? '')}` })}
         </UI>
       )}
 
@@ -68,17 +73,17 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
         <View style={styles.timerCard}>
           <View style={styles.timerHead}>
             <UI size={14} color={colors.muted}>
-              Activity timer
+              {t('Activity timer')}
             </UI>
             <View style={[styles.zone, { backgroundColor: ZONE_COLORS[a.zone] }]}>
-              <UI size={14} weight={700} color={colors.onPlate}>{`Zone ${a.zone}`}</UI>
+              <UI size={14} weight={700} color={colors.onPlate}>{t('Zone {zone}', { zone: a.zone })}</UI>
             </View>
           </View>
           <View style={styles.timerRow}>
-            <Mono size={58} weight={500} lh={1} spacing={-0.06} color={el >= target ? colors.green : colors.ink}>
+            <Mono size={56} weight={500} lh={1} spacing={-0.06} color={el >= target ? colors.green : colors.ink}>
               {mmss(el)}
             </Mono>
-            <Mono size={15} color={colors.muted}>{`/ ${mmss(target)}`}</Mono>
+            <Mono size={16} color={colors.muted}>{`/ ${mmss(target)}`}</Mono>
           </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${pct}%` }]} />
@@ -93,8 +98,8 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
               </UI>
             </Pressable>
             <Pressable onPress={() => setSession(C.resetTimer(s))} accessibilityRole="button" style={styles.reset}>
-              <UI size={15} weight={600}>
-                Reset
+              <UI size={16} weight={600}>
+                {t('Reset')}
               </UI>
             </Pressable>
           </View>
@@ -114,14 +119,14 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
                 <Mono size={14} color={colors.muted} style={{ width: 22 }}>
                   {String(i + 1)}
                 </Mono>
-                <UI size={15} weight={600} numberOfLines={1} color={x.done || act ? colors.ink : colors.muted} style={{ flex: 1 }}>
+                <UI size={16} weight={600} numberOfLines={1} color={x.done || act ? colors.ink : colors.muted} style={{ flex: 1 }}>
                   {ee.name}
                 </UI>
                 <Mono size={14} weight={500} color={x.done || act ? colors.ink : colors.muted}>
-                  {x.done ? `${x.min} min, ${fmt(x.v)} ${ee.unit === 'km' ? 'km' : 'fl'}` : `${x.target} min`}
+                  {x.done ? `${x.min} min, ${fmt(x.v)} ${ee.unit === 'km' ? 'km' : t('fl')}` : `${x.target} min`}
                 </Mono>
                 <UI size={14} weight={700} align="right" color={act ? colors.accent : colors.muted} style={{ minWidth: 34 }}>
-                  {x.done ? 'Done' : act ? 'Now' : ''}
+                  {x.done ? t('Done') : act ? t('Now') : ''}
                 </UI>
               </Pressable>
             );
@@ -135,7 +140,7 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
       <View style={[logStyles.sheet, { paddingTop: 12, paddingBottom: 12 + insets.bottom }]}>
         <StepRow
           value={String(a.min)}
-          label="minutes"
+          label={t('minutes')}
           mirrored={mirrored}
           onDec={() => setSession(C.adjustActivity(s, 'min', -1))}
           onInc={() => setSession(C.adjustActivity(s, 'min', 1))}
@@ -143,14 +148,14 @@ export function CardioLog({ session: s }: { session: CardioSession }) {
         />
         <StepRow
           value={fmt(a.v)}
-          label={km ? 'km, step 0.1' : 'floors'}
+          label={km ? t('km, step 0.1') : t('floors')}
           mirrored={mirrored}
           onDec={() => setSession(C.adjustActivity(s, 'v', -(e.step ?? 1)))}
           onInc={() => setSession(C.adjustActivity(s, 'v', e.step ?? 1))}
           input={{ min: 0, max: km ? 300 : 1000, decimals: km, value: a.v, onSet: (v) => setSession(C.adjustActivity(s, 'v', v - a.v)) }}
         />
         <PrimaryButton
-          label={(!a.done ? 'Log activity' : C.allDone(s) ? 'Finish workout' : 'Next activity').toUpperCase()}
+          label={(!a.done ? t('Log activity') : C.allDone(s) ? (s.stretch?.length ? t('Stretching') : t('Finish workout')) : t('Next activity')).toUpperCase()}
           onPress={main}
           height={fit(56)}
         />

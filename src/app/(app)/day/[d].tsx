@@ -2,20 +2,22 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PlateBadge } from '@/components/Cover';
 import { Hero } from '@/components/Hero';
-import { Photo } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { PrimaryButton } from '@/components/ui';
+import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { DAYS_FULL, exercise } from '@/data/catalog';
-import { coverPhoto, exPhoto } from '@/data/photos';
+import { coverPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { dateInWeek, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt } from '@/domain/format';
+import { routineStretch, routineWarmup } from '@/domain/mobility';
 import { routineMeta, schemeText } from '@/domain/plan';
+import type { TimedItem } from '@/domain/types';
 import { canStart } from '@/domain/session';
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /** One day of the plan: cover, exercise list and the start button. */
 export default function DayDetail() {
@@ -58,19 +60,19 @@ export default function DayDetail() {
       <View style={styles.screen}>
         <ScrollView style={{ flex: 1 }}>
           <DayHero source={null} onBack={back}>
-            <UI size={15} weight={600}>
+            <UI size={16} weight={600}>
               {DAYS_FULL[day]}
             </UI>
             <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
-              Rest day
+              {t('Rest day')}
             </Display>
           </DayHero>
           <View style={styles.list}>
-            <EditLink label="Edit this routine" onPress={() => router.push('/plan')} />
+            <EditLink label={t('Edit this routine')} onPress={() => router.push('/plan')} />
           </View>
         </ScrollView>
         <Footer bottom={insets.bottom}>
-          <PrimaryButton label="BACK" onPress={back} />
+          <PrimaryButton label={t('BACK')} onPress={back} />
         </Footer>
       </View>
     );
@@ -78,7 +80,7 @@ export default function DayDetail() {
 
   const running = !!session && session.day === day && session.weekStart === weekStart;
   const startable = canStart(plan, day);
-  const startLabel = running ? 'CONTINUE WORKOUT' : done.includes(day) ? 'LOG AGAIN' : 'START WORKOUT';
+  const startLabel = running ? t('CONTINUE WORKOUT') : done.includes(day) ? t('LOG AGAIN') : t('START WORKOUT');
   const start = async () => {
     if (!startable) return;
     if (await startWorkout(day)) router.push('/log');
@@ -88,10 +90,7 @@ export default function DayDetail() {
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }}>
         <DayHero source={coverPhoto(r)} onBack={back}>
-          <View style={styles.badgeRow}>
-            <PlateBadge routineKey={key} size={28} fontSize={13} />
-            <UI size={15} weight={600}>{`${DAYS_FULL[day]}, ${dateLabel}`}</UI>
-          </View>
+          <UI size={16} weight={600} color={colors.accent}>{`${DAYS_FULL[day]}, ${dateLabel}`}</UI>
           <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
             {r.name}
           </Display>
@@ -101,6 +100,7 @@ export default function DayDetail() {
         </DayHero>
 
         <View style={styles.list}>
+          <MobilityLine label={t('Warm-up')} items={routineWarmup(r)} />
           {r.type === 'cardio'
             ? r.items.map((it, i) => {
                 const e = exercise(it.ex);
@@ -110,7 +110,7 @@ export default function DayDetail() {
                     key={i}
                     exId={it.ex}
                     name={e.name}
-                    last={last != null ? `Zone ${it.zone}, last time ${fmt(last)} ${e.unit}` : `Zone ${it.zone}`}
+                    last={last != null ? t('Zone {zone}, last time {value}', { zone: it.zone, value: `${fmt(last)} ${t(e.unit ?? '')}` }) : t('Zone {zone}', { zone: it.zone })}
                     scheme={`${it.min} min`}
                   />
                 );
@@ -118,10 +118,11 @@ export default function DayDetail() {
             : r.items.map((it, i) => {
                 const e = exercise(it.ex);
                 const last = history?.[it.ex];
-                const line = e.bodyweight ? 'Body weight' : last != null ? `Last time ${fmt(last)} kg` : null;
+                const line = e.bodyweight ? t('Body weight') : last != null ? t('Last time {kg} kg', { kg: fmt(last) }) : null;
                 return <ItemRow key={i} exId={it.ex} name={e.name} last={line} scheme={schemeText(it)} />;
               })}
-          <EditLink label="Edit this routine" onPress={() => router.push(`/routine/${key}`)} />
+          <MobilityLine label={t('Stretching')} items={routineStretch(r)} />
+          <EditLink label={t('Edit this routine')} onPress={() => router.push(`/routine/${key}`)} />
         </View>
       </ScrollView>
       <Footer bottom={insets.bottom}>
@@ -134,18 +135,16 @@ export default function DayDetail() {
 
 function DayHero({ source, onBack, children }: { source: ReturnType<typeof coverPhoto>; onBack: () => void; children: React.ReactNode }) {
   return (
-    <Hero source={source} height={330} cardHeight={200} onBack={onBack}>
-      {children}
-    </Hero>
+    <Hero source={source} height={330} cardHeight={260} onBack={onBack} caption={children} />
   );
 }
 
 function ItemRow({ exId, name, last, scheme }: { exId: string; name: string; last: string | null; scheme: string }) {
   return (
     <Pressable onPress={() => router.push(`/exercise/${exId}`)} accessibilityRole="button" style={styles.row}>
-      <Photo source={exPhoto(exId)} style={styles.thumb} />
+      <ExerciseThumb id={exId} size={54} radius={12} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <UI size={17} weight={600}>
+        <UI size={20} weight={600}>
           {name}
         </UI>
         {last != null && (
@@ -158,6 +157,21 @@ function ItemRow({ exId, name, last, scheme }: { exId: string; name: string; las
         {scheme}
       </Mono>
     </Pressable>
+  );
+}
+
+/** Warm-up or stretching as one quiet row: label, then the moves and their times. */
+function MobilityLine({ label, items }: { label: string; items: TimedItem[] }) {
+  if (!items.length) return null;
+  return (
+    <View style={styles.mobility}>
+      <UI size={14} weight={600} color={colors.accent}>
+        {label}
+      </UI>
+      <UI size={16} color={colors.muted} style={{ marginTop: 4 }}>
+        {items.map((x) => `${exercise(x.ex).name} ${x.sec} s`).join(' · ')}
+      </UI>
+    </View>
   );
 }
 
@@ -177,7 +191,6 @@ function Footer({ bottom, children }: { bottom: number; children: React.ReactNod
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   list: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 24 },
   row: {
     flexDirection: 'row',
@@ -188,5 +201,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
   },
   thumb: { width: 54, height: 54, borderRadius: 12 },
+  mobility: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line },
   edit: { height: 48, marginTop: 8, justifyContent: 'center', alignSelf: 'flex-start' },
 });

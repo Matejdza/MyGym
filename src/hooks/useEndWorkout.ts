@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { confirm } from '@/components/confirm';
 import type { LoggedCardio, LoggedSet, Session } from '@/domain/types';
 import { useStore } from '@/state/store';
+import { t } from '@/i18n';
 
 /** Leaves the workout screens for the Workout tab. */
 function toWorkoutTab() {
@@ -35,12 +36,12 @@ export function useEndWorkout(s: Session, emptyPrompt: string) {
   /** `left`: what is still open (e.g. "5 sets"); finishing early asks first so a stray tap can't end the workout. */
   const finish = async (logged: { sets: LoggedSet[]; cardio: LoggedCardio[] }, left?: string) => {
     if (!logged.sets.length && !logged.cardio.length) {
-      if (!(await confirm(emptyPrompt, 'Finish'))) return;
+      if (!(await confirm(emptyPrompt, t('Finish')))) return;
       setSession(null);
       toWorkoutTab();
       return;
     }
-    if (left && !(await confirm(`Finish now? ${left} not logged yet.`, 'Finish', 'What you logged is saved.'))) return;
+    if (left && !(await confirm(t('Finish now? {left} not logged yet.', { left }), t('Finish'), t('What you logged is saved.')))) return;
     const id = await finishWorkout({
       routineKey: s.routineKey,
       routineName: s.routineName,

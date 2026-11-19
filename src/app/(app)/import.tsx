@@ -6,11 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill, PrimaryButton } from '@/components/ui';
 import { DAYS, exercise } from '@/data/catalog';
+import { plural } from '@/domain/format';
 import { parseRoutineText, withImportedRoutine } from '@/domain/importText';
 import { nextRoutineKey, schemeText, restText } from '@/domain/plan';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 const EXAMPLE = ['Push day', 'Monday, Thursday', 'Bench press 4 x 8, 90 s rest', 'Incline dumbbell press 3 x 10-12', 'Lateral raise 3 sets, 15 reps'].join('\n');
 
@@ -44,11 +46,11 @@ export default function ImportRoutine() {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: top(58) }]} keyboardShouldPersistTaps="handled">
         <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-        <Display size={52} weight={900} lh={0.9} style={{ marginTop: 24 }}>
-          Import routine
+        <Display size={56} weight={900} lh={0.9} style={{ marginTop: 24 }}>
+          {t('Import routine')}
         </Display>
         <UI size={16} color={colors.muted} lh={1.5} style={{ marginTop: 16 }}>
-          Paste a routine, one exercise per line. Sets, reps, rest and days are picked up; weights are skipped.
+          {t('Paste a routine, one exercise per line. Sets, reps, rest and days are picked up; weights are skipped.')}
         </UI>
 
         <TextInput
@@ -61,28 +63,28 @@ export default function ImportRoutine() {
           placeholderTextColor={colors.placeholder}
           autoCapitalize="sentences"
           autoCorrect={false}
-          accessibilityLabel="Routine text"
+          accessibilityLabel={t('Routine text')}
           textAlignVertical="top"
           style={[styles.input, { borderColor: focused ? colors.accent : colors.line }]}
         />
 
         {text.trim().length > 0 && (
           <View style={{ marginTop: 32 }}>
-            <Display size={28} weight={800}>
-              Preview
+            <Display size={32} weight={800}>
+              {t('Preview')}
             </Display>
 
             {parsed.items.length === 0 ? (
               <UI size={16} color={colors.muted} lh={1.5} style={{ marginTop: 16 }}>
-                No exercises recognised yet. Use the names from the exercise library, e.g. “Bench press 4 x 8”.
+                {t('No exercises recognised yet. Use the names from the exercise library, e.g. “Bench press 4 x 8”.')}
               </UI>
             ) : (
               <View style={styles.card}>
-                <UI size={18} weight={600}>
-                  {parsed.name ?? 'Imported routine'}
+                <UI size={20} weight={600}>
+                  {parsed.name ?? t('Imported routine')}
                 </UI>
-                <UI size={15} color={colors.muted} style={{ marginTop: 4 }}>
-                  {parsed.days.length ? parsed.days.map((d) => DAYS[d]).join(', ') : 'No days yet: pick them in Training plan'}
+                <UI size={16} color={colors.muted} style={{ marginTop: 4 }}>
+                  {parsed.days.length ? parsed.days.map((d) => DAYS[d]).join(', ') : t('No days yet: pick them in Training plan')}
                 </UI>
                 <View style={{ marginTop: 16 }}>
                   {parsed.items.map((it, i) => (
@@ -90,7 +92,7 @@ export default function ImportRoutine() {
                       <UI size={16} style={{ flex: 1, minWidth: 0 }} numberOfLines={1}>
                         {exercise(it.ex).name}
                       </UI>
-                      <Mono size={15} color={colors.muted}>
+                      <Mono size={16} color={colors.muted}>
                         {`${schemeText(it)} · ${restText(it.rest ?? settings.restSeconds)}`}
                       </Mono>
                     </View>
@@ -101,11 +103,11 @@ export default function ImportRoutine() {
 
             {parsed.unknown.length > 0 && (
               <View style={{ marginTop: 16, gap: 8 }}>
-                <UI size={15} weight={600} color={colors.red}>
-                  {`Skipped ${parsed.unknown.length === 1 ? '1 line' : `${parsed.unknown.length} lines`}`}
+                <UI size={16} weight={600} color={colors.red}>
+                  {t('Skipped {count}', { count: plural(parsed.unknown.length, 'line') })}
                 </UI>
                 {parsed.unknown.map((u, i) => (
-                  <UI key={i} size={15} color={colors.muted}>{`“${u.line}”: ${u.reason}`}</UI>
+                  <UI key={i} size={16} color={colors.muted}>{`“${u.line}”: ${t(u.reason)}`}</UI>
                 ))}
               </View>
             )}
@@ -115,11 +117,11 @@ export default function ImportRoutine() {
 
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
         {full && (
-          <UI size={15} color={colors.red} align="center" style={{ marginBottom: 8 }}>
-            You already have 8 routines. Delete one first.
+          <UI size={16} color={colors.red} align="center" style={{ marginBottom: 8 }}>
+            {t('You already have 8 routines. Delete one first.')}
           </UI>
         )}
-        <PrimaryButton label="CREATE ROUTINE" onPress={canCreate ? create : undefined} dimmed={!canCreate} disabled={!canCreate} />
+        <PrimaryButton label={t('CREATE ROUTINE')} onPress={canCreate ? create : undefined} dimmed={!canCreate} disabled={!canCreate} />
       </View>
     </View>
   );

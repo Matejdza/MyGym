@@ -7,16 +7,18 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { Fill, useCountUp } from '@/components/Motion';
 import { Segmented } from '@/components/Segmented';
 import { Mono, UI } from '@/components/Txt';
 import * as repo from '@/data/repo';
 import { isoDate } from '@/domain/dates';
 import { periodRange, plannedWorkouts, timeText, volumeText, type Period } from '@/domain/overview';
 import { thou } from '@/domain/format';
-import { DAY_LETTERS } from '@/domain/week';
+import { DAY_INITIALS } from '@/domain/week';
 import type { Plan } from '@/domain/types';
 import { useDbQuery } from '@/state/store';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 const PERIODS: [Period, string][] = [
   ['week', 'Week'],
@@ -30,7 +32,8 @@ const EMPTY_NOTE: Record<Period, string> = {
   year: 'No workouts this year yet.',
 };
 
-export function Overview({ profileId, plan }: { profileId: string; plan: Plan }) {
+export function Overview({ profileId, plan, createdAt }: { profileId: string; plan: Plan; createdAt: number }) {
+  const since = isoDate(new Date(createdAt));
   const [period, setPeriod] = useState<Period>('week');
   const now = new Date();
   const range = periodRange(period, now);
@@ -39,10 +42,12 @@ export function Overview({ profileId, plan }: { profileId: string; plan: Plan })
     period,
     range.from.getTime(),
   ]);
-  const planned = plannedWorkouts(plan, range);
-  const done = stats?.workouts ?? 0;
+  const planned = plannedWorkouts(plan, range, since);
+  // Days with a workout, like Home's "x of y done" (logging a day twice counts once).
+  const done = stats?.days.length ?? 0;
   const pct = planned ? Math.min(100, (done / planned) * 100) : done ? 100 : 0;
   const show = (v: string) => (stats ? v : '–');
+  const doneShown = Math.round(useCountUp(done));
 
   return (
     <View>
@@ -51,32 +56,32 @@ export function Overview({ profileId, plan }: { profileId: string; plan: Plan })
         {range.label}
       </UI>
 
-      {period === 'week' && <WeekDays from={range.from} plan={plan} done={stats?.days ?? []} today={isoDate(now)} />}
+      {period === 'week' && <WeekDays from={range.from} plan={plan} done={stats?.days ?? []} today={isoDate(now)} since={since} />}
 
       <View style={styles.card}>
         <View style={styles.valueRow}>
-          <Mono size={36} weight={500}>
-            {show(String(done))}
+          <Mono size={40} weight={500}>
+            {show(String(doneShown))}
           </Mono>
-          <Mono size={18} color={colors.muted}>{`/ ${planned}`}</Mono>
+          <Mono size={20} color={colors.muted}>{`/ ${planned}`}</Mono>
         </View>
         <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: planned, now: done }}>
-          <View style={[styles.fill, { width: `${pct}%` }]} />
+          <Fill pct={pct} color={colors.accentFill} style={styles.fill} />
         </View>
-        <UI size={15} color={colors.muted} style={{ marginTop: 8 }}>
-          Workouts done
+        <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+          {t('Workouts done')}
         </UI>
       </View>
 
       <View style={styles.list}>
-        <Stat label="Sets logged" value={show(thou(stats?.sets ?? 0))} />
-        <Stat label="Volume lifted" value={show(volumeText(stats?.volume ?? 0))} />
-        <Stat label="Time trained" value={show(timeText(stats?.minutes ?? 0))} last />
+        <Stat label={t('Sets logged')} value={show(thou(stats?.sets ?? 0))} />
+        <Stat label={t('Volume lifted')} value={show(volumeText(stats?.volume ?? 0))} />
+        <Stat label={t('Time trained')} value={show(timeText(stats?.minutes ?? 0))} last />
       </View>
 
       {stats && done === 0 && (
-        <UI size={15} color={colors.muted} style={{ marginTop: 16 }}>
-          {EMPTY_NOTE[period]}
+        <UI size={16} color={colors.muted} style={{ marginTop: 16 }}>
+          {t(EMPTY_NOTE[period])}
         </UI>
       )}
     </View>
@@ -90,7 +95,7 @@ function Stat({ value, label, last }: { value: string; label: string; last?: boo
       <UI size={16} color={colors.muted}>
         {label}
       </UI>
-      <Mono size={18} weight={500} numberOfLines={1}>
+      <Mono size={20} weight={500} numberOfLines={1}>
         {value}
       </Mono>
     </View>
@@ -98,18 +103,18 @@ function Stat({ value, label, last }: { value: string; label: string; last?: boo
 }
 
 /** Mon–Sun with dates: done days filled and checked, planned days outlined, today in accent. */
-function WeekDays({ from, plan, done, today }: { from: Date; plan: Plan; done: string[]; today: string }) {
+function WeekDays({ from, plan, done, today, since }: { from: Date; plan: Plan; done: string[]; today: string; since: string }) {
   return (
     <View style={styles.week}>
-      {DAY_LETTERS.map((letter, i) => {
+      {DAY_INITIALS.map((letter, i) => {
         const d = new Date(from);
         d.setDate(d.getDate() + i);
         const iso = isoDate(d);
         const isDone = done.includes(iso);
-        const planned = !!plan.days[i];
+        const planned = !!plan.days[i] && iso >= since;
         const isToday = iso === today;
         return (
-          <View key={i} style={styles.day} accessibilityLabel={`${letter} ${d.getDate()}${isDone ? ', done' : planned ? ', planned' : ''}`}>
+          <View key={i} style={styles.day} accessibilityLabel={`${letter} ${d.getDate()}${isDone ? `, ${t('done')}` : planned ? `, ${t('planned')}` : ''}`}>
             <UI size={14} weight={600} color={isToday ? colors.accent : colors.muted}>
               {letter}
             </UI>
@@ -117,17 +122,17 @@ function WeekDays({ from, plan, done, today }: { from: Date; plan: Plan; done: s
               style={[
                 styles.dayCircle,
                 isDone
-                  ? { backgroundColor: colors.accentFill }
+                  ? { backgroundColor: colors.green }
                   : planned
                     ? { borderWidth: 1.5, borderColor: isToday ? colors.accent : colors.border }
                     : isToday && { borderWidth: 1.5, borderColor: colors.accent },
               ]}>
               {isDone ? (
                 <Svg width={18} height={18} viewBox="0 0 18 18">
-                  <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={colors.onPlate} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={colors.accentInk} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
                 </Svg>
               ) : (
-                <Mono size={15} weight={500} color={planned || isToday ? colors.ink : colors.muted}>
+                <Mono size={16} weight={500} color={planned || isToday ? colors.ink : colors.muted}>
                   {String(d.getDate())}
                 </Mono>
               )}
@@ -146,7 +151,7 @@ const styles = StyleSheet.create({
   rowLine: { borderBottomWidth: 1, borderBottomColor: colors.line },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.surface2, marginTop: 16, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 3, backgroundColor: colors.accentFill },
+  fill: { borderRadius: 3 },
   week: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   day: { alignItems: 'center', gap: 8 },
   dayCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

@@ -17,6 +17,7 @@ import { WEEKS, bodyProgress, cardioProgress, lastWeeks, liftProgress, type Prog
 import { useActive, useDbQuery, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 type Mode = 'lift' | 'cardio' | 'body';
 const MODES: [Mode, string][] = [
@@ -55,16 +56,16 @@ export default function Progress() {
       if (mode === 'lift') {
         if (!exId) return { view: null, title: '', savedToday: false };
         const sets = await repo.liftSets(db, profile.id, exId, fromMs);
-        return { view: liftProgress(exId, sets, weeks), title: `${exercise(exId).name}, best set`, savedToday: false };
+        return { view: liftProgress(exId, sets, weeks), title: t('{name}, best set', { name: exercise(exId).name }), savedToday: false };
       }
       if (mode === 'cardio') {
         const entries = await repo.cardioEntries(db, profile.id, fromMs);
-        return { view: cardioProgress(entries, weeks), title: 'Cardio minutes per week', savedToday: false };
+        return { view: cardioProgress(entries, weeks), title: t('Cardio minutes per week'), savedToday: false };
       }
       const log = await repo.bodyLog(db, profile.id);
       return {
         view: bodyProgress(log, profile.target, addDays(today, -WEEKS * 7)),
-        title: 'Body weight',
+        title: t('Body weight'),
         savedToday: log.some((e) => e.date === today),
       };
     },
@@ -82,22 +83,22 @@ export default function Progress() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(66) }]}>
       <View style={styles.header}>
-        <Display size={52} weight={900} lh={0.9}>
-          Progress
+        <Display size={56} weight={900} lh={0.9}>
+          {t('Progress')}
         </Display>
         <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={styles.allBtn}>
-          <UI size={15} weight={600} numberOfLines={1}>
-            All workouts
+          <UI size={16} weight={600} numberOfLines={1}>
+            {t('All workouts')}
           </UI>
         </Pressable>
       </View>
 
       <View style={{ marginTop: 24 }}>
-        <Overview profileId={profile.id} plan={profile.plan} />
+        <Overview profileId={profile.id} plan={profile.plan} createdAt={profile.createdAt} />
       </View>
 
-      <Display size={28} weight={800} style={{ marginTop: 48 }}>
-        Trends
+      <Display size={32} weight={800} style={{ marginTop: 48 }}>
+        {t('Trends')}
       </Display>
       <View style={styles.segment}>
         {MODES.map(([m, label]) => (
@@ -107,7 +108,7 @@ export default function Progress() {
             accessibilityRole="button"
             accessibilityState={{ selected: m === mode }}
             style={[styles.segBtn, { backgroundColor: m === mode ? colors.ink : 'transparent' }]}>
-            <UI size={15} weight={700} color={m === mode ? colors.bg : colors.ink}>
+            <UI size={16} weight={700} color={m === mode ? colors.bg : colors.ink}>
               {label}
             </UI>
           </Pressable>
@@ -136,13 +137,13 @@ export default function Progress() {
 
       {view && (
         <>
-          <UI size={15} color={colors.muted} style={{ marginTop: 24 }}>
+          <UI size={16} color={colors.muted} style={{ marginTop: 24 }}>
             {view.title}
           </UI>
           {v && (
             <>
               <View style={styles.bigRow}>
-                <Mono size={60} weight={500} lh={1} spacing={-0.06}>
+                <Mono size={56} weight={500} lh={1} spacing={-0.06}>
                   {v.big}
                 </Mono>
                 <UI size={20} weight={600} color={colors.muted}>
@@ -150,7 +151,7 @@ export default function Progress() {
                 </UI>
               </View>
               {/* Green only for an actual change; "first entry" and "no change" stay quiet. */}
-              <UI size={15} weight={600} color={/^(First|No change)/.test(v.delta) ? colors.muted : colors.green} style={{ marginTop: 8 }}>
+              <UI size={16} weight={600} color={/^(First|No change)/.test(v.delta) ? colors.muted : colors.green} style={{ marginTop: 8 }}>
                 {v.delta}
               </UI>
             </>
@@ -160,8 +161,8 @@ export default function Progress() {
               <LineChart vals={v.vals} labels={v.labels} width={chartWidth} target={v.target} />
             ) : (
               <View style={[styles.empty, { width: chartWidth }]}>
-                <UI size={15} color={colors.muted} align="center">
-                  {mode === 'body' ? 'No weight saved yet.' : 'No workouts logged yet.'}
+                <UI size={16} color={colors.muted} align="center">
+                  {mode === 'body' ? t('No weight saved yet.') : t('No workouts logged yet.')}
                 </UI>
               </View>
             )}
@@ -175,13 +176,13 @@ export default function Progress() {
             <RoundButton sign="−" size={56} fontSize={24} onPress={() => setBwInput(r2(bw - 0.1))} />
             <View style={{ flex: 1, alignItems: 'center' }}>
               <UI size={14} color={bwError ? colors.red : colors.muted}>
-                {bwError ?? 'Today, kg'}
+                {bwError ?? t('Today, kg')}
               </UI>
               <NumberField
                 input={{ ...BODY_LIMITS.weight, value: bw, onSet: setBwInput }}
                 display={fmt(bw)}
-                size={26}
-                label="Today's body weight in kg"
+                size={24}
+                label={t('Today\'s body weight in kg')}
                 onError={setBwError}
               />
             </View>
@@ -192,7 +193,7 @@ export default function Progress() {
             accessibilityRole="button"
             style={({ pressed }) => [styles.save, { backgroundColor: pressed ? colors.press : colors.accentFill }]}>
             <UI size={16} weight={700} color={colors.accentInk}>
-              {view?.savedToday ? `Saved for ${shortDate(now)}. Tap to update` : 'Save for today'}
+              {view?.savedToday ? t('Saved for {date}. Tap to update', { date: shortDate(now) }) : t('Save for today')}
             </UI>
           </Pressable>
         </>
@@ -200,15 +201,15 @@ export default function Progress() {
 
       {v && (
         <>
-          <Display size={28} weight={800} style={{ marginTop: 32 }}>
-            History
+          <Display size={32} weight={800} style={{ marginTop: 32 }}>
+            {t('History')}
           </Display>
           {v.rows.map((r, i) => (
             <View key={i} style={styles.row}>
-              <UI size={15} color={colors.muted}>
+              <UI size={16} color={colors.muted}>
                 {r.k}
               </UI>
-              <Mono size={15} weight={500}>
+              <Mono size={16} weight={500}>
                 {r.v}
               </Mono>
             </View>

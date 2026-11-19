@@ -4,7 +4,9 @@
 import { PATTERNS, exercise, routinesDefault } from '@/data/catalog';
 
 import { plural } from './format';
-import type { Plan, Routine, RoutineKey, StrengthItem } from './types';
+import { routineStretch, routineWarmup } from './mobility';
+import type { Plan, Routine, RoutineKey, StrengthItem, TimedItem } from './types';
+import { t } from '@/i18n';
 
 export const MIN_WEEKLY = 2;
 export const MAX_WEEKLY = 6;
@@ -50,7 +52,7 @@ export function nextRoutineKey(plan: Plan): RoutineKey | null {
 }
 
 export function newRoutine(type: 'strength' | 'cardio'): Routine {
-  return type === 'cardio' ? { name: 'New cardio', type: 'cardio', items: [] } : { name: 'New routine', items: [] };
+  return type === 'cardio' ? { name: t('New cardio'), type: 'cardio', items: [] } : { name: t('New routine'), items: [] };
 }
 
 export type RoutineMeta = {
@@ -69,15 +71,15 @@ export type RoutineMeta = {
 export function routineMeta(r: Routine): RoutineMeta {
   const n = r.items.length;
   if (r.type === 'cardio') {
-    const t = r.items.reduce((a, b) => a + b.min, 0);
-    const text = `${n} ${n === 1 ? 'activity' : 'activities'}, ${t} min`;
-    const pre = /cardio/i.test(r.name) ? '' : 'Cardio, ';
-    return { n, text, min: t, long: pre + text, list: pre + text };
+    const total = r.items.reduce((a, b) => a + b.min, 0);
+    const text = `${plural(n, 'activity')}, ${total} min`;
+    const pre = /cardio|kardio/i.test(r.name) ? '' : `${t('Cardio')}, `;
+    return { n, text, min: total, long: pre + text, list: pre + text };
   }
   const s = r.items.reduce((a, b) => a + b.sets, 0);
   const text = `${plural(n, 'exercise')}, ${plural(s, 'set')}`;
   const min = Math.max(10, Math.round((s * 3.6) / 5) * 5);
-  return { n, text, min, long: `${text}, about ${min} min`, list: text };
+  return { n, text, min, long: t('{text}, about {min} min', { text, min }), list: text };
 }
 
 /** Same piece of kit written differently in the catalog. */
@@ -105,7 +107,7 @@ export const assignedDays = (plan: Plan) => plan.days.filter(Boolean).length;
 export const workoutsPerWeek = assignedDays;
 
 /** "3 workouts a week" / "1 workout a week". */
-export const workoutsText = (plan: Plan) => `${plural(workoutsPerWeek(plan), 'workout')} a week`;
+export const workoutsText = (plan: Plan) => t('{count} a week', { count: plural(workoutsPerWeek(plan), 'workout') });
 
 /**
  * The stored `weekly` value follows the schedule. The database keeps it within
@@ -157,7 +159,7 @@ export const repsText = (it: StrengthItem) => {
 export const isTimed = (exId: string) => !!exercise(exId)?.timed;
 
 /** What the reps number counts, as a short label. */
-export const repsUnit = (exId: string) => (isTimed(exId) ? 'sec' : 'reps');
+export const repsUnit = (exId: string) => (isTimed(exId) ? t('sec') : t('reps'));
 
 /** Stepper increment for reps: 5 seconds for holds, otherwise 1 rep. */
 export const repsStep = (exId: string) => (isTimed(exId) ? 5 : 1);
@@ -225,4 +227,17 @@ export function searchExercises(query: string, ids: readonly string[], describe:
     const text = describe(id).toLowerCase();
     return words.every((w) => text.includes(w));
   });
+}
+
+/** A routine's warm-up or stretching list after `fn`; the picked defaults become the routine's own on first edit. */
+export function withMobility(
+  plan: Plan,
+  key: RoutineKey,
+  slot: 'warmup' | 'stretch',
+  fn: (list: TimedItem[]) => TimedItem[],
+): Plan {
+  const r = plan.routines[key];
+  if (!r) return plan;
+  const current = slot === 'warmup' ? routineWarmup(r) : routineStretch(r);
+  return { ...plan, routines: { ...plan.routines, [key]: { ...r, [slot]: fn(current) } } };
 }

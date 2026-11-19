@@ -1,23 +1,25 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { PlateBadge } from '@/components/Cover';
+import { Appear, Pressy } from '@/components/Motion';
 import { Photo } from '@/components/Photo';
 import { Display, UI } from '@/components/Txt';
 import { DAYS_FULL } from '@/data/catalog';
 import { coverPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { dateInWeek, dayIndex, longDate, parseIso, shortDate, weekStartOf } from '@/domain/dates';
+import { firstPlanDay } from '@/domain/week';
 import { routineEquipment, routineMeta } from '@/domain/plan';
 import type { Routine } from '@/domain/types';
 import { useActive, useDbQuery } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
-type DayState = 'done' | 'progress' | 'today' | 'missed' | 'upcoming' | 'rest';
+type DayState = 'done' | 'progress' | 'today' | 'missed' | 'upcoming' | 'rest' | 'before';
 
-const STATUS: Record<Exclude<DayState, 'rest'>, string> = {
+const STATUS: Record<Exclude<DayState, 'rest' | 'before'>, string> = {
   done: 'Done',
   progress: 'In progress',
   today: 'Today',
@@ -40,22 +42,25 @@ export default function Workout() {
   const weekStart = weekStartOf(now);
   const done = useDbQuery((db) => repo.doneDays(db, profile.id, weekStart), [profile.id, weekStart]) ?? [];
   const live = session && session.weekStart === weekStart ? session.day : -1;
+  // Days before the profile was made are not "missed": they just show the date.
+  const firstDay = firstPlanDay(profile.createdAt, weekStart);
 
   const stateOf = (i: number, r: Routine | null): DayState => {
     if (!r) return 'rest';
     if (done.includes(i)) return 'done';
     if (i === live) return 'progress';
     if (i === today) return 'today';
+    if (i < firstDay) return 'before';
     return i < today ? 'missed' : 'upcoming';
   };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(66) }]}>
-      <Display size={52} weight={900} lh={0.9}>
-        Workout
+      <Display size={56} weight={900} lh={0.9}>
+        {t('Workout')}
       </Display>
       <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
-        {`Week of ${longDate(parseIso(weekStart))}. Pick a day to open its workout.`}
+        {t('Week of {date}. Pick a day to open its workout.', { date: longDate(parseIso(weekStart)) })}
       </UI>
 
       <View style={{ marginTop: 24 }}>
@@ -65,20 +70,20 @@ export default function Workout() {
           const state = stateOf(i, r);
           const date = shortDate(dateInWeek(weekStart, i));
           return (
-            <View key={i} style={styles.row}>
+            <Appear key={i} index={i} style={styles.row}>
               <View style={styles.rail}>
                 <View style={[styles.line, i === 0 && { top: '50%' }, i === 6 && { bottom: '50%' }]} />
                 <Marker state={state} />
               </View>
-              {state === 'rest' || !r || !k ? (
+              {state === 'rest' || state === 'before' || !r || !k ? (
                 <View style={styles.restRow}>
-                  <UI size={15} color={colors.muted}>{`${dayName}, ${date} · Rest`}</UI>
+                  <UI size={16} color={colors.muted}>{state === 'before' ? `${dayName}, ${date}` : `${dayName}, ${date} · ${t('Rest')}`}</UI>
                 </View>
               ) : (
-                <Pressable
+                <Pressy
                   onPress={() => router.push(`/day/${i}`)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${dayName}, ${r.name}, ${STATUS[state]}`}
+                  accessibilityLabel={`${dayName}, ${r.name}, ${t(STATUS[state])}`}
                   style={({ pressed }) => [
                     styles.card,
                     (state === 'today' || state === 'progress') && styles.cardToday,
@@ -86,13 +91,12 @@ export default function Workout() {
                   ]}>
                   <View style={styles.photo}>
                     <Photo source={coverPhoto(r)} fill={colors.surface2} style={StyleSheet.absoluteFill} />
-                    <PlateBadge routineKey={k} size={24} fontSize={12} style={{ position: 'absolute', left: 8, bottom: 8 }} />
                   </View>
                   <View style={styles.text}>
                     <UI size={14} weight={600} color={state === 'today' || state === 'progress' ? colors.accent : colors.muted}>
-                      {`${dayName}, ${date} · ${STATUS[state]}`}
+                      {`${dayName}, ${date} · ${t(STATUS[state])}`}
                     </UI>
-                    <Display size={22} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
+                    <Display size={24} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
                       {r.name}
                     </Display>
                     <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
@@ -104,9 +108,9 @@ export default function Workout() {
                       </UI>
                     )}
                   </View>
-                </Pressable>
+                </Pressy>
               )}
-            </View>
+            </Appear>
           );
         })}
       </View>
@@ -116,18 +120,18 @@ export default function Workout() {
 
 /** "About 45 min" (cardio: the planned minutes; empty routine: "No exercises yet"). */
 function timeLine(r: Routine): string {
-  if (!r.items.length) return r.type === 'cardio' ? 'No activities yet' : 'No exercises yet';
-  return r.type === 'cardio' ? `${routineMeta(r).min} min` : `About ${routineMeta(r).min} min`;
+  if (!r.items.length) return r.type === 'cardio' ? t('No activities yet') : t('No exercises yet');
+  return r.type === 'cardio' ? `${routineMeta(r).min} min` : t('About {min} min', { min: routineMeta(r).min });
 }
 
 /** The marker on the line: check (done), accent ring (today), outline (upcoming), dash (missed), dot (rest). */
 function Marker({ state }: { state: DayState }) {
-  if (state === 'rest') return <View style={styles.restDot} />;
+  if (state === 'rest' || state === 'before') return <View style={styles.restDot} />;
   if (state === 'done')
     return (
-      <View style={[styles.node, { backgroundColor: colors.accentFill }]}>
+      <View style={[styles.node, { backgroundColor: colors.green }]}>
         <Svg width={14} height={14} viewBox="0 0 18 18">
-          <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={colors.onPlate} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d="M3.5 9.5 L7.5 13.5 L14.5 5" fill="none" stroke={colors.accentInk} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
       </View>
     );

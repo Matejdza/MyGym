@@ -55,7 +55,7 @@ export function setThemePref(pref: ThemePref) {
   }
   document.documentElement.setAttribute('data-theme', pref);
   const dark = pref === 'dark' || (pref === 'auto' && !window.matchMedia?.('(prefers-color-scheme: light)').matches);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1C1C1A' : '#F4F2EC');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1C1C1A' : '#E8EAEE');
   // iOS only reads this when the home-screen app opens; it takes effect next launch.
   document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute('content', dark ? 'black-translucent' : 'default');
   listeners.forEach((l) => l());

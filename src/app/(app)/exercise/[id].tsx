@@ -1,20 +1,24 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Hero } from '@/components/Hero';
-import { Photo, heroStops } from '@/components/Photo';
+import { BodyMap } from '@/components/BodyMap';
+import { BackPill } from '@/components/ui';
+import { Photo } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
-import { ALL_GROUPS, EX, exercise } from '@/data/catalog';
+import { ALL_GROUPS, exercise } from '@/data/catalog';
 import { PHOTOS, exPhoto } from '@/data/photos';
 import * as repo from '@/data/repo';
+import { MUSCLE_LABEL, MUSCLES } from '@/domain/muscles';
 import { exerciseStats } from '@/domain/stats';
+import { useTop } from '@/theme/layout';
 import { useActive, useDbQuery } from '@/state/store';
 import { colors } from '@/theme/tokens';
+import { t } from '@/i18n';
 
-/** Exercise page: hero photo, position photos, how-to steps and "Your numbers". */
+/** Exercise page: body map of the worked muscles, position photos, how-to steps and "Your numbers". */
 export default function ExerciseDetail() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
-  const id = raw && raw in EX ? raw : 'bench';
+  const id = raw && exercise(raw) ? raw : 'bench';
   const e = exercise(id);
   const { profile } = useActive();
   const cardio = e.kind === 'cardio';
@@ -32,46 +36,76 @@ export default function ExerciseDetail() {
     [profile.id, id],
   );
 
+  const top = useTop();
+  const muscles = { primary: MUSCLES[id]?.primary ?? [], secondary: MUSCLES[id]?.secondary ?? [] };
+  const hasPhotos = exPhoto(id, 0) != null;
   const group = ALL_GROUPS.find((g) => g.key === e.group)?.label ?? '';
-  // Two photos: start / end side by side. Three: photo 1 is the hero, 2 and 3 below.
+  // Two photos: start / end side by side. Three: start and mid-rep side by side, the end below.
   const two = cardio || PHOTOS[id]?.length === 2;
-  const captions = cardio ? ['1. Setup', '2. In motion'] : ['1. Start position', '2. End position'];
+  const captions = cardio ? [`1. ${t('Setup')}`, `2. ${t('In motion')}`] : [`1. ${t('Start position')}`, `2. ${t('End position')}`];
 
   const toProgress = () => {
     router.dismissAll();
-    router.navigate({ pathname: '/progress', params: cardio ? { mode: 'cardio' } : { mode: 'lift', ex: id } });
+    router.navigate({
+      pathname: '/progress',
+      params: cardio ? { mode: 'cardio' } : { mode: 'lift', ex: id },
+    });
   };
 
   return (
     <ScrollView style={styles.screen}>
-      <Hero source={exPhoto(id, 0)} height={340} cardHeight={240} photoTop stops={heroStops(0.7, [0.28, 0.5], 0.97)} onBack={() => router.back()}>
-        <UI size={15} weight={600} color={colors.accent}>{`${group}, ${e.equipment}`}</UI>
-        <Display size={54} weight={900} lh={0.9} style={{ marginTop: 8 }}>
-          {e.name}
-        </Display>
-      </Hero>
-
-      <View style={styles.body}>
-        <View style={styles.photos}>
-          {two ? (
-            <>
-              <Shot source={exPhoto(id, 0)} height={190} caption={captions[0]} />
-              <Shot source={exPhoto(id, 1)} height={190} caption={captions[1]} />
-            </>
-          ) : (
-            <>
-              <Shot source={exPhoto(id, 1)} height={150} caption="2. Mid-rep" />
-              <Shot source={exPhoto(id, 2)} height={150} caption="3. End position" />
-            </>
+      <View style={[styles.plainHead, { paddingTop: top(54) }]}>
+        <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
+        <View style={{ marginTop: 24 }}>
+          <UI size={16} weight={600} color={colors.accent}>{`${group}, ${e.equipment}`}</UI>
+          <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
+            {e.name}
+          </Display>
+        </View>
+        {/* The worked muscles on a body figure (owner's choice over a hero photo). */}
+        <View style={styles.mapCard}>
+          <BodyMap primary={muscles.primary} secondary={muscles.secondary} width={104} />
+          {muscles.primary.length > 0 && (
+            <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+              <UI size={20} weight={600} align="center">
+                {muscles.primary.map((m) => MUSCLE_LABEL[m]).join(' · ')}
+              </UI>
+              {muscles.secondary.length > 0 && (
+                <UI size={14} color={colors.muted} align="center" style={{ marginTop: 4 }}>
+                  {t('Also working: {list}', { list: muscles.secondary.map((m) => MUSCLE_LABEL[m].toLowerCase()).join(', ') })}
+                </UI>
+              )}
+            </View>
           )}
         </View>
+      </View>
 
-        <UI size={17} lh={1.5} style={{ marginTop: 24 }}>
+      <View style={styles.body}>
+        {hasPhotos && (
+          <View style={styles.photos}>
+            {two ? (
+              <View style={styles.photoRow}>
+                <Shot source={exPhoto(id, 0)} height={190} caption={captions[0]} />
+                <Shot source={exPhoto(id, 1)} height={190} caption={captions[1]} />
+              </View>
+            ) : (
+              <>
+                <View style={styles.photoRow}>
+                  <Shot source={exPhoto(id, 0)} height={170} caption={`1. ${t('Start position')}`} />
+                  <Shot source={exPhoto(id, 1)} height={170} caption={`2. ${t('Mid-rep')}`} />
+                </View>
+                <Shot source={exPhoto(id, 2)} height={220} caption={`3. ${t('End position')}`} />
+              </>
+            )}
+          </View>
+        )}
+
+        <UI size={20} lh={1.5} style={{ marginTop: 24 }}>
           {e.description}
         </UI>
 
-        <Display size={28} weight={800} style={{ marginTop: 32 }}>
-          How to do it
+        <Display size={32} weight={800} style={{ marginTop: 32 }}>
+          {t('How to do it')}
         </Display>
         <View style={styles.steps}>
           {e.steps.map((t, i) => (
@@ -90,22 +124,22 @@ export default function ExerciseDetail() {
 
         {stats && (
           <>
-            <Display size={28} weight={800} style={{ marginTop: 32 }}>
-              Your numbers
+            <Display size={32} weight={800} style={{ marginTop: 32 }}>
+              {t('Your numbers')}
             </Display>
             {stats.map((r) => (
               <View key={r.k} style={styles.stat}>
                 <UI size={16} color={colors.muted}>
                   {r.k}
                 </UI>
-                <Mono size={17} weight={500}>
+                <Mono size={20} weight={500}>
                   {r.v}
                 </Mono>
               </View>
             ))}
             <Pressable onPress={toProgress} accessibilityRole="button" style={styles.progressBtn}>
               <UI size={16} weight={600}>
-                View progress
+                {t('View progress')}
               </UI>
             </Pressable>
           </>
@@ -129,10 +163,32 @@ function Shot({ source, height, caption }: { source: ReturnType<typeof exPhoto>;
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 32 },
-  photos: { flexDirection: 'row', gap: 8 },
+  plainHead: { paddingHorizontal: 16 },
+  mapCard: {
+    marginTop: 24,
+    paddingVertical: 24,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+  },
+  photos: { gap: 16 },
+  photoRow: { flexDirection: 'row', gap: 8 },
   steps: { gap: 8, marginTop: 16 },
-  step: { flexDirection: 'row', gap: 16, backgroundColor: colors.surface, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 16 },
-  stepNo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.accentFill, alignItems: 'center', justifyContent: 'center' },
+  step: {
+    flexDirection: 'row',
+    gap: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  stepNo: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.accentFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -142,5 +198,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  progressBtn: { height: 48, marginTop: 16, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  progressBtn: {
+    height: 48,
+    marginTop: 16,
+    borderRadius: 24,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

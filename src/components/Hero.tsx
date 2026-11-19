@@ -1,11 +1,11 @@
 // The big photo at the top of a screen, in two looks:
 // - dark theme: full-bleed photo that fades into the page, light text over it;
-// - light theme: the photo as a rounded card with a margin, the text below it
-//   in dark ink on the cream page. The photos are dark gym shots; as a card they
+// - light theme: the photo as a rounded card with a margin; the caption (title,
+//   meta) sits on the card's bottom over a blurred strip, the rest below it. The photos are dark gym shots; as a card they
 //   read as pictures on the page instead of a dark block cut off by the cream.
 
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { DARK_SCOPE, Photo, Shade, heroStops, type Stop } from '@/components/Photo';
 import { BackPill } from '@/components/ui';
@@ -22,6 +22,7 @@ export function Hero({
   stops,
   onBack,
   bar,
+  caption,
   children,
 }: {
   source: Img | null;
@@ -36,8 +37,10 @@ export function Hero({
   onBack?: () => void;
   /** Row at the very top instead of the back button (e.g. the profile avatar on Home). */
   bar?: ReactNode;
+  /** Title and meta that sit on the photo in both themes (light: at the card's bottom, on a blurred strip). */
+  caption?: ReactNode;
   /** Title, meta and actions: over the photo (dark) or under the card (light). */
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const light = useIsLight();
   const top = useTop();
@@ -50,8 +53,14 @@ export function Hero({
         )}
         <View style={[styles.card, { height: cardHeight }]} {...DARK_SCOPE}>
           <Photo source={source} style={StyleSheet.absoluteFill} top={photoTop} fill={colors.surface2} />
+          {caption && (
+            <View style={styles.caption}>
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.frost, FROST]} />
+              {caption}
+            </View>
+          )}
         </View>
-        <View style={styles.lightText}>{children}</View>
+        {children && <View style={styles.lightText}>{children}</View>}
       </View>
     );
   }
@@ -61,16 +70,33 @@ export function Hero({
       <Photo source={source} style={StyleSheet.absoluteFill} top={photoTop} />
       <Shade stops={stops ?? heroStops(0.7, [0.3, 0.45], 0.96)} />
       {bar && <View style={[styles.darkBar, { top: top(54) }]}>{bar}</View>}
-      {!bar && onBack && <BackPill onPress={onBack} onPhoto style={[styles.darkBar, { top: top(54), right: undefined }]} />}
-      <View style={styles.darkText}>{children}</View>
+      {!bar && onBack && <BackPill onPress={onBack} onPhoto style={{ position: 'absolute', top: top(54), left: 16 }} />}
+      <View style={styles.darkText}>
+        {caption}
+        {children}
+      </View>
     </View>
   );
 }
+
+/** Web: blur the photo under the caption, fading in from the top so there is no hard edge. */
+const FROST = (
+  Platform.OS === 'web'
+    ? {
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        maskImage: 'linear-gradient(to bottom, transparent 0%, #000 45%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 45%)',
+      }
+    : {}
+) as ViewStyle;
 
 const styles = StyleSheet.create({
   lightBar: { paddingHorizontal: 16, marginBottom: 16, minHeight: 40, justifyContent: 'center' },
   card: { marginHorizontal: 16, borderRadius: 24, overflow: 'hidden', backgroundColor: colors.surface2 },
   lightText: { paddingHorizontal: 16, paddingTop: 16 },
+  caption: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 16 },
+  frost: { backgroundColor: 'rgba(12,16,24,0.42)' },
   darkBar: { position: 'absolute', left: 16, right: 16 },
   darkText: { position: 'absolute', left: 16, right: 16, bottom: 8 },
 });

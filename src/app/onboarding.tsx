@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
   KeyboardAvoidingView,
@@ -9,39 +9,88 @@ import {
   StyleSheet,
   TextInput,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AvatarPicker } from '@/components/AvatarPicker';
+import { Segmented } from '@/components/Segmented';
 import { Display, Mono, UI } from '@/components/Txt';
-import { Avatar, BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
-import { DAYS_FULL, GOALS } from '@/data/catalog';
+import { BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
+import { DAYS_FULL, exercise } from '@/data/catalog';
 import { BODY_LIMITS } from '@/domain/numberEntry';
-import { fmt, r2 } from '@/domain/format';
-import { mkPlan, ownPlan } from '@/domain/plan';
-import type { GoalKey } from '@/domain/types';
+import { fmt, plural, r2 } from '@/domain/format';
+import { FOCUS_OPTIONS, GOAL_OPTIONS, SUGGESTED_FOCUS, generatePlan, legacyGoal } from '@/domain/generate';
+import { ownPlan, schemeText } from '@/domain/plan';
+import type { Equipment, Experience, Focus, MainGoal, Setup, Sex } from '@/domain/types';
 import { DAY_LETTERS } from '@/domain/week';
 import { useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { PROFILE_COLORS, colors, fonts, plate } from '@/theme/tokens';
+import { LANGS, getLang, setLang, t, type Lang } from '@/i18n';
 
-const TITLES = ['What should we call you?', 'Your body', 'Your goal', 'How often will you train?'];
-const SUBS = [
-  'Your name shows on the profile screen.',
-  'We use this to track progress against your goal.',
-  'This shapes your progress screen and suggestions.',
-  'Pick workouts per week. We build a schedule from it.',
-];
-/** Step 4 subtitle when building your own plan. */
-const SUB_OWN = 'Pick the days you train. You add the exercises next.';
+/** Steps: making a plan asks about goals and training; building your own skips straight to the days. */
+type StepKey = 'about' | 'mode' | 'body' | 'goals' | 'focus' | 'experience' | 'equipment' | 'week' | 'plan' | 'days';
+const FLOW_SUGGESTED: StepKey[] = ['about', 'mode', 'body', 'goals', 'focus', 'experience', 'equipment', 'week', 'plan'];
+const FLOW_OWN: StepKey[] = ['about', 'mode', 'body', 'days'];
 
-/** Step 4: a suggested plan (the design's flow) or one you build yourself. */
+const TITLES: Record<StepKey, string> = {
+  about: 'What should we call you?',
+  mode: 'How do you want to start?',
+  body: 'Your body',
+  goals: 'What do you want to achieve?',
+  focus: 'What should we focus on?',
+  experience: 'Your experience',
+  equipment: 'Where do you train?',
+  week: 'Your training week',
+  plan: 'Your plan is ready',
+  days: 'Your training days',
+};
+const SUBS: Record<StepKey, string> = {
+  about: 'Your name shows on the profile screen.',
+  mode: 'Let us build a plan from a few questions, or set up your own routines.',
+  body: 'Where you are now, and where you want to be. Both can change later.',
+  goals: 'Pick a main goal. A second one is optional.',
+  focus: 'We suggest a focus; add anything else you want to work on.',
+  experience: 'So the plan starts at the right level.',
+  equipment: 'We only pick exercises you can do there.',
+  week: 'How often and how long you train. Rest days are part of the plan.',
+  plan: 'Built from your answers. You can change anything later.',
+  days: 'Pick the days you train. You add the exercises next.',
+};
+
+/** How the plan is made: the app builds it, or the user does. */
 const MODES = [
-  { key: 'suggested', label: 'Suggested plan', description: 'We pick the days and routines for you.' },
+  { key: 'suggested', label: 'Make my plan', description: 'We build your routines from your answers.' },
   { key: 'own', label: 'Build my own', description: 'Choose your days, then add your own exercises.' },
 ] as const;
 type Mode = (typeof MODES)[number]['key'];
 
-/** New profile in four steps: name and color, body, goal, and a suggested or own plan. */
+const EXPERIENCE: { key: Experience; label: string; description: string }[] = [
+  { key: 'beginner', label: 'Beginner', description: 'New to the gym, or back after a long break' },
+  { key: 'intermediate', label: 'Intermediate', description: 'Training regularly for a few months' },
+  { key: 'advanced', label: 'Advanced', description: 'Years of training, comfortable with heavy lifts' },
+];
+const EQUIPMENT: { key: Equipment; label: string; description: string }[] = [
+  { key: 'gym', label: 'Gym', description: 'Machines, cables, barbells and dumbbells' },
+  { key: 'dumbbells', label: 'Home with dumbbells', description: 'Dumbbells, maybe a bench or a kettlebell' },
+  { key: 'none', label: 'No equipment', description: 'Body weight only' },
+];
+/** How long a strength workout usually takes; people who stay longer than an hour pick "Long". */
+const LENGTHS: { key: Setup['minutes']; label: string; description: string }[] = [
+  { key: 45, label: 'Short', description: 'Up to 45 minutes' },
+  { key: 60, label: 'About an hour', description: '45 to 75 minutes' },
+  { key: 90, label: 'Long', description: 'More than an hour' },
+];
+const SEXES: [Sex, string][] = [
+  ['female', 'Female'],
+  ['male', 'Male'],
+];
+
+/**
+ * New profile in seven steps: about you, body, goals, focus, experience and
+ * equipment, the training week, and the plan the app builds (or your own days).
+ */
 export default function Onboarding() {
   const { createProfile } = useStore();
   const top = useTop();
@@ -50,16 +99,53 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(PROFILE_COLORS[0]);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [sex, setSex] = useState<Sex | null>(null);
   const [weight, setWeight] = useState(80);
-  const [goal, setGoal] = useState<GoalKey>('muscle');
   const [target, setTarget] = useState(78);
-  const [weekly, setWeekly] = useState(3);
+  const [goal, setGoal] = useState<MainGoal>('muscle');
+  const [goal2, setGoal2] = useState<MainGoal | null>(null);
+  const [focus, setFocus] = useState<Focus[]>([]);
+  const [experience, setExperience] = useState<Experience>('beginner');
+  const [equipment, setEquipment] = useState<Equipment>('gym');
+  const [minutes, setMinutes] = useState<Setup['minutes']>(60);
+  const [strengthDays, setStrengthDays] = useState(3);
+  const [cardioDays, setCardioDays] = useState(1);
   const [mode, setMode] = useState<Mode>('suggested');
   const [ownDays, setOwnDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  const scroller = useRef<ScrollViewInstance>(null);
+  // Each step starts at the top.
+  useEffect(() => {
+    scroller.current?.scrollTo({ y: 0, animated: false });
+  }, [step]);
 
-  const canContinue = (step !== 1 || name.trim().length > 0) && (step !== 4 || mode === 'suggested' || ownDays.length > 0);
+  const flow = mode === 'own' ? FLOW_OWN : FLOW_SUGGESTED;
+  const last = flow.length;
+  const key = flow[step - 1];
+  // The second goal opens like a menu; it starts open when one is already chosen.
+  const [goal2Open, setGoal2Open] = useState(false);
+  const setup: Setup = {
+    sex: sex ?? 'female',
+    goal,
+    goal2,
+    focus: focus.length ? focus : ['full'],
+    experience,
+    equipment,
+    minutes,
+    strengthDays,
+    cardioDays,
+  };
+  const plan = generatePlan(setup);
 
+  const canContinue =
+    (key !== 'about' || (name.trim().length > 0 && sex != null)) && (key !== 'days' || ownDays.length > 0);
+
+  const chooseSex = (s: Sex) => {
+    setSex(s);
+    setFocus(SUGGESTED_FOCUS[s]);
+  };
+  const toggleFocus = (f: Focus) => setFocus((l) => (l.includes(f) ? l.filter((x) => x !== f) : [...l, f]));
   const toggleDay = (i: number) => setOwnDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
 
   const back = () => {
@@ -81,15 +167,18 @@ export default function Onboarding() {
 
   const next = async () => {
     if (!canContinue || saving) return;
-    if (step < 4) {
+    if (step < last) {
       setStep(step + 1);
       return;
     }
     setSaving(true);
     try {
       // Selecting the new profile unlocks the app; the router moves to Home.
-      const plan = mode === 'own' ? ownPlan(ownDays, DAYS_FULL) : mkPlan(weekly);
-      await createProfile({ name: name.trim(), color, height: 0, weight, goal, target, plan });
+      const chosen = mode === 'own' ? ownPlan(ownDays, DAYS_FULL) : plan;
+      await createProfile(
+        { name: name.trim(), color, height: 0, weight, goal: legacyGoal(goal), target, plan: chosen, setup, avatar },
+        getLang(),
+      );
       // Your own plan starts with empty days: go straight to adding exercises.
       if (mode === 'own') setTimeout(() => router.push('/plan'), 50);
     } catch (e) {
@@ -99,34 +188,39 @@ export default function Onboarding() {
   };
 
   const initial = (name.trim()[0] || '?').toUpperCase();
-  const preview = mkPlan(weekly);
+  const suggested = sex ? SUGGESTED_FOCUS[sex] : [];
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { paddingTop: top(50) }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <BackCircle onPress={back} />
         <View style={styles.segs}>
-          {[1, 2, 3, 4].map((i) => (
+          {Array.from({ length: last }, (_, i) => i + 1).map((i) => (
             <View key={i} style={[styles.seg, { backgroundColor: i <= step ? colors.accentFill : colors.surface2 }]} />
           ))}
         </View>
-        <Mono size={14} color={colors.muted}>{`${step}/4`}</Mono>
+        <Mono size={14} color={colors.muted}>{`${step}/${last}`}</Mono>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Display size={52} weight={900} lh={0.92}>
-          {TITLES[step - 1]}
+      <ScrollView ref={scroller} style={{ flex: 1 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Display size={40} weight={900} lh={0.92}>
+          {t(TITLES[key])}
         </Display>
         <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 16 }}>
-          {step === 4 && mode === 'own' ? SUB_OWN : SUBS[step - 1]}
+          {t(SUBS[key])}
         </UI>
 
-        {step === 1 && (
+        {key === 'about' && (
           <>
+            {/* Language first: picking it redraws the screens in that language. */}
+            <UI size={16} color={colors.muted} style={{ marginTop: 32 }}>
+              {t('Language')}
+            </UI>
+            <Segmented<Lang> options={LANGS} value={getLang()} onChange={setLang} style={{ marginTop: 8 }} />
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Your name"
+              placeholder={t('Your name')}
               placeholderTextColor={colors.placeholder}
               autoCapitalize="words"
               autoCorrect={false}
@@ -135,188 +229,317 @@ export default function Onboarding() {
               maxFontSizeMultiplier={1.2}
               style={styles.nameInput}
             />
-            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
-              Profile color
+            <UI size={16} color={colors.muted} style={{ marginTop: 32 }}>
+              {t('I am')}
             </UI>
-            <View style={styles.swatches}>
-              {PROFILE_COLORS.map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => setColor(c)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: c === color }}
-                  style={[styles.swatch, { backgroundColor: c }]}>
-                  {/* 0 0 0 3px bg, 0 0 0 5px ink */}
-                  {c === color && <Ring width={2} color={colors.ink} radius={26} offset={5} />}
-                </Pressable>
-              ))}
-            </View>
-            <View style={styles.previewRow}>
-              <Avatar size={84} color={color} initial={initial} fontSize={46}>
-                <Ring width={9} color="rgba(0,0,0,0.16)" radius={42} />
-              </Avatar>
-              <UI size={15} lh={1.4} color={colors.muted} style={{ flex: 1 }}>
-                You can add a photo later on your profile.
-              </UI>
-            </View>
+            <Segmented<Sex> options={SEXES} value={sex ?? ('' as Sex)} onChange={chooseSex} style={{ marginTop: 8 }} />
+            <AvatarPicker color={color} icon={avatar} initial={initial} onColor={setColor} onIcon={setAvatar} />
           </>
         )}
 
-        {step === 2 && (
+        {key === 'body' && (
           <View style={{ gap: 8, marginTop: 32 }}>
             <StepperCard
-              label="Weight"
+              label={t('Weight')}
               value={fmt(weight)}
               unit="kg"
               onDec={() => setWeight((w) => r2(w - 0.5))}
               onInc={() => setWeight((w) => r2(w + 0.5))}
               input={{ ...BODY_LIMITS.weight, value: weight, onSet: setWeight }}
             />
+            <StepperCard
+              label={t('Target weight')}
+              value={fmt(target)}
+              unit="kg"
+              onDec={() => setTarget((v) => r2(v - 0.5))}
+              onInc={() => setTarget((v) => r2(v + 0.5))}
+              input={{ ...BODY_LIMITS.target, value: target, onSet: setTarget }}
+            />
           </View>
         )}
 
-        {step === 3 && (
-          <>
-            <View style={{ gap: 8, marginTop: 24 }}>
-              {GOALS.map((g) => (
-                <Pressable
-                  key={g.key}
-                  onPress={() => setGoal(g.key)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: g.key === goal }}
-                  style={styles.goal}>
-                  {g.key === goal && <Ring width={2} color={colors.accent} radius={20} />}
-                  <View style={[styles.goalDot, { backgroundColor: g.color }]} />
-                  <View style={{ flex: 1 }}>
-                    <Display size={26} weight={800}>
-                      {g.label}
-                    </Display>
-                    <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
-                      {g.description}
-                    </UI>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-            <View style={{ marginTop: 16 }}>
-              <StepperCard
-                label="Target weight"
-                value={fmt(target)}
-                unit="kg"
-                valueSize={36}
-                onDec={() => setTarget((t) => r2(t - 0.5))}
-                onInc={() => setTarget((t) => r2(t + 0.5))}
-                input={{ ...BODY_LIMITS.target, value: target, onSet: setTarget }}
-              />
-            </View>
-          </>
-        )}
-
-        {step === 4 && (
-          <View style={{ gap: 8, marginTop: 24 }}>
+        {key === 'mode' && (
+          <View style={[styles.cards, { marginTop: 24 }]}>
             {MODES.map((m) => (
-              <Pressable
-                key={m.key}
-                onPress={() => setMode(m.key)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: m.key === mode }}
-                style={styles.goal}>
-                {m.key === mode && <Ring width={2} color={colors.accent} radius={20} />}
-                <View style={{ flex: 1 }}>
-                  <Display size={26} weight={800}>
-                    {m.label}
-                  </Display>
-                  <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
-                    {m.description}
-                  </UI>
-                </View>
-              </Pressable>
+              <Choice key={m.key} on={m.key === mode} onPress={() => setMode(m.key)} title={m.label} sub={m.description} />
             ))}
           </View>
         )}
 
-        {step === 4 && mode === 'own' && (
+        {key === 'goals' && (
           <>
-            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
-              Tap the days you train
-            </UI>
-            <View style={styles.week}>
-              {DAY_LETTERS.map((d, i) => {
-                const on = ownDays.includes(i);
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={() => toggleDay(i)}
-                    accessibilityRole="button"
-                    accessibilityLabel={DAYS_FULL[i]}
-                    accessibilityState={{ selected: on }}
-                    style={styles.weekCell}>
-                    <View style={[styles.ownDay, { backgroundColor: on ? colors.accentFill : 'transparent' }]}>
-                      {!on && <Ring width={1} color={colors.line} radius={999} />}
-                      <Mono size={15} weight={500} color={on ? colors.accentInk : colors.muted}>
-                        {d}
-                      </Mono>
-                    </View>
-                  </Pressable>
-                );
-              })}
+            <Label text="Main goal" />
+            <View style={styles.cards}>
+              {GOAL_OPTIONS.map((g) => (
+                <Choice key={g.key} on={g.key === goal} onPress={() => { setGoal(g.key); if (goal2 === g.key) setGoal2(null); }} title={g.label} sub={g.description} />
+              ))}
             </View>
-            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
-              {ownDays.length
-                ? `${ownDays.length} ${ownDays.length === 1 ? 'workout' : 'workouts'} a week. Each day gets its own routine, ready for your exercises.`
-                : 'You can change days and routines any time from your profile.'}
+            {/* Second goal: a closed row until opened, so the main choice stays the focus. */}
+            <Pressable
+              onPress={() => setGoal2Open(!(goal2Open || goal2 != null))}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: goal2Open || goal2 != null }}
+              style={({ pressed }) => [styles.more, pressed && { opacity: 0.8 }]}>
+              <View style={styles.plus}>
+                <Mono size={20} color={colors.ink}>
+                  {goal2Open || goal2 != null ? '−' : '+'}
+                </Mono>
+              </View>
+              <View style={{ flex: 1 }}>
+                <UI size={16} weight={700}>
+                  {goal2 ? t('Second goal: {goal}', { goal: t(GOAL_OPTIONS.find((g) => g.key === goal2)!.label) }) : t('Add a second goal')}
+                </UI>
+                <UI size={14} lh={1.4} color={colors.muted} style={{ marginTop: 4 }}>
+                  {t('Optional. It adds a little to your plan, like a short conditioning finisher for fat loss or fitness.')}
+                </UI>
+              </View>
+            </Pressable>
+            {(goal2Open || goal2 != null) && (
+              <View style={styles.chips}>
+                {GOAL_OPTIONS.filter((g) => g.key !== goal).map((g) => (
+                  <Chip key={g.key} on={goal2 === g.key} label={g.label} onPress={() => setGoal2(goal2 === g.key ? null : g.key)} />
+                ))}
+                {goal2 != null && (
+                  <Chip
+                    on={false}
+                    label="No second goal"
+                    onPress={() => {
+                      setGoal2(null);
+                      setGoal2Open(false);
+                    }}
+                  />
+                )}
+              </View>
+            )}
+          </>
+        )}
+
+        {key === 'focus' && (
+          <>
+            <View style={[styles.chips, { marginTop: 24 }]}>
+              {FOCUS_OPTIONS.map((f) => (
+                <Chip
+                  key={f.key}
+                  on={focus.includes(f.key)}
+                  label={f.label}
+                  tag={suggested.includes(f.key) ? t('Suggested') : undefined}
+                  onPress={() => toggleFocus(f.key)}
+                />
+              ))}
+            </View>
+            <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
+              {focus.length
+                ? t('Extra exercises go to: {list}.', { list: focus.map((f) => t(FOCUS_OPTIONS.find((o) => o.key === f)!.label).toLowerCase()).join(', ') })
+                : t('Nothing picked: the plan works the whole body evenly.')}
             </UI>
           </>
         )}
 
-        {step === 4 && mode === 'suggested' && (
+        {key === 'experience' && (
           <>
-            <View style={[styles.weeklyRow, { marginTop: 24 }]}>
-              {[2, 3, 4, 5, 6].map((n) => {
-                const on = n === weekly;
-                return (
-                  <Pressable
-                    key={n}
-                    onPress={() => setWeekly(n)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    style={[styles.weeklyOpt, { backgroundColor: on ? colors.accentFill : colors.surface }]}>
-                    <Mono size={26} weight={500} color={on ? colors.accentInk : colors.ink}>
-                      {String(n)}
-                    </Mono>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <UI size={15} color={colors.muted} style={{ marginTop: 32 }}>
-              Your starting schedule
-            </UI>
-            <View style={styles.week}>
-              {preview.days.map((k, i) => (
-                <View key={i} style={styles.weekCell}>
-                  <UI size={14} weight={600} color={colors.muted}>
-                    {DAY_LETTERS[i]}
-                  </UI>
-                  <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
-                    {!k && <Ring width={1} color={colors.line} radius={999} />}
-                    <Mono size={15} weight={500} color={k ? colors.onPlate : colors.muted}>
-                      {k ?? '·'}
-                    </Mono>
-                  </View>
-                </View>
+            <View style={[styles.cards, { marginTop: 24 }]}>
+              {EXPERIENCE.map((x) => (
+                <Choice key={x.key} on={x.key === experience} onPress={() => setExperience(x.key)} title={x.label} sub={x.description} />
               ))}
             </View>
-            <UI size={15} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
-              You can change days and routines any time from your profile.
-            </UI>
           </>
         )}
+
+        {key === 'equipment' && (
+          <>
+            <View style={[styles.cards, { marginTop: 24 }]}>
+              {EQUIPMENT.map((x) => (
+                <Choice key={x.key} on={x.key === equipment} onPress={() => setEquipment(x.key)} title={x.label} sub={x.description} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {key === 'week' && (
+          <>
+                <Label text="Strength workouts a week" />
+                <NumberRow values={[1, 2, 3, 4, 5, 6]} value={strengthDays} max={7 - cardioDays} onChange={setStrengthDays} />
+                <Label text="Cardio workouts a week" />
+                <NumberRow values={[0, 1, 2, 3, 4]} value={cardioDays} max={7 - strengthDays} onChange={setCardioDays} />
+                <Label text="How long do you usually train?" />
+<View style={styles.cards}>
+              {LENGTHS.map((l) => (
+                <Choice key={l.key} on={l.key === minutes} onPress={() => setMinutes(l.key)} title={l.label} sub={l.description} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {key === 'days' && (
+          <>
+                <Label text="Tap the days you train" />
+                <View style={styles.week}>
+                  {DAY_LETTERS.map((d, i) => {
+                    const on = ownDays.includes(i);
+                    return (
+                      <Pressable
+                        key={i}
+                        onPress={() => toggleDay(i)}
+                        accessibilityRole="button"
+                        accessibilityLabel={DAYS_FULL[i]}
+                        accessibilityState={{ selected: on }}
+                        style={styles.weekCell}>
+                        <View style={[styles.ownDay, { backgroundColor: on ? colors.accentFill : 'transparent' }]}>
+                          {!on && <Ring width={1} color={colors.line} radius={999} />}
+                          <Mono size={16} weight={500} color={on ? colors.accentInk : colors.muted}>
+                            {d}
+                          </Mono>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
+                  {ownDays.length
+                    ? t('{count} a week. Each day gets its own routine, ready for your exercises.', { count: plural(ownDays.length, 'workout') })
+                    : t('You can change days and routines any time from your profile.')}
+                </UI>
+          </>
+        )}
+
+        {key === 'plan' && <PlanPreview plan={plan} />}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
-        <PrimaryButton label={step === 4 ? 'CREATE PROFILE' : 'NEXT'} dimmed={!canContinue} onPress={next} />
+        <PrimaryButton label={step === last ? t('CREATE PROFILE') : t('NEXT')} dimmed={!canContinue} onPress={next} />
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+function Label({ text }: { text: string }) {
+  return (
+    <UI size={16} color={colors.muted} style={{ marginTop: 32 }}>
+      {t(text)}
+    </UI>
+  );
+}
+
+/** A selectable card: title and one line; the selected one has an accent outline. */
+function Choice({ on, onPress, title, sub }: { on: boolean; onPress: () => void; title: string; sub: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      style={({ pressed }) => [styles.choice, pressed && { opacity: 0.8 }]}>
+      {on && <Ring width={2} color={colors.accent} radius={20} />}
+      <View style={{ flex: 1 }}>
+        <UI size={20} weight={700}>
+          {t(title)}
+        </UI>
+        <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
+          {t(sub)}
+        </UI>
+      </View>
+      <View style={[styles.radio, on && { borderColor: colors.accent }]}>{on && <View style={styles.radioDot} />}</View>
+    </Pressable>
+  );
+}
+
+/** A toggle pill; `tag` marks suggested ones. */
+function Chip({ on, label, tag, onPress }: { on: boolean; label: string; tag?: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      style={({ pressed }) => [styles.chip, on ? styles.chipOn : null, pressed && { opacity: 0.8 }]}>
+      <UI size={16} weight={600} color={on ? colors.accentInk : colors.ink}>
+        {t(label)}
+      </UI>
+      {tag && (
+        <UI size={14} color={on ? colors.accentInk : colors.accent} style={{ opacity: on ? 0.8 : 1 }}>
+          {`· ${tag}`}
+        </UI>
+      )}
+    </Pressable>
+  );
+}
+
+/** Round number options in a row; ones over `max` are disabled. */
+function NumberRow({ values, value, max, onChange }: { values: number[]; value: number; max: number; onChange: (n: number) => void }) {
+  return (
+    <View style={styles.weeklyRow}>
+      {values.map((n) => {
+        const on = n === value;
+        const off = n > max;
+        return (
+          <Pressable
+            key={n}
+            onPress={() => onChange(n)}
+            disabled={off}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on, disabled: off }}
+            style={[styles.weeklyOpt, { backgroundColor: on ? colors.accentFill : colors.surface, opacity: off ? 0.35 : 1 }]}>
+            <Mono size={24} weight={500} color={on ? colors.accentInk : colors.ink}>
+              {String(n)}
+            </Mono>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** The generated week and each routine's exercises, warm-up and stretching. */
+function PlanPreview({ plan }: { plan: ReturnType<typeof generatePlan> }) {
+  return (
+    <>
+      <View style={styles.week}>
+        {plan.days.map((k, i) => (
+          <View key={i} style={styles.weekCell}>
+            <UI size={14} weight={600} color={colors.muted}>
+              {DAY_LETTERS[i]}
+            </UI>
+            <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
+              {!k && <Ring width={1} color={colors.line} radius={999} />}
+              <Mono size={16} weight={500} color={k ? colors.onPlate : colors.muted}>
+                {k ?? '·'}
+              </Mono>
+            </View>
+          </View>
+        ))}
+      </View>
+      <View style={{ gap: 8, marginTop: 24 }}>
+        {Object.entries(plan.routines).map(([k, r]) => (
+          <View key={k} style={styles.planCard}>
+            <View style={styles.planHead}>
+              <View style={[styles.planDot, { backgroundColor: plate(k) }]}>
+                <Mono size={14} weight={500} color={colors.onPlate}>
+                  {k}
+                </Mono>
+              </View>
+              <UI size={20} weight={700} style={{ flex: 1 }}>
+                {r.name}
+              </UI>
+              <UI size={14} color={colors.muted}>
+                {plural(plan.days.filter((d) => d === k).length, 'workout')}
+              </UI>
+            </View>
+            <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
+              {`${t('Warm-up')}: ${(r.warmup ?? []).map((w) => exercise(w.ex).name).join(', ')}`}
+            </UI>
+            <UI size={16} lh={1.45} style={{ marginTop: 8 }}>
+              {r.type === 'cardio'
+                ? r.items.map((it) => `${exercise(it.ex).name} ${it.min} min`).join(' · ')
+                : r.items.map((it) => `${exercise(it.ex).name} ${schemeText(it)}`).join(' · ')}
+            </UI>
+            <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
+              {`${t('Stretching')}: ${(r.stretch ?? []).map((w) => exercise(w.ex).name).join(', ')}`}
+            </UI>
+          </View>
+        ))}
+      </View>
+      <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
+        {t('You can change days and routines any time from your profile.')}
+      </UI>
+    </>
   );
 }
 
@@ -332,14 +555,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.accent,
     color: colors.ink,
     fontFamily: fonts.display800,
-    fontSize: 44,
+    fontSize: 40,
     paddingTop: 4,
     paddingBottom: 8,
     paddingHorizontal: 0,
   },
-  swatches: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  swatch: { width: 52, height: 52, borderRadius: 26 },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 32 },
   goal: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -357,4 +577,16 @@ const styles = StyleSheet.create({
   ownDay: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   dayCircle: { width: 40, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   footer: { paddingTop: 16, paddingHorizontal: 16 },
+  cards: { gap: 8, marginTop: 8 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: colors.surface, borderRadius: 20, padding: 16 },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.accentFill },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  more: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 24, padding: 16, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed' },
+  plus: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 44, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5, borderColor: colors.border },
+  chipOn: { backgroundColor: colors.accentFill, borderColor: colors.accentFill },
+  planCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 16 },
+  planHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  planDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

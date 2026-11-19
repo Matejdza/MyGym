@@ -1,7 +1,7 @@
 import { Text, type TextProps, type TextStyle } from 'react-native';
 
 import { useScale } from '@/theme/layout';
-import { colors, em, fonts } from '@/theme/tokens';
+import { TYPE_LINE, colors, em, fonts } from '@/theme/tokens';
 
 type Base = TextProps & {
   size: number;
@@ -19,12 +19,14 @@ const MAX_SCALE = 1.2;
 function render(family: string, props: Base, scale: number, extra?: TextStyle) {
   const { size: designSize, color, spacing, lh, align, style, ...rest } = props;
   const size = Math.round(designSize * scale * 10) / 10;
+  // On the type scale: its line height unless the text sets its own (`lh`).
+  const line = lh != null ? Math.round(size * lh) : TYPE_LINE[designSize] ? Math.round(TYPE_LINE[designSize] * scale) : undefined;
   const base: TextStyle = {
     fontFamily: family,
     fontSize: size,
     color: color ?? colors.ink,
     letterSpacing: spacing != null ? em(spacing, size) : undefined,
-    lineHeight: lh != null ? Math.round(size * lh) : undefined,
+    lineHeight: line,
     textAlign: align,
     ...extra,
   };

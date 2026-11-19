@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { confirm } from '@/components/confirm';
-import { PlateBadge } from '@/components/Cover';
 import { NumberField, type NumberInput } from '@/components/NumberField';
 import { Photo } from '@/components/Photo';
 import { Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
+import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { ZONES, exercise } from '@/data/catalog';
-import { coverPhoto, exPhoto } from '@/data/photos';
+import { coverPhoto } from '@/data/photos';
+import { routineStretch, routineWarmup } from '@/domain/mobility';
 import {
   REST_MAX,
   REST_MIN,
@@ -21,14 +22,16 @@ import {
   restText,
   routineMeta,
   withItemMoved,
+  withMobility,
   withStrengthChange,
   withoutRoutine,
   type StrengthField,
 } from '@/domain/plan';
-import type { Routine } from '@/domain/types';
+import type { Routine, TimedItem } from '@/domain/types';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 /**
  * Rename a routine; change sets, rep range and rest (or minutes and zone);
@@ -93,7 +96,7 @@ export default function RoutineEditor() {
   };
 
   const deleteRoutine = async () => {
-    if (!(await confirm('Delete this routine?', 'Delete'))) return;
+    if (!(await confirm(t('Delete this routine?'), t('Delete'), undefined, true))) return;
     router.back();
     setPlan(withoutRoutine(plan, id));
   };
@@ -112,18 +115,24 @@ export default function RoutineEditor() {
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]} keyboardShouldPersistTaps="handled">
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
       <Photo source={coverPhoto(r, true)} style={styles.cover} />
-      <View style={styles.metaRow}>
-        <PlateBadge routineKey={id} size={28} fontSize={13} />
-        <UI size={15} color={colors.muted} style={{ flex: 1 }}>{`Routine ${id}, ${routineMeta(r).text}`}</UI>
-      </View>
+      <UI size={16} color={colors.muted} style={styles.meta}>
+        {routineMeta(r).text}
+      </UI>
       <TextInput
         value={r.name}
         onChangeText={(name) => save({ ...r, name })}
         autoCorrect={false}
         returnKeyType="done"
         maxFontSizeMultiplier={1.2}
-        accessibilityLabel="Routine name"
+        accessibilityLabel={t('Routine name')}
         style={styles.name}
+      />
+
+      <MobilityEditor
+        title={t('Warm-up')}
+        items={routineWarmup(r)}
+        onChange={(fn) => setPlan(withMobility(plan, id, 'warmup', fn))}
+        onAdd={() => router.push({ pathname: '/group/[k]', params: { k: 'mobility', pick: id, slot: 'warmup' } })}
       />
 
       <View style={styles.items}>
@@ -132,7 +141,7 @@ export default function RoutineEditor() {
               <ItemCard
                 key={i}
                 exId={it.ex}
-                summary={`${it.min} min, zone ${it.zone}`}
+                summary={t('{min} min, zone {zone}', { min: it.min, zone: it.zone })}
                 open={open === i}
                 onToggle={() => setOpen(open === i ? null : i)}
                 onRemove={() => remove(i)}
@@ -141,14 +150,15 @@ export default function RoutineEditor() {
                 last={i === r.items.length - 1}>
                 <View style={styles.pair}>
                   <Pill
-                    label="minutes"
+                    label={t('minutes')}
                     value={String(it.min)}
                     onDec={() => changeCardio(i, 'min', -5)}
                     onInc={() => changeCardio(i, 'min', 5)}
                     input={cardioInput(i, 'min', it.min, 5, 240)}
                   />
+                  <View style={styles.divider} />
                   <Pill
-                    label="zone"
+                    label={t('zone')}
                     value={String(it.zone)}
                     onDec={() => changeCardio(i, 'zone', -1)}
                     onInc={() => changeCardio(i, 'zone', 1)}
@@ -156,7 +166,7 @@ export default function RoutineEditor() {
                   />
                 </View>
                 <UI size={14} color={colors.muted} style={{ marginTop: 8, paddingLeft: 4 }}>
-                  {`Zone ${it.zone}: ${ZONES[it.zone]}`}
+                  {`${t('Zone {zone}', { zone: it.zone })}: ${ZONES[it.zone]}`}
                 </UI>
               </ItemCard>
             ))
@@ -164,7 +174,7 @@ export default function RoutineEditor() {
               <ItemCard
                 key={i}
                 exId={it.ex}
-                summary={`${it.sets} × ${repsText(it)}, rest ${restText(it.rest ?? settings.restSeconds)}`}
+                summary={t('{scheme}, rest {rest}', { scheme: `${it.sets} × ${repsText(it)}`, rest: restText(it.rest ?? settings.restSeconds) })}
                 open={open === i}
                 onToggle={() => setOpen(open === i ? null : i)}
                 onRemove={() => remove(i)}
@@ -173,12 +183,13 @@ export default function RoutineEditor() {
                 last={i === r.items.length - 1}>
                 <View style={styles.pair}>
                   <Pill
-                    label="sets"
+                    label={t('sets')}
                     value={String(it.sets)}
                     onDec={() => changeStrength(i, 'sets', -1)}
                     onInc={() => changeStrength(i, 'sets', 1)}
                     input={strengthInput(i, 'sets', it.sets, { min: 1, max: 20 })}
                   />
+                  <View style={styles.divider} />
                   <Pill
                     label={repsUnit(it.ex)}
                     value={String(it.reps)}
@@ -190,14 +201,15 @@ export default function RoutineEditor() {
                 <View style={styles.pair}>
                   {/* "up to" turns the reps into a range (6–8); equal to reps means a single number. */}
                   <Pill
-                    label="up to"
+                    label={t('up to')}
                     value={String(it.repsMax ?? it.reps)}
                     onDec={() => changeStrength(i, 'repsMax', -repsStep(it.ex))}
                     onInc={() => changeStrength(i, 'repsMax', repsStep(it.ex))}
                     input={strengthInput(i, 'repsMax', it.repsMax ?? it.reps, { min: it.reps, max: maxReps(it.ex) })}
                   />
+                  <View style={styles.divider} />
                   <Pill
-                    label="rest"
+                    label={t('rest')}
                     value={restText(it.rest ?? settings.restSeconds)}
                     onDec={() => changeStrength(i, 'rest', -REST_STEP)}
                     onInc={() => changeStrength(i, 'rest', REST_STEP)}
@@ -210,16 +222,81 @@ export default function RoutineEditor() {
 
       <Pressable onPress={add} accessibilityRole="button" style={styles.add}>
         <UI size={16} weight={700}>
-          {cardio ? 'Add activity' : 'Add exercise'}
+          {cardio ? t('Add activity') : t('Add exercise')}
         </UI>
       </Pressable>
 
+      <MobilityEditor
+        title={t('Stretching')}
+        items={routineStretch(r)}
+        onChange={(fn) => setPlan(withMobility(plan, id, 'stretch', fn))}
+        onAdd={() => router.push({ pathname: '/group/[k]', params: { k: 'mobility', pick: id, slot: 'stretch' } })}
+      />
+
       <Pressable onPress={deleteRoutine} accessibilityRole="button" style={styles.delete}>
-        <UI size={15} weight={600} color={colors.red}>
-          Delete routine
+        <UI size={16} weight={600} color={colors.red}>
+          {t('Delete routine')}
         </UI>
       </Pressable>
     </ScrollView>
+  );
+}
+
+/** Warm-up or stretching list: each move with its time (− / + by 15 s) and Remove; Add opens the moves. */
+function MobilityEditor({
+  title,
+  items,
+  onChange,
+  onAdd,
+}: {
+  title: string;
+  items: TimedItem[];
+  onChange: (fn: (l: TimedItem[]) => TimedItem[]) => void;
+  onAdd: () => void;
+}) {
+  const setSec = (i: number, d: number) => onChange((l) => l.map((x, j) => (j === i ? { ...x, sec: Math.min(600, Math.max(15, x.sec + d)) } : x)));
+  return (
+    <View style={styles.mobility}>
+      <View style={styles.mobilityHead}>
+        <UI size={16} weight={700} style={{ flex: 1 }}>
+          {title}
+        </UI>
+        <Pressable onPress={onAdd} accessibilityRole="button" style={styles.remove}>
+          <UI size={16} weight={600} color={colors.accent}>
+            {t('Add')}
+          </UI>
+        </Pressable>
+      </View>
+      {items.map((x, i) => (
+        <View key={x.ex} style={[styles.mobilityRow, i > 0 && styles.mobilityLine]}>
+          <ExerciseThumb id={x.ex} size={36} radius={9} />
+          <UI size={16} weight={600} numberOfLines={2} style={{ flex: 1, minWidth: 0 }}>
+            {exercise(x.ex).name}
+          </UI>
+          <Pressable onPress={() => setSec(i, -15)} accessibilityRole="button" accessibilityLabel={t('Decrease')} style={styles.secBtn}>
+            <Mono size={20}>−</Mono>
+          </Pressable>
+          <Mono size={16} weight={500} style={{ width: 48, textAlign: 'center' }}>{`${x.sec} s`}</Mono>
+          <Pressable onPress={() => setSec(i, 15)} accessibilityRole="button" accessibilityLabel={t('Increase')} style={styles.secBtn}>
+            <Mono size={20}>+</Mono>
+          </Pressable>
+          <Pressable
+            onPress={() => onChange((l) => l.filter((_, j) => j !== i))}
+            accessibilityRole="button"
+            accessibilityLabel={t('Remove')}
+            style={styles.secBtn}>
+            <UI size={20} color={colors.red}>
+              ×
+            </UI>
+          </Pressable>
+        </View>
+      ))}
+      {!items.length && (
+        <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
+          {t('None. Tap Add to pick moves.')}
+        </UI>
+      )}
+    </View>
   );
 }
 
@@ -254,29 +331,29 @@ function ItemCard({
         accessibilityLabel={`${name}, ${summary}`}
         accessibilityState={{ expanded: open }}
         style={({ pressed }) => [styles.cardHead, pressed && { opacity: 0.6 }]}>
-        <Photo source={exPhoto(exId)} fill={colors.surface2} style={styles.thumb} />
+        <ExerciseThumb id={exId} size={44} radius={11} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <UI size={16} weight={600} numberOfLines={1}>
             {name}
           </UI>
-          <Mono size={15} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
+          <Mono size={16} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
             {summary}
           </Mono>
         </View>
-        <UI size={15} weight={600} color={open ? colors.muted : colors.accent}>
-          {open ? 'Done' : 'Edit'}
+        <UI size={16} weight={600} color={open ? colors.muted : colors.accent}>
+          {open ? t('Done') : t('Edit')}
         </UI>
       </Pressable>
       {open && (
         <>
           {children}
           <View style={styles.actions}>
-            <MoveButton label="↑" hint="Move up" disabled={first} onPress={() => onMove(-1)} />
-            <MoveButton label="↓" hint="Move down" disabled={last} onPress={() => onMove(1)} />
+            <MoveButton label="↑" hint={t('Move up')} disabled={first} onPress={() => onMove(-1)} />
+            <MoveButton label="↓" hint={t('Move down')} disabled={last} onPress={() => onMove(1)} />
             <View style={{ flex: 1 }} />
             <Pressable onPress={onRemove} accessibilityRole="button" style={styles.remove}>
-              <UI size={15} weight={600} color={colors.red}>
-                Remove
+              <UI size={16} weight={600} color={colors.red}>
+                {t('Remove')}
               </UI>
             </Pressable>
           </View>
@@ -320,16 +397,16 @@ function Pill({
   const [error, setError] = useState<string | null>(null);
   return (
     <View style={styles.pill}>
-      <Pressable onPress={onDec} accessibilityRole="button" accessibilityLabel={`Fewer ${label}`} style={styles.pillBtn}>
+      <Pressable onPress={onDec} accessibilityRole="button" accessibilityLabel={t('Fewer {what}', { what: label })} style={({ pressed }) => [styles.pillBtn, styles.noOutline, pressed && { backgroundColor: colors.surface2 }]}>
         <Mono size={20}>−</Mono>
       </Pressable>
       <View style={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
-        <UI size={11} lh={1.1} color={error ? colors.red : colors.muted} numberOfLines={1}>
+        <UI size={14} lh={1.1} color={error ? colors.red : colors.muted} numberOfLines={1}>
           {error ?? label}
         </UI>
-        <NumberField input={input} display={value} size={18} label={label} onError={setError} />
+        <NumberField input={input} display={value} size={20} label={label} onError={setError} />
       </View>
-      <Pressable onPress={onInc} accessibilityRole="button" accessibilityLabel={`More ${label}`} style={styles.pillBtn}>
+      <Pressable onPress={onInc} accessibilityRole="button" accessibilityLabel={t('More {what}', { what: label })} style={({ pressed }) => [styles.pillBtn, styles.noOutline, pressed && { backgroundColor: colors.surface2 }]}>
         <Mono size={20}>+</Mono>
       </Pressable>
     </View>
@@ -340,20 +417,25 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, paddingBottom: 32 },
   cover: { height: 150, borderRadius: 22, marginTop: 16 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  meta: { marginTop: 16 },
   name: {
     marginTop: 8,
     borderBottomWidth: 2,
     borderBottomColor: colors.line,
     color: colors.ink,
     fontFamily: fonts.display900,
-    fontSize: 44,
+    fontSize: 40,
     textTransform: 'uppercase',
     paddingTop: 4,
     paddingBottom: 8,
     paddingHorizontal: 0,
   },
   items: { gap: 8, marginTop: 16 },
+  mobility: { marginTop: 16, backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  mobilityHead: { flexDirection: 'row', alignItems: 'center' },
+  mobilityRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  mobilityLine: { borderTopWidth: 1, borderTopColor: colors.line },
+  secBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: 20, padding: 16, borderWidth: 1.5, borderColor: 'transparent' },
   cardOpen: { borderColor: colors.border },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
@@ -362,9 +444,13 @@ const styles = StyleSheet.create({
   remove: { height: 44, paddingHorizontal: 8, justifyContent: 'center' },
   moveBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   delete: { height: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center' },
-  pair: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  pill: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 50, borderRadius: 25, backgroundColor: colors.surface2 },
-  pillBtn: { width: 46, height: 50, alignItems: 'center', justifyContent: 'center' },
+  pair: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  /** Thin line between the two steppers of a row (no pill backgrounds). */
+  divider: { width: 1, height: 32, backgroundColor: colors.line },
+  pill: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 50 },
+  pillBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  /** No browser focus box on the − / + taps; pressed shows a soft circle instead. */
+  noOutline: { outlineStyle: 'none' } as never,
   add: {
     height: 56,
     marginTop: 16,

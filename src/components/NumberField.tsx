@@ -14,6 +14,7 @@ import { Platform, TextInput, View, type StyleProp, type TextStyle, type ViewSty
 
 import { editText, parseEntry, type NumberSpec } from '@/domain/numberEntry';
 import { useScale } from '@/theme/layout';
+import { t } from '@/i18n';
 import { colors, em, fonts } from '@/theme/tokens';
 
 /** What a stepper needs to make its number typeable. */
@@ -85,7 +86,10 @@ export function NumberField({
   const hint = editText(input.value, input);
   const shown = draft || (editing ? hint : display);
   const line = !editable ? 'transparent' : error ? colors.red : editing ? colors.accent : colors.line;
-  const width = Math.max(2, shown.length) * fontSize * CHAR_EM + 6;
+  // Fixed width from the largest value the field takes (plus room for ".5" when it
+  // allows decimals), so the underline does not grow or shrink while the number changes.
+  const slots = Math.max(2, editText(input.max, input).length + (input.decimals ? 2 : 0), shown.length);
+  const width = slots * fontSize * CHAR_EM + 6;
 
   const textStyle: TextStyle = {
     width,
@@ -120,7 +124,7 @@ export function NumberField({
         maxLength={8}
         maxFontSizeMultiplier={1.2}
         accessibilityLabel={label}
-        accessibilityHint="Type a number, or use the minus and plus buttons"
+        accessibilityHint={t('Type a number, or use the minus and plus buttons')}
         style={textStyle}
       />
     </View>

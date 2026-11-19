@@ -67,19 +67,70 @@ home screen). The owner writes in Serbian; answer in Serbian.
   `liftlog-profile`; "Switch profile" clears it); "Discard workout" (was "End workout") says nothing is
   saved; Finish with sets still open asks first; a finished day shows "Done for today. Next: …" and one
   quiet "View workout" button instead of a yellow one; list rows use a chevron, not a "View" pill;
-  "Workout done" totals are one list card. Screen padding is 16; spacing follows 4/8/16/24/32; text is 14+
-  (chart ticks and the routine pill captions stay 11).
+  "Workout done" totals are one list card. Screen padding is 16; spacing follows 4/8/16/24/32; text follows the type scale below.
 - Approved 2026-11-17: set entry is buttons + typing only (Keypad and Scale removed; the
   `input_variant` column stays and is ignored); Height is no longer asked or shown (stored as 0 for new
   profiles); no "Home" title. Library and the Add-exercise picker have a search field
   (`searchExercises`). Logging 0 kg on a weighted exercise asks once per exercise. A finished workout
-  can be deleted and has a note (summary screen; `workouts.note`, schema v2). Routine items are one
+  has a note (summary screen; `workouts.note`, schema v2) and can be deleted only when opened from All workouts
+  (not on "Workout done" right after finishing, owner 2026-11-20). Routine items are one
   line with Edit, one open at a time. Tab bar: icons in a pill + labels, active = ink pill
   (`src/components/TabBar.tsx`). Home also shows week totals, "Coming up" and "Last workout".
 - Photos (2026-11-18): the home photo (`assets/photos/hero.jpg`, owner's photo of a man and a woman) is
   also on Welcome and the profile picker. Big photos go through `src/components/Hero.tsx`: dark theme =
-  full-bleed photo with text over it; light theme = rounded photo card with the text below on the
+  full-bleed photo with text over it; light theme = rounded photo card (title and meta on the card's bottom over a blurred strip via the `caption` prop on every hero screen; buttons below) with the text below on the
   page (`useIsLight` in `src/theme/themePref.ts`), because all photos are dark gym shots.
+- 2026-11-19 (owner's choices): light theme is "Kobalt" (cobalt #2457D6 fills, white text on them,
+  cool near-white page); photos in light mode are a little lighter with a faint warm tone (2026-11-20, was blue) by CSS on `[data-photo]`
+  in public/index.html. Home shows a body map (`src/components/BodyMap.tsx`, muscles per exercise in
+  `src/domain/muscles.ts`; worked muscles in red `#E0353B` in both themes, owner's choice) with today's muscles pulsing, or the next workout's on a rest day.
+  Motion is moderate (`src/components/Motion.tsx`: Appear, Pop, Pressy, useCountUp, Fill). Do not use
+  Reanimated "entering" presets on the web: they leave elements absolutely positioned.
+- 2026-11-19 (owner): strength group tiles in the library and the group pages show a close-up of the body
+  part (`BodyZoom` in `BodyMap.tsx`) with its muscles in red instead of photos; Cardio (heart, lungs, legs), Functional (every muscle)
+  and Warm-up & stretching (joints) use `BodyBadge` the same way. Light theme is a light gray (`bg #E8EAEE`), and has no yellow text anywhere: inside
+  dark photo strips `--c-accent` becomes light cobalt `#A9C0FF` (public/index.html).
+- Home "Your goal" card (owner, 2026-11-20) replaces the body weight card: current weight on top, a bar
+  from the first weigh-in (left label) to the target (right label, no "Goal" word), "x kg to go" riding on the
+  moving dot (counts up) (`src/components/GoalCard.tsx`, `domain/goal.ts`),
+  the last weigh-in date (asks for a new one after 7 days) and "Weigh in" with a stepper right on the card.
+  Weight changes on Profile are saved as today's weigh-in too (`saveBodyWeight`).
+- Review fixes (owner, 2026-11-20): "workouts done" counts days with a workout everywhere (Home and Progress);
+  days before the profile was made are neither planned nor "Missed" (`firstPlanDay`, `plannedFrom` in
+  domain/week.ts, `plannedWorkouts(…, since)`). On the web, confirms open the app's own dialog
+  (`ConfirmHost` in the root layout, `confirm(title, label, message, danger)`), not the browser popup.
+  Every routine plate is one neutral shade (`plate()`); planned days a neutral ring. Week strips (Home, Progress)
+  show the day's initial on top (`DAY_INITIALS`) and the date in the circle; done days are green with a check
+  (also the Workout timeline).
+- Type scale (owner, 2026-11-20): 56 display / 40 / 32 / 24 / 20 / 16 / 14 with line heights 56/40/40/32/28/24/20
+  (`TYPE`, `TYPE_LINE` in tokens.ts; Txt components use the scale's line height unless `lh` is set). Only
+  exceptions: big typed numbers (Mono ≥ 66) and chart ticks (LineChart). `tests/typescale.test.ts` guards it.
+- Language (2026-11-19): English (default) or Serbian in Latin script, chosen per profile in
+  onboarding step 1 and in Profile → Settings → Language (`settings.language`, schema v3). Texts are
+  written in English and wrapped in `t()` from `src/i18n`; Serbian is in `src/i18n/sr.ts` and
+  `src/i18n/exercises.sr.ts` (tests/i18n.test.ts fails on a missing translation). A language change
+  remounts the screens (key on the root Stack) and reopens the screen that was open. Routine names
+  the user already saved are their own text and are not translated. No pulse on the tab bar.
+- Exercise library (2026-11-19): 104 exercises = the original 34 + 70 from the owner's list of 103
+  (`src/data/catalog.more.ts`: texts, `ORDER` = the owner's order, `SECTIONS` = sub-headings in Arms and
+  Legs). New group `functional` (wide card in the library, home photo as cover). Exercises without
+  photos show a body figure (`ExerciseThumb`). Every exercise page opens with a body map of its muscles instead
+  of a hero photo (owner's choice); the photos sit below (two side by side, or start + mid-rep with the end below); the owner will
+  send photos later → add them to `PHOTOS` in `src/data/photos.ts`. Serbian names follow the owner's list.
+- Plan builder (2026-11-19): onboarding = about you (incl. sex, language) → "Make my plan" or "Build my own"
+  → body; own plan then only picks days (4 steps); a made plan continues (8 steps): main +
+  optional second goal (a closed "+ Add a second goal" row), focus, experience + equipment, week:
+  strength/cardio days and minutes, plan preview. Sex only suggests a focus (women: glutes + legs, men:
+  chest, back, arms) that the user can change. `src/domain/generate.ts` builds the plan (tested in
+  tests/generate.test.ts); answers are stored as `profiles.setup` (JSON, schema v4).
+- Every workout has a warm-up (1–3 moves) and stretching (2–4) as timed lists (`src/domain/mobility.ts`
+  picks them from the routine's muscles unless the routine has its own, `routines.extra` JSON); the
+  live flow is warm-up → exercises → stretching (`screens/MobilityLog.tsx`, `domain/mobilitySession.ts`),
+  none of it logged. 22 warm-up / stretching moves live in the `mobility` group.
+- Onboarding details (2026-11-19): target weight sits with the current weight (body step); "Where do
+  you train?" is its own step; workout length is Short (≤45) / About an hour / Long (>1 h) → `Setup.minutes`
+  45 | 60 | 90. Profile color (10 quick picks + "Any color": hue strip and 5 tones, all readable with dark text, `src/theme/profileColor.ts`) and picture (letter, 8 flat avatars, 17 icons), each behind a row that opens a card over a blurred, dimmed screen with a preview; only Done saves, close or tapping outside discards (`AvatarPicker`); the picture is the letter, an avatar or a sport icon (`ProfileIcon.tsx`,
+  no emoji per the design rules), stored in `profiles.avatar` (schema v5), changeable on Profile.
 - Don't invent screens or features; ask the owner first. Fixed sizes follow the 390 × 844 design and
   scale down on narrower phones via `useScale()` in `src/theme/layout.ts`.
 

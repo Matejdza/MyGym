@@ -14,6 +14,8 @@ import type {
   Settings,
   StrengthItem,
   WorkoutRecord,
+  Setup,
+  TimedItem,
 } from '@/domain/types';
 import { DEFAULT_SETTINGS } from '@/domain/types';
 
@@ -33,14 +35,17 @@ type ProfileRow = {
   weekly: number;
   days: string;
   created_at: number;
+  setup: string | null;
+  avatar: string | null;
 };
-type RoutineRow = { profile_id: string; key: string; name: string; type: 'strength' | 'cardio'; items: string };
+type RoutineRow = { profile_id: string; key: string; name: string; type: 'strength' | 'cardio'; items: string; extra: string | null };
 type SettingsRow = {
   profile_id: string;
   input_variant: Settings['inputVariant'];
   weight_step: number;
   rest_seconds: number;
   handedness: Settings['handedness'];
+  language: Settings['language'] | null;
 };
 type WorkoutRow = {
   id: number;
@@ -55,16 +60,22 @@ type WorkoutRow = {
   note: string;
 };
 
-const toRoutine = (r: RoutineRow): Routine =>
-  r.type === 'cardio'
-    ? { name: r.name, type: 'cardio', items: JSON.parse(r.items) as CardioItem[] }
-    : { name: r.name, items: JSON.parse(r.items) as StrengthItem[] };
+/** Warm-up and stretching lists stored with a routine (absent = picked from its muscles). */
+type RoutineExtra = { warmup?: TimedItem[]; stretch?: TimedItem[] };
+
+const toRoutine = (r: RoutineRow): Routine => {
+  const extra = r.extra ? (JSON.parse(r.extra) as RoutineExtra) : {};
+  return r.type === 'cardio'
+    ? { name: r.name, type: 'cardio', items: JSON.parse(r.items) as CardioItem[], ...extra }
+    : { name: r.name, items: JSON.parse(r.items) as StrengthItem[], ...extra };
+};
 
 const toSettings = (r: SettingsRow): Settings => ({
   inputVariant: r.input_variant,
   weightStep: r.weight_step as Settings['weightStep'],
   restSeconds: r.rest_seconds,
   handedness: r.handedness,
+  language: r.language === 'sr' ? 'sr' : 'en',
 });
 
 const toWorkout = (r: WorkoutRow): WorkoutRecord => ({
@@ -109,6 +120,8 @@ export async function loadProfiles(db: Db): Promise<LoadedProfile[]> {
         photoUri: p.photo_uri,
         plan: { weekly: p.weekly, days: JSON.parse(p.days), routines: own },
         createdAt: p.created_at,
+        setup: p.setup ? (JSON.parse(p.setup) as Setup) : null,
+        avatar: p.avatar ?? null,
       },
       settings: s ? toSettings(s) : DEFAULT_SETTINGS,
       session: sess ? (JSON.parse(sess.data) as Session) : null,
@@ -118,26 +131,28 @@ export async function loadProfiles(db: Db): Promise<LoadedProfile[]> {
 
 async function writeRoutine(db: Db, profileId: string, key: RoutineKey, r: Routine) {
   await db.runAsync(
-    `INSERT INTO routines (profile_id, key, name, type, items) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT (profile_id, key) DO UPDATE SET name = excluded.name, type = excluded.type, items = excluded.items`,
+    `INSERT INTO routines (profile_id, key, name, type, items, extra) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT (profile_id, key) DO UPDATE SET name = excluded.name, type = excluded.type, items = excluded.items, extra = excluded.extra`,
     profileId,
     key,
     r.name,
     r.type === 'cardio' ? 'cardio' : 'strength',
     JSON.stringify(r.items),
+    r.warmup || r.stretch ? JSON.stringify({ warmup: r.warmup, stretch: r.stretch }) : null,
   );
 }
 
 async function writeSettings(db: Db, profileId: string, s: Settings) {
   await db.runAsync(
-    `INSERT INTO settings (profile_id, input_variant, weight_step, rest_seconds, handedness) VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO settings (profile_id, input_variant, weight_step, rest_seconds, handedness, language) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT (profile_id) DO UPDATE SET input_variant = excluded.input_variant, weight_step = excluded.weight_step,
-       rest_seconds = excluded.rest_seconds, handedness = excluded.handedness`,
+       rest_seconds = excluded.rest_seconds, handedness = excluded.handedness, language = excluded.language`,
     profileId,
     s.inputVariant,
     s.weightStep,
     s.restSeconds,
     s.handedness,
+    s.language,
   );
 }
 
@@ -148,8 +163,8 @@ async function writeSettings(db: Db, profileId: string, s: Settings) {
 export async function createProfile(db: Db, p: Profile, today: string, settings: Settings = DEFAULT_SETTINGS) {
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `INSERT INTO profiles (id, name, color, height, weight, goal, target, photo_uri, weekly, days, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO profiles (id, name, color, height, weight, goal, target, photo_uri, weekly, days, created_at, setup, avatar)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       p.id,
       p.name,
       p.color,
@@ -161,6 +176,8 @@ export async function createProfile(db: Db, p: Profile, today: string, settings:
       p.plan.weekly,
       JSON.stringify(p.plan.days),
       p.createdAt,
+      p.setup ? JSON.stringify(p.setup) : null,
+      p.avatar ?? null,
     );
     for (const [key, r] of Object.entries(p.plan.routines)) await writeRoutine(db, p.id, key, r);
     await writeSettings(db, p.id, settings);
@@ -168,7 +185,7 @@ export async function createProfile(db: Db, p: Profile, today: string, settings:
   });
 }
 
-export type ProfileFields = Partial<Pick<Profile, 'name' | 'color' | 'height' | 'weight' | 'goal' | 'target' | 'photoUri'>>;
+export type ProfileFields = Partial<Pick<Profile, 'name' | 'color' | 'height' | 'weight' | 'goal' | 'target' | 'photoUri' | 'setup' | 'avatar'>>;
 
 const FIELD_COLUMNS: Record<keyof ProfileFields, string> = {
   name: 'name',
@@ -178,6 +195,8 @@ const FIELD_COLUMNS: Record<keyof ProfileFields, string> = {
   goal: 'goal',
   target: 'target',
   photoUri: 'photo_uri',
+  setup: 'setup',
+  avatar: 'avatar',
 };
 
 /** Updates profile fields (height, weight, target, goal, photo…). */
@@ -186,7 +205,8 @@ export async function updateProfileFields(db: Db, id: string, fields: ProfileFie
   if (!keys.length) return;
   // Column names come from the fixed FIELD_COLUMNS allowlist, never from input.
   const set = keys.map((k) => `${FIELD_COLUMNS[k]} = ?`).join(', ');
-  await db.runAsync(`UPDATE profiles SET ${set} WHERE id = ?`, ...keys.map((k) => fields[k] ?? null), id);
+  const value = (k: keyof ProfileFields) => (k === 'setup' ? (fields.setup ? JSON.stringify(fields.setup) : null) : (fields[k] ?? null));
+  await db.runAsync(`UPDATE profiles SET ${set} WHERE id = ?`, ...keys.map(value), id);
 }
 
 /**

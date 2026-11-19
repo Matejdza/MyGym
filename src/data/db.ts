@@ -6,7 +6,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 export type Db = Pick<SQLiteDatabase, 'execAsync' | 'runAsync' | 'getAllAsync' | 'getFirstAsync' | 'withTransactionAsync'>;
 
 export const DATABASE_NAME = 'liftlog.db';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 5;
 
 const V1 = `
 CREATE TABLE profiles (
@@ -96,6 +96,15 @@ CREATE TABLE body_log (
 /** v2: a free-text note on a finished workout ("shoulder felt off", "add 2.5 kg next time"). */
 const V2 = `ALTER TABLE workouts ADD COLUMN note TEXT NOT NULL DEFAULT '';`;
 
+/** v3: the app language of each profile. */
+const V3 = `ALTER TABLE settings ADD COLUMN language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'sr'));`;
+
+/** v4: the plan builder's answers per profile, and warm-up / stretching lists per routine (both JSON). */
+const V4 = `ALTER TABLE profiles ADD COLUMN setup TEXT; ALTER TABLE routines ADD COLUMN extra TEXT;`;
+
+/** v5: a profile icon instead of the initial. */
+const V5 = `ALTER TABLE profiles ADD COLUMN avatar TEXT;`;
+
 /** Runs from SQLiteProvider's onInit, before any screen reads the database. */
 export async function migrate(db: Db) {
   // Connection settings must be applied outside the migration transaction.
@@ -110,6 +119,9 @@ export async function migrate(db: Db) {
   await db.withTransactionAsync(async () => {
     if (version < 1) await db.execAsync(V1);
     if (version < 2) await db.execAsync(V2);
+    if (version < 3) await db.execAsync(V3);
+    if (version < 4) await db.execAsync(V4);
+    if (version < 5) await db.execAsync(V5);
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   });
 }

@@ -28,9 +28,9 @@ export const DARK = {
   border: 'rgba(242,240,234,0.26)',
   /** 10%: accent for text, lines and chart strokes. */
   accent: '#F2B92A',
-  /** Accent as a fill (main button, chips). Same in both themes. */
+  /** Accent as a fill (main button, chips, progress). Gold in dark, cobalt in light. */
   accentFill: '#F2B92A',
-  /** Text on accentFill. */
+  /** Text and icons on accentFill. */
   accentInk: '#1C1C1A',
   /** accentFill while pressed. */
   press: '#D9A41F',
@@ -50,25 +50,26 @@ export const DARK = {
 
 export type Palette = { [K in keyof typeof DARK]: string };
 
+/** "Kobalt" (owner, 2026-11-19): light gray page (not pure white, owner 2026-11-19), cobalt blue in place of the gold. */
 export const LIGHT: Palette = {
-  bg: '#F4F2EC',
-  surface: '#E7E3DA',
-  surface2: '#DAD5CA',
-  ink: '#1C1C1A',
-  muted: '#5E5A52',
-  line: 'rgba(28,28,26,0.12)',
-  border: 'rgba(28,28,26,0.28)',
-  accent: '#7A5800',
-  accentFill: '#F2B92A',
-  accentInk: '#1C1C1A',
-  press: '#D9A41F',
-  red: '#B8391F',
-  green: '#187241',
-  placeholder: '#8C877E',
-  scrim: 'rgba(28,28,26,0.72)',
-  onPlate: '#1C1C1A',
-  plateD: '#B5B0A6',
-  plateH: '#A39E93',
+  bg: '#E8EAEE',
+  surface: '#DADEE5',
+  surface2: '#CBD0D9',
+  ink: '#141922',
+  muted: '#4F5867',
+  line: 'rgba(20,25,34,0.12)',
+  border: 'rgba(20,25,34,0.28)',
+  accent: '#1E47B3',
+  accentFill: '#2457D6',
+  accentInk: '#FFFFFF',
+  press: '#1D48B8',
+  red: '#B3261E',
+  green: '#146B3A',
+  placeholder: '#8A93A2',
+  scrim: 'rgba(20,25,34,0.72)',
+  onPlate: '#141922',
+  plateD: '#B4BCC8',
+  plateH: '#A3ACBA',
 };
 
 const KEYS = Object.keys(DARK) as (keyof Palette)[];
@@ -80,17 +81,30 @@ export const cssVars = (p: Palette) => KEYS.map((k) => `${cssName(k)}: ${p[k]};`
 export const colors: Palette =
   IS_WEB ? (Object.fromEntries(KEYS.map((k) => [k, `var(${cssName(k)})`])) as Palette) : { ...DARK };
 
-/** Routine plate colors. Text on a plate is always colors.onPlate. */
-export const PLATES = ['#ff5a3c', '#3ddc84', '#ffc531', colors.plateD, '#ff9f43', '#b8e04a', '#ff7aa8', colors.plateH];
-
-/** Plate color for a routine key (A, B, C…). */
-export const plate = (key: string) => PLATES[(key.charCodeAt(0) - 65) % PLATES.length];
+/**
+ * Plate color for a routine key (A, B, C…). One neutral shade for every routine
+ * (owner, 2026-11-20): the letter tells routines apart, so the only colors left
+ * are the accent and the red of worked muscles (60/30/10). Text on it is colors.onPlate.
+ */
+export const plate = (_key: string) => colors.plateD;
 
 /** Profiles pick from the first 5 plates. Plain hex: the choice is saved with the profile. */
-export const PROFILE_COLORS = ['#ff5a3c', '#3ddc84', '#ffc531', '#e9e6df', '#ff9f43'];
+/** Profile colors (all light enough for dark text on them, at least 4.5:1). */
+export const PROFILE_COLORS = ['#ff5a3c', '#3ddc84', '#ffc531', '#e9e6df', '#ff9f43', '#7fb8f5', '#f59bb6', '#5ed3c7', '#c9e265', '#d9b38c'];
 
 /** Heart-rate zones 1–5. Index 0 is unused. */
 export const ZONE_COLORS = ['', '#c7c2b8', '#3ddc84', '#ffc531', '#ff9f43', '#ff5a3c'] as const;
+
+/**
+ * Type scale (owner, 2026-11-20): every text uses one of these sizes, with its
+ * line height. Display is the screen title (Big Shoulders needs size to read
+ * as a headline); headings in caps sit tight (1.0); text is 1.5. Exceptions:
+ * the big typed numbers of the set and body inputs, and chart tick labels.
+ */
+export const TYPE = { display: 56, h1: 40, h2: 32, h3: 24, h4: 20, body: 16, mini: 14 } as const;
+export const TYPE_SIZES: number[] = Object.values(TYPE);
+/** Line height (px) for each size on the scale. */
+export const TYPE_LINE: Record<number, number> = { 56: 56, 40: 40, 32: 40, 24: 32, 20: 28, 16: 24, 14: 20 };
 
 /**
  * Font families. Each weight is registered as its own family because custom

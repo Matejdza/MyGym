@@ -2,27 +2,19 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
-import { Photo, Shade, dark, DARK_SCOPE } from '@/components/Photo';
+import { BodyBadge, BodyZoom, type Badge } from '@/components/BodyMap';
+import { Appear, Pressy } from '@/components/Motion';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
+import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { ALL_GROUPS, EXERCISE_IDS, GROUPS, exercise } from '@/data/catalog';
-import { IMAGES, exPhoto, groupPhoto } from '@/data/photos';
 import { plural } from '@/domain/format';
 import { searchExercises, withExerciseAdded } from '@/domain/plan';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { colors, fonts } from '@/theme/tokens';
+import { t } from '@/i18n';
 
-const TILE_STOPS: [number, string][] = [
-  [0, dark(0)],
-  [0.4, dark(0)],
-  [1, dark(0.85)],
-];
-const CARDIO_STOPS: [number, string][] = [
-  [0, dark(0.85)],
-  [0.7, dark(0)],
-  [1, dark(0)],
-];
 
 /**
  * Muscle-group tiles and the Cardio card. With `pickFor` (a routine key) it is
@@ -36,6 +28,7 @@ export function Library({ pickFor }: { pickFor?: string }) {
   const tileWidth = (width - 16 * 2 - 8) / 2;
   const pick = pickFor != null;
   const cardioCount = EXERCISE_IDS.filter((id) => exercise(id).group === 'cardio').length;
+  const functionalCount = EXERCISE_IDS.filter((id) => exercise(id).group === 'functional').length;
 
   const { profile } = useActive();
   const { setPlan } = useStore();
@@ -61,17 +54,17 @@ export function Library({ pickFor }: { pickFor?: string }) {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]} keyboardShouldPersistTaps="handled">
-      {pick && <BackPill label={`‹ Routine ${pickFor}`} onPress={() => router.back()} style={styles.pickBack} />}
+      {pick && <BackPill onPress={() => router.back()} style={styles.pickBack} />}
       <View style={styles.head}>
-        <Display size={52} weight={900} lh={0.9}>
-          {pick ? 'Add exercise' : 'Exercises'}
+        <Display size={56} weight={900} lh={0.9}>
+          {pick ? t('Add exercise') : t('Exercises')}
         </Display>
         <Mono size={14} color={colors.muted}>
           {String(EXERCISE_IDS.length)}
         </Mono>
       </View>
       <UI size={16} color={colors.muted} style={styles.sub}>
-        {pick ? 'Search, or pick a muscle group.' : 'Search, or browse by muscle group.'}
+        {pick ? t('Search, or pick a muscle group.') : t('Search, or browse by muscle group.')}
       </UI>
 
       <View style={[styles.search, { borderColor: focused ? colors.accent : colors.line }]}>
@@ -80,18 +73,18 @@ export function Library({ pickFor }: { pickFor?: string }) {
           onChangeText={setQuery}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Search exercises"
+          placeholder={t('Search exercises')}
           placeholderTextColor={colors.placeholder}
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
-          accessibilityLabel="Search exercises"
+          accessibilityLabel={t('Search exercises')}
           style={styles.searchInput}
         />
         {searching && (
-          <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" style={styles.clear}>
-            <UI size={15} weight={600} color={colors.muted}>
-              Clear
+          <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel={t('Clear search')} style={styles.clear}>
+            <UI size={16} weight={600} color={colors.muted}>
+              {t('Clear')}
             </UI>
           </Pressable>
         )}
@@ -101,7 +94,7 @@ export function Library({ pickFor }: { pickFor?: string }) {
         <View style={{ marginTop: 16 }}>
           {results.length === 0 ? (
             <UI size={16} color={colors.muted} lh={1.5}>
-              {`No exercise matches “${query.trim()}”. Try a muscle group or a piece of equipment, e.g. “back” or “dumbbell”.`}
+              {t('No exercise matches “{q}”. Try a muscle group or a piece of equipment, e.g. “back” or “dumbbell”.', { q: query.trim() })}
             </UI>
           ) : (
             results.map((id) => (
@@ -110,9 +103,9 @@ export function Library({ pickFor }: { pickFor?: string }) {
                 onPress={() => openExercise(id)}
                 accessibilityRole="button"
                 style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
-                <Photo source={exPhoto(id)} fill={colors.surface2} style={styles.thumb} />
+                <ExerciseThumb id={id} size={60} radius={14} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <UI size={17} weight={600} numberOfLines={1}>
+                  <UI size={20} weight={600} numberOfLines={1}>
                     {exercise(id).name}
                   </UI>
                   <UI size={14} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
@@ -122,11 +115,11 @@ export function Library({ pickFor }: { pickFor?: string }) {
                 {pick ? (
                   <View style={styles.addPill}>
                     <UI size={14} weight={700} color={colors.accentInk}>
-                      Add
+                      {t('Add')}
                     </UI>
                   </View>
                 ) : (
-                  <UI size={22} color={colors.muted}>
+                  <UI size={24} color={colors.muted}>
                     ›
                   </UI>
                 )}
@@ -141,41 +134,70 @@ export function Library({ pickFor }: { pickFor?: string }) {
         {GROUPS.map((g) => {
           const n = EXERCISE_IDS.filter((id) => exercise(id).group === g.key).length;
           return (
-            <Pressable key={g.key} onPress={() => openGroup(g.key)} accessibilityRole="button" style={[styles.tile, { width: tileWidth }]} {...DARK_SCOPE}>
-              <Photo source={groupPhoto(g.key)} style={StyleSheet.absoluteFill} />
-              <Shade stops={TILE_STOPS} />
-              <View style={styles.tileText}>
-                <Display size={30} weight={900} lh={1}>
-                  {g.label}
-                </Display>
-                <UI size={14} style={{ marginTop: 4, opacity: 0.75 }}>
-                  {plural(n, 'exercise')}
-                </UI>
+            <Appear key={g.key} index={GROUPS.indexOf(g)}>
+            <Pressy onPress={() => openGroup(g.key)} accessibilityRole="button" style={[styles.tile, { width: tileWidth }]}>
+              {/* A close-up of the body part with its muscles in red (owner's choice over photos). */}
+              <View style={styles.tileArt}>
+                <BodyZoom group={g.key} height={96} />
               </View>
-            </Pressable>
+              <Display size={24} weight={900} lh={1}>
+                {g.label}
+              </Display>
+              <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
+                {plural(n, 'exercise')}
+              </UI>
+            </Pressy>
+            </Appear>
           );
         })}
       </View>
       )}
 
       {!pick && !searching && (
-        <Pressable onPress={() => openGroup('cardio')} accessibilityRole="button" style={styles.cardio} {...DARK_SCOPE}>
-          <Photo source={IMAGES.cardioWide} style={StyleSheet.absoluteFill} />
-          <Shade stops={CARDIO_STOPS} horizontal />
-          <View style={styles.cardioText}>
-            <UI size={14} weight={700} color={colors.accent}>
-              Conditioning
-            </UI>
-            <Display size={38} weight={900} lh={1} style={{ marginTop: 4 }}>
-              Cardio
-            </Display>
-            <UI size={14} style={{ marginTop: 4, opacity: 0.75 }}>
-              {`${cardioCount} activities`}
-            </UI>
-          </View>
-        </Pressable>
+        <WideCard kind="cardio" kicker={t('Conditioning')} title={t('Cardio')} count={plural(cardioCount, 'activity')} onPress={() => openGroup('cardio')} />
+      )}
+
+      {/* Functional training: full-body and conditioning moves; they fit strength routines, so the picker shows it too. */}
+      {!searching && (
+        <WideCard
+          kind="functional"
+          kicker={t('Strength and conditioning')}
+          title={t('Functional')}
+          count={plural(functionalCount, 'exercise')}
+          onPress={() => openGroup('functional')}
+        />
+      )}
+
+      {!pick && !searching && (
+        <WideCard
+          kind="mobility"
+          kicker={t('Before and after every workout')}
+          title={t('Warm-up & stretching')}
+          count={plural(EXERCISE_IDS.filter((id) => exercise(id).group === 'mobility').length, 'exercise')}
+          onPress={() => openGroup('mobility')}
+        />
       )}
     </ScrollView>
+  );
+}
+
+/** Wide card for a group that is not one muscle: text on the left, its figure on the right. */
+function WideCard({ kind, kicker, title, count, onPress }: { kind: Badge; kicker: string; title: string; count: string; onPress: () => void }) {
+  return (
+    <Pressy onPress={onPress} accessibilityRole="button" style={styles.cardio}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <UI size={14} weight={700} color={colors.accent}>
+          {kicker}
+        </UI>
+        <Display size={kind === 'mobility' ? 32 : 40} weight={900} lh={1} style={{ marginTop: 4 }}>
+          {title}
+        </Display>
+        <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
+          {count}
+        </UI>
+      </View>
+      <BodyBadge kind={kind} height={kind === 'functional' ? 118 : 126} />
+    </Pressy>
   );
 }
 
@@ -201,8 +223,7 @@ const styles = StyleSheet.create({
   thumb: { width: 60, height: 60, borderRadius: 14 },
   addPill: { height: 32, paddingHorizontal: 16, borderRadius: 16, justifyContent: 'center', backgroundColor: colors.accentFill },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  tile: { height: 168, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface },
-  tileText: { position: 'absolute', left: 14, right: 14, bottom: 12 },
-  cardio: { height: 150, marginTop: 8, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface },
-  cardioText: { position: 'absolute', left: 16, bottom: 14 },
+  tile: { height: 184, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface, padding: 16 },
+  tileArt: { flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  cardio: { height: 150, marginTop: 8, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16 },
 });
