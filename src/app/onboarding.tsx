@@ -88,31 +88,74 @@ const SEXES: [Sex, string][] = [
 ];
 
 /**
+ * Answers typed so far. They live outside the screen so nothing is lost when
+ * the screen is rebuilt (choosing a language remounts every screen); cleared
+ * when the profile is made or onboarding is left (owner, 2026-11-20).
+ */
+type Draft = {
+  step: number;
+  name: string;
+  color: string;
+  avatar: string | null;
+  sex: Sex | null;
+  weight: number;
+  target: number;
+  goal: MainGoal;
+  goal2: MainGoal | null;
+  focus: Focus[];
+  focusTouched: boolean;
+  experience: Experience;
+  equipment: Equipment;
+  minutes: Setup['minutes'];
+  strengthDays: number;
+  cardioDays: number;
+  mode: Mode;
+  ownDays: number[];
+  savedAt: number;
+};
+let draft: Draft | null = null;
+/** A draft older than this is from an earlier visit, not a language change. */
+const DRAFT_TTL = 30 * 60 * 1000;
+const clearDraft = () => {
+  draft = null;
+};
+
+/**
  * New profile in seven steps: about you, body, goals, focus, experience and
  * equipment, the training week, and the plan the app builds (or your own days).
  */
 export default function Onboarding() {
-  const { createProfile } = useStore();
+  const { createProfile, order } = useStore();
   const top = useTop();
   const insets = useSafeAreaInsets();
 
-  const [step, setStep] = useState(1);
-  const [name, setName] = useState('');
-  const [color, setColor] = useState<string>(PROFILE_COLORS[0]);
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [sex, setSex] = useState<Sex | null>(null);
-  const [weight, setWeight] = useState(80);
-  const [target, setTarget] = useState(78);
-  const [goal, setGoal] = useState<MainGoal>('muscle');
-  const [goal2, setGoal2] = useState<MainGoal | null>(null);
-  const [focus, setFocus] = useState<Focus[]>([]);
-  const [experience, setExperience] = useState<Experience>('beginner');
-  const [equipment, setEquipment] = useState<Equipment>('gym');
-  const [minutes, setMinutes] = useState<Setup['minutes']>(60);
-  const [strengthDays, setStrengthDays] = useState(3);
-  const [cardioDays, setCardioDays] = useState(1);
-  const [mode, setMode] = useState<Mode>('suggested');
-  const [ownDays, setOwnDays] = useState<number[]>([]);
+  // Pick up where the user was if the screen was just rebuilt (e.g. a language change).
+  const [d0] = useState(() => (draft && Date.now() - draft.savedAt < DRAFT_TTL ? draft : null));
+  const [step, setStep] = useState(d0?.step ?? 1);
+  const [name, setName] = useState(d0?.name ?? '');
+  const [color, setColor] = useState<string>(d0?.color ?? PROFILE_COLORS[0]);
+  const [avatar, setAvatar] = useState<string | null>(d0?.avatar ?? null);
+  const [sex, setSex] = useState<Sex | null>(d0?.sex ?? null);
+  const [weight, setWeight] = useState(d0?.weight ?? 80);
+  const [target, setTarget] = useState(d0?.target ?? 78);
+  const [goal, setGoal] = useState<MainGoal>(d0?.goal ?? 'muscle');
+  const [goal2, setGoal2] = useState<MainGoal | null>(d0?.goal2 ?? null);
+  const [focus, setFocus] = useState<Focus[]>(d0?.focus ?? []);
+  // Once the user picks a focus, changing sex no longer replaces it with the suggestion.
+  const [focusTouched, setFocusTouched] = useState(d0?.focusTouched ?? false);
+  const [experience, setExperience] = useState<Experience>(d0?.experience ?? 'beginner');
+  const [equipment, setEquipment] = useState<Equipment>(d0?.equipment ?? 'gym');
+  const [minutes, setMinutes] = useState<Setup['minutes']>(d0?.minutes ?? 60);
+  const [strengthDays, setStrengthDays] = useState(d0?.strengthDays ?? 3);
+  const [cardioDays, setCardioDays] = useState(d0?.cardioDays ?? 1);
+  const [mode, setMode] = useState<Mode>(d0?.mode ?? 'suggested');
+  const [ownDays, setOwnDays] = useState<number[]>(d0?.ownDays ?? []);
+  useEffect(() => {
+    draft = {
+      step, name, color, avatar, sex, weight, target, goal, goal2, focus, focusTouched,
+      experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays, savedAt: Date.now(),
+    };
+  }, [step, name, color, avatar, sex, weight, target, goal, goal2, focus, focusTouched, experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays]);
   const [saving, setSaving] = useState(false);
   const scroller = useRef<ScrollViewInstance>(null);
   // Each step starts at the top.
@@ -143,14 +186,22 @@ export default function Onboarding() {
 
   const chooseSex = (s: Sex) => {
     setSex(s);
-    setFocus(SUGGESTED_FOCUS[s]);
+    if (!focusTouched) setFocus(SUGGESTED_FOCUS[s]);
   };
-  const toggleFocus = (f: Focus) => setFocus((l) => (l.includes(f) ? l.filter((x) => x !== f) : [...l, f]));
+  const toggleFocus = (f: Focus) => {
+    setFocusTouched(true);
+    setFocus((l) => (l.includes(f) ? l.filter((x) => x !== f) : [...l, f]));
+  };
   const toggleDay = (i: number) => setOwnDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
 
   const back = () => {
     if (step > 1) setStep(step - 1);
-    else router.back();
+    else {
+      clearDraft();
+      // After a language change the screen below may be gone; then go to the start screen.
+      if (router.canGoBack()) router.back();
+      else router.replace(order.length ? '/profiles' : '/welcome');
+    }
   };
 
   // Android back button steps back through onboarding before leaving it.
@@ -160,6 +211,7 @@ export default function Onboarding() {
         setStep(step - 1);
         return true;
       }
+      clearDraft();
       return false;
     });
     return () => sub.remove();
@@ -179,6 +231,7 @@ export default function Onboarding() {
         { name: name.trim(), color, height: 0, weight, goal: legacyGoal(goal), target, plan: chosen, setup, avatar },
         getLang(),
       );
+      clearDraft();
       // Your own plan starts with empty days: go straight to adding exercises.
       if (mode === 'own') setTimeout(() => router.push('/plan'), 50);
     } catch (e) {

@@ -82,7 +82,9 @@ function RootStack() {
     if (shownLang.current !== lang) {
       shownLang.current = lang;
       const back = path.current;
-      if (!START_PATHS.has(back)) requestAnimationFrame(() => router.push(back as never));
+      // On the web the new stack already opens the address shown; pushing again would
+      // leave a second copy of the screen underneath (Back would open the stale one).
+      if (!START_PATHS.has(back) && pathname !== back) requestAnimationFrame(() => router.push(back as never));
     } else path.current = pathname;
   }, [lang, pathname]);
 

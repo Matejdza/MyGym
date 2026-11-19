@@ -69,7 +69,7 @@ export default function Profile() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]}>
       <View style={styles.topRow}>
-        <BackPill onPress={() => router.back()} />
+        <BackPill onPress={() => (router.canGoBack() ? router.back() : router.navigate('/'))} />
         <Pressable onPress={leaveProfile} accessibilityRole="button" style={styles.switch}>
           <UI size={16} weight={600} numberOfLines={1}>
             {t('Switch profile')}
