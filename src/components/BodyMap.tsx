@@ -9,7 +9,8 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTim
 import Svg, { Ellipse, G, Path } from 'react-native-svg';
 
 import { UI } from '@/components/Txt';
-import type { MuscleKey } from '@/domain/muscles';
+import { routineMuscles, type MuscleKey } from '@/domain/muscles';
+import type { Routine } from '@/domain/types';
 import { t } from '@/i18n';
 import { colors } from '@/theme/tokens';
 
@@ -164,21 +165,11 @@ type Crop = { back: boolean; vb: string };
 const ZOOM: Record<string, { muscles: MuscleKey[]; crops: Crop[] }> = {
   chest: { muscles: ['chest'], crops: [{ back: false, vb: '22 26 76 76' }] },
   back: { muscles: ['lats', 'traps', 'lowerBack'], crops: [{ back: true, vb: '18 26 84 92' }] },
-  legs: {
-    muscles: ['quads', 'calves', 'glutes', 'hamstrings'],
-    crops: [
-      { back: false, vb: '34 108 52 130' },
-      { back: true, vb: '34 108 52 130' },
-    ],
-  },
+  // One shape per tile like the other groups (owner, 2026-11-20): both legs from the hips down.
+  legs: { muscles: ['quads', 'calves'], crops: [{ back: false, vb: '24 110 72 128' }] },
   shoulders: { muscles: ['shoulders'], crops: [{ back: false, vb: '18 22 84 64' }] },
-  arms: {
-    muscles: ['biceps', 'triceps', 'forearms'],
-    crops: [
-      { back: false, vb: '14 50 32 82' },
-      { back: true, vb: '14 50 32 82' },
-    ],
-  },
+  // The upper body with both arms, like Chest and Shoulders.
+  arms: { muscles: ['biceps', 'forearms'], crops: [{ back: false, vb: '12 34 96 100' }] },
   core: { muscles: ['abs', 'obliques'], crops: [{ back: false, vb: '32 60 56 62' }] },
 };
 
@@ -266,6 +257,35 @@ export function BodyBadge({ kind, height }: { kind: Badge; height: number }) {
             ])}
           </G>,
         )}
+    </View>
+  );
+}
+
+/**
+ * A routine's picture (owner, 2026-11-20: figures instead of stock photos):
+ * front and back with the routine's main muscles in red and its helpers in a
+ * fainter red; a cardio routine shows the heart and lungs figure. Still.
+ */
+export function RoutineFigure({ routine, height }: { routine: Routine; height: number }) {
+  if (routine.type === 'cardio') return <BodyBadge kind="cardio" height={height} />;
+  const { primary, secondary } = routineMuscles(routine);
+  return <BodyPair primary={primary} secondary={secondary} height={height} />;
+}
+
+/** Front and back side by side, no labels, no motion. */
+export function BodyPair({ primary, secondary, height }: { primary: MuscleKey[]; secondary: MuscleKey[]; height: number }) {
+  const p = new Set(primary);
+  const s = new Set(secondary);
+  return (
+    <View style={[styles.row, { gap: height * 0.06 }]} accessible accessibilityRole="image" accessibilityLabel={primary.join(', ')}>
+      {[FRONT, BACK].map((map, i) => (
+        <Svg key={i} width={height / 2} height={height} viewBox="0 0 120 240">
+          <Frame />
+          <Shapes map={map} pick={() => true} fill={colors.border} />
+          <Shapes map={map} pick={(m) => s.has(m)} fill={MUSCLE} opacity={0.35} />
+          <Shapes map={map} pick={(m) => p.has(m)} fill={MUSCLE} />
+        </Svg>
+      ))}
     </View>
   );
 }

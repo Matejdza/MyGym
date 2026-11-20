@@ -53,8 +53,8 @@ export type Palette = { [K in keyof typeof DARK]: string };
 /** "Kobalt" (owner, 2026-11-19): light gray page (not pure white, owner 2026-11-19), cobalt blue in place of the gold. */
 export const LIGHT: Palette = {
   bg: '#E8EAEE',
-  surface: '#DADEE5',
-  surface2: '#CBD0D9',
+  surface: '#F6F7F9',
+  surface2: '#E1E4EA',
   ink: '#141922',
   muted: '#4F5867',
   line: 'rgba(20,25,34,0.12)',

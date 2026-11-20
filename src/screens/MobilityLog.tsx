@@ -124,7 +124,7 @@ export function MobilityLog({ session: s, phase }: { session: Session; phase: 'w
           <>
             <View style={styles.timerRow}>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <UI size={16} color={colors.muted} numberOfLines={1}>
+                <UI size={14} color={colors.muted} numberOfLines={1}>
                   {exercise(move.ex).name}
                 </UI>
                 <Mono size={40} weight={500} color={running ? colors.accent : colors.ink}>

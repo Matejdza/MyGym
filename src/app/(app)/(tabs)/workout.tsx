@@ -3,10 +3,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Appear, Pressy } from '@/components/Motion';
-import { Photo } from '@/components/Photo';
 import { Display, UI } from '@/components/Txt';
 import { DAYS_FULL } from '@/data/catalog';
-import { coverPhoto } from '@/data/photos';
+import { RoutineFigure } from '@/components/BodyMap';
 import * as repo from '@/data/repo';
 import { dateInWeek, dayIndex, longDate, parseIso, shortDate, weekStartOf } from '@/domain/dates';
 import { firstPlanDay } from '@/domain/week';
@@ -77,7 +76,7 @@ export default function Workout() {
               </View>
               {state === 'rest' || state === 'before' || !r || !k ? (
                 <View style={styles.restRow}>
-                  <UI size={16} color={colors.muted}>{state === 'before' ? `${dayName}, ${date}` : `${dayName}, ${date} · ${t('Rest')}`}</UI>
+                  <UI size={14} color={colors.muted}>{state === 'before' ? `${dayName}, ${date}` : `${dayName}, ${date} · ${t('Rest')}`}</UI>
                 </View>
               ) : (
                 <Pressy
@@ -90,7 +89,7 @@ export default function Workout() {
                     pressed && { opacity: 0.7 },
                   ]}>
                   <View style={styles.photo}>
-                    <Photo source={coverPhoto(r)} fill={colors.surface2} style={StyleSheet.absoluteFill} />
+                    <RoutineFigure routine={r} height={84} />
                   </View>
                   <View style={styles.text}>
                     <UI size={14} weight={600} color={state === 'today' || state === 'progress' ? colors.accent : colors.muted}>
@@ -181,6 +180,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardToday: { borderWidth: 1.5, borderColor: colors.accent },
-  photo: { width: 96, backgroundColor: colors.surface2 },
+  photo: { width: 96, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface2 },
   text: { flex: 1, minWidth: 0, paddingVertical: 16, paddingHorizontal: 16, justifyContent: 'center' },
 });

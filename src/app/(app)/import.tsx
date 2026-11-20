@@ -83,7 +83,7 @@ export default function ImportRoutine() {
                 <UI size={20} weight={600}>
                   {parsed.name ?? t('Imported routine')}
                 </UI>
-                <UI size={16} color={colors.muted} style={{ marginTop: 4 }}>
+                <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
                   {parsed.days.length ? parsed.days.map((d) => DAYS[d]).join(', ') : t('No days yet: pick them in Training plan')}
                 </UI>
                 <View style={{ marginTop: 16 }}>

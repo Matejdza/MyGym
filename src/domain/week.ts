@@ -43,7 +43,8 @@ export function weekCells(plan: Plan, done: number[], today: number | null): Wee
     const isDone = !!k && done.includes(i);
     const isToday = today === i;
     let ring: CellRing = { kind: 'none' };
-    if (isToday) ring = isDone ? { kind: 'outer', width: 2, gap: 2, color: colors.accent } : { kind: 'inset', width: 2, color: colors.accent };
+    // Today done: just the green check, no second color around it (owner, 2026-11-20).
+    if (isToday) ring = isDone ? { kind: 'none' } : { kind: 'inset', width: 2, color: colors.accent };
     else if (k && !isDone) ring = { kind: 'inset', width: 1.5, color: colors.border };
     return {
       day,

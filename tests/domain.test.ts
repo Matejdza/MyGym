@@ -90,7 +90,7 @@ test('weekCells: done, planned, today', () => {
   assert.equal(cells[0].check, true);
   assert.deepEqual(cells[2].ring, { kind: 'inset', width: 1.5, color: colors.border }); // C planned: neutral
   assert.equal(cells[3].letter, '·');
-  assert.deepEqual(cells[4].ring, { kind: 'outer', width: 2, gap: 2, color: colors.accent }); // today, done
+  assert.deepEqual(cells[4].ring, { kind: 'none' }); // today, done: only the green check
   assert.deepEqual(weekCells(plan, [], 4)[4].ring, { kind: 'inset', width: 2, color: colors.accent });
   assert.equal(cells[4].dayColor, colors.accent);
 });

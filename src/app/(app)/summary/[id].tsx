@@ -4,13 +4,12 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirm } from '@/components/confirm';
+import { BodyPair, RoutineFigure } from '@/components/BodyMap';
 import { Hero } from '@/components/Hero';
 import { Confetti } from '@/components/Confetti';
 import { Appear } from '@/components/Motion';
-import { dark } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { InkDisplayButton } from '@/components/ui';
-import { IMAGES } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { cardioSummary, strengthSummary } from '@/domain/cardio';
 import { shortDate } from '@/domain/dates';
@@ -68,16 +67,16 @@ export default function Summary() {
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         <Hero
-          source={IMAGES.workoutDone}
-          height={300}
+          source={null}
+          // The muscles this workout's routine trains (owner, 2026-11-20: figures instead of stock photos).
+          art={
+            w && profile.plan.routines[w.routineKey] ? (
+              <RoutineFigure routine={profile.plan.routines[w.routineKey]} height={200} />
+            ) : (
+              <BodyPair primary={[]} secondary={[]} height={200} />
+            )
+          }
           cardHeight={240}
-          photoTop
-          stops={[
-            [0, dark(0.6)],
-            [0.3, dark(0)],
-            [0.96, colors.bg],
-            [1, colors.bg],
-          ]}
           caption={
             <>
               <UI size={16} weight={600} color={colors.accent}>

@@ -54,3 +54,13 @@ test('Serbian plural forms and counts', () => {
   }
   assert.equal(t('Back view'), 'Back');
 });
+
+test('thousands use a dot in Serbian and a comma in English', async () => {
+  const { thou } = await import('@/domain/format');
+  const before = getLang();
+  setLang('sr');
+  assert.equal(thou(1200), '1.200');
+  setLang('en');
+  assert.equal(thou(1200), '1,200');
+  setLang(before);
+});

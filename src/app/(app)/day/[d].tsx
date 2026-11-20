@@ -7,7 +7,7 @@ import { Display, Mono, UI } from '@/components/Txt';
 import { PrimaryButton } from '@/components/ui';
 import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { DAYS_FULL, exercise } from '@/data/catalog';
-import { coverPhoto } from '@/data/photos';
+import { BodyPair, RoutineFigure } from '@/components/BodyMap';
 import * as repo from '@/data/repo';
 import { dateInWeek, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt } from '@/domain/format';
@@ -59,7 +59,7 @@ export default function DayDetail() {
     return (
       <View style={styles.screen}>
         <ScrollView style={{ flex: 1 }}>
-          <DayHero source={null} onBack={back}>
+          <DayHero art={<BodyPair primary={[]} secondary={[]} height={200} />} onBack={back}>
             <UI size={16} weight={600}>
               {DAYS_FULL[day]}
             </UI>
@@ -89,7 +89,7 @@ export default function DayDetail() {
   return (
     <View style={styles.screen}>
       <ScrollView style={{ flex: 1 }}>
-        <DayHero source={coverPhoto(r)} onBack={back}>
+        <DayHero art={<RoutineFigure routine={r} height={200} />} onBack={back}>
           <UI size={16} weight={600} color={colors.accent}>{`${DAYS_FULL[day]}, ${dateLabel}`}</UI>
           <Display size={56} weight={900} lh={0.9} style={{ marginTop: 8 }}>
             {r.name}
@@ -133,9 +133,9 @@ export default function DayDetail() {
   );
 }
 
-function DayHero({ source, onBack, children }: { source: ReturnType<typeof coverPhoto>; onBack: () => void; children: React.ReactNode }) {
+function DayHero({ art, onBack, children }: { art: React.ReactNode; onBack: () => void; children: React.ReactNode }) {
   return (
-    <Hero source={source} height={330} cardHeight={260} onBack={onBack} caption={children} />
+    <Hero source={null} art={art} cardHeight={240} onBack={onBack} caption={children} />
   );
 }
 
@@ -168,7 +168,7 @@ function MobilityLine({ label, items }: { label: string; items: TimedItem[] }) {
       <UI size={14} weight={600} color={colors.accent}>
         {label}
       </UI>
-      <UI size={16} color={colors.muted} style={{ marginTop: 4 }}>
+      <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
         {items.map((x) => `${exercise(x.ex).name} ${x.sec} s`).join(' · ')}
       </UI>
     </View>

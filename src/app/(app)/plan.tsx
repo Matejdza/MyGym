@@ -1,11 +1,10 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { CoverThumb } from '@/components/Cover';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackPill, Ring } from '@/components/ui';
 import { DAYS } from '@/data/catalog';
-import { coverPhoto } from '@/data/photos';
+import { RoutineFigure } from '@/components/BodyMap';
 import { newRoutine, nextRoutineKey, routineMeta, sortedKeys, withDayCycled, workoutsText } from '@/domain/plan';
 import { useActive, useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
@@ -69,7 +68,9 @@ export default function Plan() {
           const r = plan.routines[k];
           return (
             <Pressable key={k} onPress={() => router.push(`/routine/${k}`)} accessibilityRole="button" style={styles.routine}>
-              <CoverThumb source={coverPhoto(r)} size={58} radius={13} />
+              <View style={styles.thumb}>
+                <RoutineFigure routine={r} height={50} />
+              </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <UI size={20} weight={600}>
                   {r.name}
@@ -107,6 +108,7 @@ export default function Plan() {
 }
 
 const styles = StyleSheet.create({
+  thumb: { width: 58, height: 58, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface2 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, paddingBottom: 32 },
   days: { flexDirection: 'row', gap: 8, marginTop: 8 },

@@ -58,7 +58,7 @@ export default function Group() {
           <Display size={56} weight={900} lh={0.9} style={{ marginTop: 24 }}>
             {g.label}
           </Display>
-          <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+          <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
             {plural(ids.length, cardio ? 'activity' : 'exercise')}
           </UI>
           <View style={styles.zoomCard}>

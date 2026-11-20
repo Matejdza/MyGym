@@ -77,8 +77,8 @@ home screen). The owner writes in Serbian; answer in Serbian.
   line with Edit, one open at a time. Tab bar: icons in a pill + labels, active = ink pill
   (`src/components/TabBar.tsx`). Home also shows week totals, "Coming up" and "Last workout".
 - Photos (2026-11-18): the home photo (`assets/photos/hero.jpg`, owner's photo of a man and a woman) is
-  also on Welcome and the profile picker. Big photos go through `src/components/Hero.tsx`: dark theme =
-  full-bleed photo with text over it; light theme = rounded photo card (title and meta on the card's bottom over a blurred strip via the `caption` prop on every hero screen; buttons below) with the text below on the
+  also on Welcome and the profile picker. Big photos go through `src/components/Hero.tsx`: in both themes (owner, 2026-11-20; was
+  full-bleed in dark) a rounded photo card (title and meta on the card's bottom over a blurred strip via the `caption` prop on every hero screen; buttons below) with the text below on the
   page (`useIsLight` in `src/theme/themePref.ts`), because all photos are dark gym shots.
 - 2026-11-19 (owner's choices): light theme is "Kobalt" (cobalt #2457D6 fills, white text on them,
   cool near-white page); photos in light mode are a little lighter with a faint warm tone (2026-11-20, was blue) by CSS on `[data-photo]`
@@ -109,8 +109,15 @@ home screen). The owner writes in Serbian; answer in Serbian.
   (which remounts the screens) loses nothing; cleared when the profile is made or onboarding is left.
   Changing sex only re-suggests the focus until the user picks one. On the web the remount keeps the open
   screen, so it is not pushed again (no stale copy underneath).
-- Welcome follows the phone's theme from the first screen (owner, 2026-11-20): dark = full-screen photo,
-  light = photo card on the light page with the cobalt button.
+- Welcome follows the phone's theme from the first screen with one layout in both themes (owner, 2026-11-20):
+  photo card, then LIFTLOG in page ink, headline and the theme-colored button. Home photo is
+  `assets/photos/hero-concrete.jpg` (owner's lighter photo; the older hero.jpg is kept).
+- Critique pass (owner, 2026-11-20): routines show a body figure of their muscles (`RoutineFigure`/`BodyPair`
+  in BodyMap.tsx; cardio = heart figure) instead of stock photos on Workout, Home "Coming up", plan, routine
+  editor, day and "Workout done" (Hero `art` prop: drawing on the card, caption below). Photos stay only on
+  Welcome, Home and the profile picker. Light cards are near-white (#F6F7F9) on the gray page. Home section
+  titles are 24 and "Last workout" is gone. Card meta lines are 14. Today done = green check, no ring.
+  Library Legs and Arms are single crops like the other groups. Thousands: "1.200" in Serbian.
 - Language (2026-11-19): English (default) or Serbian in Latin script, chosen per profile in
   onboarding step 1 and in Profile → Settings → Language (`settings.language`, schema v3). Texts are
   written in English and wrapped in `t()` from `src/i18n`; Serbian is in `src/i18n/sr.ts` and

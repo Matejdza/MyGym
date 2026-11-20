@@ -1,12 +1,13 @@
 // Number and text helpers ported from the prototype (fmt, thou, s_, mmss, r2).
 
-import { countOf } from '@/i18n';
+import { countOf, getLang } from '@/i18n';
 
 /** Rounds to 2 decimals and drops trailing zeros: 82.50 → "82.5". */
 export const fmt = (n: number) => String(Math.round(n * 100) / 100);
 
 /** Thousands separator: 6885 → "6,885". */
-export const thou = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+/** Thousands grouped the local way: "1,200" in English, "1.200" in Serbian. */
+export const thou = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, getLang() === 'sr' ? '.' : ',');
 
 /** Count with its word in the current language: (3, 'set') → "3 sets" / "3 serije". */
 export const plural = (n: number, word: string) => countOf(n, word);

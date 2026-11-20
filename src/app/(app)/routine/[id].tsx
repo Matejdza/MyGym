@@ -4,12 +4,11 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { confirm } from '@/components/confirm';
 import { NumberField, type NumberInput } from '@/components/NumberField';
-import { Photo } from '@/components/Photo';
 import { Mono, UI } from '@/components/Txt';
 import { BackPill } from '@/components/ui';
 import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { ZONES, exercise } from '@/data/catalog';
-import { coverPhoto } from '@/data/photos';
+import { RoutineFigure } from '@/components/BodyMap';
 import { routineStretch, routineWarmup } from '@/domain/mobility';
 import {
   REST_MAX,
@@ -114,8 +113,10 @@ export default function RoutineEditor() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: top(58) }]} keyboardShouldPersistTaps="handled">
       <BackPill onPress={() => router.back()} style={{ alignSelf: 'flex-start' }} />
-      <Photo source={coverPhoto(r, true)} style={styles.cover} />
-      <UI size={16} color={colors.muted} style={styles.meta}>
+      <View style={styles.cover}>
+        <RoutineFigure routine={r} height={124} />
+      </View>
+      <UI size={14} color={colors.muted} style={styles.meta}>
         {routineMeta(r).text}
       </UI>
       <TextInput
@@ -416,7 +417,7 @@ function Pill({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, paddingBottom: 32 },
-  cover: { height: 150, borderRadius: 22, marginTop: 16 },
+  cover: { height: 150, borderRadius: 22, marginTop: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   meta: { marginTop: 16 },
   name: {
     marginTop: 8,

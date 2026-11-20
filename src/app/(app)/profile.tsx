@@ -96,7 +96,7 @@ export default function Profile() {
           <Display size={40} weight={900} lh={0.9}>
             {profile.name}
           </Display>
-          <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
+          <UI size={14} color={colors.muted} style={{ marginTop: 8 }}>
             {`${fmt(profile.weight)} kg, ${(setup ? t(GOAL_OPTIONS.find((g) => g.key === setup.goal)!.label) : (GOALS.find((g) => g.key === profile.goal)?.label ?? '')).toLowerCase()}`}
           </UI>
         </View>

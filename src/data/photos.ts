@@ -97,7 +97,8 @@ const GROUP_PHOTOS: Record<Exclude<GroupKey, 'cardio' | 'functional' | 'mobility
 };
 
 export const IMAGES = {
-  hero: require('@/assets/photos/hero.jpg') as Img,
+  // Owner's lighter photo (2026-11-20); the earlier one stays as hero.jpg.
+  hero: require('@/assets/photos/hero-concrete.jpg') as Img,
   workoutDone: require('@/assets/photos/workout-done.png') as Img,
   /** Cardio group header, cardio day hero and thumbnails. */
   cardioHero: require('@/assets/photos/cardio-hero.png') as Img,

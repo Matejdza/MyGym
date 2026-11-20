@@ -1,18 +1,18 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { BodyMap } from '@/components/BodyMap';
+import { BodyMap, RoutineFigure } from '@/components/BodyMap';
 import { GoalCard } from '@/components/GoalCard';
 import { Appear, Pressy } from '@/components/Motion';
 import { Hero } from '@/components/Hero';
 import { ProfileGlyph } from '@/components/ProfileIcon';
-import { Photo, heroStops } from '@/components/Photo';
+import { heroStops } from '@/components/Photo';
 import { Display, Mono, UI } from '@/components/Txt';
 import { WeekStrip } from '@/components/week';
 import { PrimaryButton } from '@/components/ui';
 import { ExerciseThumb } from '@/components/ExerciseThumb';
 import { DAYS_FULL, exercise } from '@/data/catalog';
-import { IMAGES, coverPhoto } from '@/data/photos';
+import { IMAGES } from '@/data/photos';
 import * as repo from '@/data/repo';
 import { dateInWeek, dayIndex, fullDate, isoDate, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt, plural } from '@/domain/format';
@@ -52,7 +52,6 @@ export default function Home() {
   // This week's totals and the newest finished workout, for the cards under the week strip.
   const weekFrom = dateInWeek(weekStart, 0).getTime();
   const totals = useDbQuery((db) => repo.periodStats(db, profile.id, weekFrom, weekFrom + 7 * 86400000), [profile.id, weekFrom]);
-  const lastWorkout = useDbQuery((db) => repo.workoutList(db, profile.id, 1), [profile.id])?.[0];
   const body = useDbQuery((db) => repo.bodyLog(db, profile.id), [profile.id, profile.weight]) ?? [];
 
   const key = plan.days[today];
@@ -153,7 +152,7 @@ export default function Home() {
       </Hero>
 
       <Appear index={1} style={styles.section}>
-        <Display size={32} weight={800}>
+        <Display size={24} weight={800}>
           {focusTitle}
         </Display>
         <Pressy
@@ -182,10 +181,10 @@ export default function Home() {
 
       <Appear index={2} style={styles.week}>
         <View style={styles.sectionHead}>
-          <Display size={32} weight={800}>
+          <Display size={24} weight={800}>
             {t('This week')}
           </Display>
-          <Mono size={16} color={colors.muted}>{t('{done} of {total} done', { done: doneCount, total: Math.max(doneCount, plannedFrom(plan, firstDay)) })}</Mono>
+          <Mono size={14} color={colors.muted}>{t('{done} of {total} done', { done: doneCount, total: Math.max(doneCount, plannedFrom(plan, firstDay)) })}</Mono>
         </View>
         <View style={{ marginTop: 16 }}>
           <WeekStrip
@@ -197,7 +196,7 @@ export default function Home() {
           />
         </View>
         {totals && totals.workouts > 0 && (
-          <UI size={16} color={colors.muted} style={{ marginTop: 16 }}>
+          <UI size={14} color={colors.muted} style={{ marginTop: 16 }}>
             {[plural(totals.sets, 'set'), totals.volume > 0 ? t('{volume} lifted', { volume: volumeText(totals.volume) }) : null, timeText(totals.minutes)]
               .filter(Boolean)
               .join(' · ')}
@@ -207,14 +206,16 @@ export default function Home() {
 
       {nextRoutine && (
         <Appear index={3} style={styles.section}>
-          <Display size={32} weight={800}>
+          <Display size={24} weight={800}>
             {t('Coming up')}
           </Display>
           <Pressy
             onPress={() => router.push(`/day/${nextDay}`)}
             accessibilityRole="button"
             style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
-            <Photo source={coverPhoto(nextRoutine)} fill={colors.surface2} style={styles.cardPhoto} />
+            <View style={styles.cardPhoto}>
+              <RoutineFigure routine={nextRoutine} height={84} />
+            </View>
             <View style={styles.cardText}>
               <UI size={14} weight={600} color={colors.muted}>
                 {`${DAYS_FULL[nextDay]}, ${shortDate(dateInWeek(weekStart, nextDay))}`}
@@ -233,51 +234,10 @@ export default function Home() {
         </Appear>
       )}
 
-      {lastWorkout && (
-        <Appear index={4} style={styles.section}>
-          <View style={styles.sectionHead}>
-            <Display size={32} weight={800}>
-              {t('Last workout')}
-            </Display>
-            <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={styles.link}>
-              <UI size={16} weight={600} color={colors.accent}>
-                {t('All workouts')}
-              </UI>
-            </Pressable>
-          </View>
-          <Pressy
-            onPress={() => router.push({ pathname: '/summary/[id]', params: { id: String(lastWorkout.id), from: 'history' } })}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.card, styles.cardPad, pressed && { opacity: 0.7 }]}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <UI size={14} weight={600} color={colors.muted}>
-                {fullDate(new Date(lastWorkout.finishedAt))}
-              </UI>
-              <Display size={24} weight={800} lh={1} numberOfLines={2} style={{ marginTop: 4 }}>
-                {lastWorkout.routineName}
-              </Display>
-              <UI size={14} color={colors.muted} numberOfLines={1} style={{ marginTop: 8 }}>
-                {lastWorkout.type === 'cardio'
-                  ? t('{min} min of cardio', { min: lastWorkout.minutes })
-                  : [
-                      plural(lastWorkout.sets, 'set'),
-                      timeText(Math.max(1, (lastWorkout.finishedAt - lastWorkout.startedAt) / 60000)),
-                      lastWorkout.prs ? plural(lastWorkout.prs, 'record') : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-              </UI>
-            </View>
-            <UI size={24} color={colors.muted}>
-              ›
-            </UI>
-          </Pressy>
-        </Appear>
-      )}
-
+      {/* "Last workout" was removed (owner, 2026-11-20): All workouts lives on Progress. */}
       {records.length > 0 && (
         <Appear index={5} style={{ paddingTop: 32 }}>
-          <Display size={32} weight={800} style={{ paddingHorizontal: 16 }}>
+          <Display size={24} weight={800} style={{ paddingHorizontal: 16 }}>
             {t('Recent records')}
           </Display>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.records}>
@@ -337,7 +297,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardPad: { padding: 16, gap: 16 },
-  cardPhoto: { width: 96, alignSelf: 'stretch' },
+  cardPhoto: { width: 96, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface2 },
   cardText: { flex: 1, minWidth: 0, padding: 16 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   records: { gap: 16, paddingTop: 16, paddingHorizontal: 16 },
