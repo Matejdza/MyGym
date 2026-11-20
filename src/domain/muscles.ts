@@ -23,6 +23,18 @@ export type MuscleKey =
   | 'hamstrings'
   | 'calves';
 
+/** Muscles a focus area works, for the figure on the onboarding Focus step. */
+export const FOCUS_MUSCLES: Record<string, MuscleKey[]> = {
+  full: ['chest', 'shoulders', 'biceps', 'triceps', 'forearms', 'abs', 'obliques', 'traps', 'lats', 'lowerBack', 'glutes', 'quads', 'hamstrings', 'calves'],
+  chest: ['chest'],
+  back: ['lats', 'traps', 'lowerBack'],
+  shoulders: ['shoulders'],
+  arms: ['biceps', 'triceps', 'forearms'],
+  glutes: ['glutes'],
+  legs: ['quads', 'hamstrings', 'calves'],
+  core: ['abs', 'obliques'],
+};
+
 export const MUSCLE_LABEL: Record<MuscleKey, string> = {
   chest: 'Chest',
   shoulders: 'Shoulders',

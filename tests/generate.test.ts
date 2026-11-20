@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { exercise } from '@/data/catalog';
-import { SUGGESTED_FOCUS, generatePlan, needs, split, weekDays } from '@/domain/generate';
+import { SUGGESTED_FOCUS, generatePlan, needs, renameFullBodyDays, split, weekDays } from '@/domain/generate';
 import * as M from '@/domain/mobilitySession';
 import { routineMuscles } from '@/domain/muscles';
 import { makeSession } from '@/domain/session';
@@ -93,4 +93,43 @@ test('the suggested focus follows sex first, then the main goal', async () => {
   assert.deepEqual(suggestFocus('male', 'strength'), ['legs', 'back', 'chest']);
   assert.deepEqual(suggestFocus('female', 'tone'), ['glutes', 'legs', 'core']);
   assert.ok(!suggestFocus('male', 'tone').includes('glutes'), 'no glutes suggested to men by default');
+});
+
+test('several full-body days are named after their lead lift (owner, 2026-11-20)', () => {
+  const p = generatePlan({ ...base, strengthDays: 3, cardioDays: 0, experience: 'beginner', focus: [] });
+  const routines = Object.values(p.routines);
+  assert.deepEqual(routines.map((r) => r.name), ['Legs', 'Back', 'Chest']);
+  // Each one leads with that lift.
+  assert.deepEqual(routines.map((r) => exercise(r.items[0].ex).group), ['legs', 'back', 'chest']);
+  // A single full-body day keeps its name.
+  const one = generatePlan({ ...base, strengthDays: 1, cardioDays: 0 });
+  assert.equal(Object.values(one.routines)[0].name, 'Full body');
+});
+
+test('old "Full body A/B/C" days take their lead group name; typed names stay', () => {
+  const r = (name: string, ex: string) => ({ name, items: [{ ex, sets: 3, reps: 10 }] });
+  const out = renameFullBodyDays({ A: r('Celo telo A', 'squat'), B: r('Celo telo B', 'bench'), C: r('My day', 'squat') } as never);
+  assert.deepEqual([out.A.name, out.B.name, out.C.name], ['Noge', 'Grudi', 'My day']);
+  // Two would be "Legs": keep the old names.
+  const same = renameFullBodyDays({ A: r('Full body A', 'squat'), B: r('Full body B', 'squat') } as never);
+  assert.deepEqual([same.A.name, same.B.name], ['Full body A', 'Full body B']);
+});
+
+test('workouts are named by body part; repeats keep the name (owner, 2026-11-20)', () => {
+  const names = (days: number, experience: Setup['experience'], focus: Setup['focus']) =>
+    Object.values(generatePlan({ ...base, strengthDays: days, cardioDays: 0, experience, focus }).routines).map((r) => r.name);
+  assert.deepEqual(names(3, 'intermediate', ['chest']), ['Chest / Shoulders', 'Back / Arms', 'Legs']);
+  assert.deepEqual(names(4, 'intermediate', ['chest']), ['Chest / Back', 'Legs / Glutes', 'Chest / Back', 'Legs / Glutes']);
+});
+
+test('picked days decide where strength and cardio go', () => {
+  const p = generatePlan({ ...base, days: ['strength', null, 'cardio', 'strength', null, null, 'strength'] });
+  assert.equal(Object.keys(p.routines).length, 4); // three strength + one cardio
+  assert.deepEqual(p.days.map((k) => (k ? (p.routines[k].type === 'cardio' ? 'c' : 's') : '-')), ['s', '-', 'c', 's', '-', '-', 's']);
+});
+
+test('old split names from earlier plans take body-part names', () => {
+  const r = (name: string) => ({ name, items: [{ ex: 'squat', sets: 3, reps: 10 }] });
+  const out = renameFullBodyDays({ A: r('Push'), B: r('Povlačenje'), C: r('Gornji deo tela A'), D: r('Leg day') } as never);
+  assert.deepEqual([out.A.name, out.B.name, out.C.name, out.D.name], ['Chest / Shoulders', 'Leđa / Ruke', 'Grudi / Leđa', 'Leg day']);
 });

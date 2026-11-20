@@ -85,7 +85,7 @@ test('format helpers', () => {
 test('weekCells: done, planned, today', () => {
   const plan = mkPlan(5); // A B C · D E ·
   const cells = weekCells(plan, [0, 1, 4], 4);
-  assert.deepEqual(cells.map((c) => c.day), ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']);
+  assert.deepEqual(cells.map((c) => c.day), ['M', 'T', 'W', 'T', 'F', 'S', 'S']);
   assert.equal(cells[0].fill, colors.green); // A done: green with a check
   assert.equal(cells[0].check, true);
   assert.deepEqual(cells[2].ring, { kind: 'inset', width: 1.5, color: colors.border }); // C planned: neutral

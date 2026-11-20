@@ -67,7 +67,12 @@ export type Setup = {
   minutes: 45 | 60 | 90;
   strengthDays: number;
   cardioDays: number;
+  /** Days the user picked (Mon–Sun); without it the app spreads the days itself. */
+  days?: DayType[];
 };
+
+/** What a day of the week is for when the user picks the days. */
+export type DayType = 'strength' | 'cardio' | null;
 
 /** Routine keys are single letters A–H. */
 export type RoutineKey = string;

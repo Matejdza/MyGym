@@ -38,7 +38,8 @@ export type WeekCell = {
  * when done, a neutral ring when planned, accent ring on today.
  */
 export function weekCells(plan: Plan, done: number[], today: number | null): WeekCell[] {
-  return DAY_LETTERS.map((day, i) => {
+  // One letter above every small circle, the same on every screen (owner, 2026-11-20).
+  return DAY_INITIALS.map((day, i) => {
     const k = plan.days[i];
     const isDone = !!k && done.includes(i);
     const isToday = today === i;
@@ -93,7 +94,7 @@ export const plannedFrom = (plan: Plan, from: number) => plan.days.filter((k, i)
  * plate, rest days outlined.
  */
 export function planCells(plan: Plan): WeekCell[] {
-  return DAY_LETTERS.map((day, i) => {
+  return DAY_INITIALS.map((day, i) => {
     const k = plan.days[i];
     return {
       day,

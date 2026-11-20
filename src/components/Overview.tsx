@@ -11,7 +11,7 @@ import { Fill, useCountUp } from '@/components/Motion';
 import { Segmented } from '@/components/Segmented';
 import { Mono, UI } from '@/components/Txt';
 import * as repo from '@/data/repo';
-import { isoDate } from '@/domain/dates';
+import { isoDate, parseIso, shortDate } from '@/domain/dates';
 import { periodRange, plannedWorkouts, timeText, volumeText, type Period } from '@/domain/overview';
 import { thou } from '@/domain/format';
 import { DAY_INITIALS } from '@/domain/week';
@@ -63,7 +63,9 @@ export function Overview({ profileId, plan, createdAt }: { profileId: string; pl
           <Mono size={40} weight={500}>
             {show(String(doneShown))}
           </Mono>
-          <Mono size={20} color={colors.muted}>{`/ ${planned}`}</Mono>
+          <UI size={16} color={colors.muted}>
+            {t('of {n} planned', { n: planned })}
+          </UI>
         </View>
         <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: planned, now: done }}>
           <Fill pct={pct} color={colors.accentFill} style={styles.fill} />
@@ -71,6 +73,11 @@ export function Overview({ profileId, plan, createdAt }: { profileId: string; pl
         <UI size={16} color={colors.muted} style={{ marginTop: 8 }}>
           {t('Workouts done')}
         </UI>
+        {since > isoDate(range.from) && since < isoDate(range.to) && (
+          <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
+            {t('Counted from the day your profile was made: {day}.', { day: shortDate(parseIso(since)) })}
+          </UI>
+        )}
       </View>
 
       <View style={styles.list}>

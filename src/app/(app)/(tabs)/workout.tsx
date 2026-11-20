@@ -76,7 +76,7 @@ export default function Workout() {
               </View>
               {state === 'rest' || state === 'before' || !r || !k ? (
                 <View style={styles.restRow}>
-                  <UI size={14} color={colors.muted}>{state === 'before' ? `${dayName}, ${date}` : `${dayName}, ${date} · ${t('Rest')}`}</UI>
+                  <UI size={14} color={colors.muted}>{`${dayName}, ${date} · ${state === 'before' ? t('Before you started') : t('Rest')}`}</UI>
                 </View>
               ) : (
                 <Pressy

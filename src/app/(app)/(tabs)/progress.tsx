@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
+import { BodyBadge, BodyPair, BodyZoom } from '@/components/BodyMap';
 import { LineChart } from '@/components/LineChart';
 import { NumberField } from '@/components/NumberField';
 import { Overview } from '@/components/Overview';
@@ -10,7 +11,7 @@ import { RoundButton } from '@/components/ui';
 import { exercise } from '@/data/catalog';
 import { BODY_LIMITS } from '@/domain/numberEntry';
 import * as repo from '@/data/repo';
-import { addDays, isoDate, parseIso, shortDate } from '@/domain/dates';
+import { addDays, dayIndex, isoDate, parseIso, shortDate, weekStartOf } from '@/domain/dates';
 import { fmt, r2 } from '@/domain/format';
 import { sortedKeys } from '@/domain/plan';
 import { WEEKS, bodyProgress, cardioProgress, lastWeeks, liftProgress, type ProgressView } from '@/domain/progress';
@@ -157,14 +158,10 @@ export default function Progress() {
             </>
           )}
           <View style={styles.card}>
-            {v ? (
+            {v && v.vals.length > 1 ? (
               <LineChart vals={v.vals} labels={v.labels} width={chartWidth} target={v.target} />
             ) : (
-              <View style={[styles.empty, { width: chartWidth }]}>
-                <UI size={16} color={colors.muted} align="center">
-                  {mode === 'body' ? t('No weight saved yet.') : t('No workouts logged yet.')}
-                </UI>
-              </View>
+              <EmptyChart mode={mode} exId={exId} oneEntry={!!v} />
             )}
           </View>
         </>
@@ -232,7 +229,9 @@ const styles = StyleSheet.create({
   chip: { height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line, justifyContent: 'center' },
   bigRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 8 },
   card: { backgroundColor: colors.surface, borderRadius: 22, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, marginTop: 24 },
-  empty: { height: 190, alignItems: 'center', justifyContent: 'center' },
+  empty: { minHeight: 190, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
+  emptyText: { marginTop: 4, maxWidth: 280 },
+  emptyBtn: { height: 48, paddingHorizontal: 24, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   today: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 22, padding: 16, marginTop: 16 },
   save: { height: 56, marginTop: 8, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   row: {
@@ -245,3 +244,61 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
   },
 });
+
+/**
+ * The chart before there is a line to draw (owner, 2026-11-20): a figure, what
+ * will appear here and how to get there. Body weight with one entry says when to
+ * weigh in again; the save button is right below, so no button here.
+ */
+function EmptyChart({ mode, exId, oneEntry }: { mode: Mode; exId?: string; oneEntry: boolean }) {
+  const now = new Date();
+  const today = dayIndex(now);
+  const weekStart = weekStartOf(now);
+  const { profile } = useActive();
+  const done = useDbQuery((db) => repo.doneDays(db, profile.id, weekStart), [profile.id, weekStart]) ?? [];
+  // "Start today's workout" only when today has a workout of this kind still to do.
+  const k = profile.plan.days[today];
+  const r = k ? profile.plan.routines[k] : null;
+  const trainsToday = !!r && !done.includes(today) && (mode === 'cardio') === (r.type === 'cardio');
+  return (
+    <View style={styles.empty}>
+      {mode === 'cardio' ? (
+        <BodyBadge kind="cardio" height={96} />
+      ) : mode === 'lift' && exId ? (
+        <BodyZoom group={exercise(exId).group} height={96} />
+      ) : (
+        <BodyPair primary={[]} secondary={[]} height={96} />
+      )}
+      <UI size={16} weight={600} align="center" style={{ marginTop: 16 }}>
+        {mode === 'body'
+          ? oneEntry
+            ? t('Your first weigh-in is saved.')
+            : t('No weight saved yet.')
+          : oneEntry
+            ? t('Your first result is saved.')
+            : t('Your progress shows up here after your first workout.')}
+      </UI>
+      <UI size={14} color={colors.muted} align="center" style={styles.emptyText}>
+        {mode === 'body'
+          ? oneEntry
+            ? t('Weigh in again next week and the line starts.')
+            : t('Save today\'s weight below to start the line.')
+          : oneEntry
+            ? t('Train it once more and the line starts.')
+            : mode === 'cardio'
+            ? t('Log a cardio workout and its minutes appear here, week by week.')
+            : t('Log this exercise and its best set appears here, week by week.')}
+      </UI>
+      {mode !== 'body' && (
+        <Pressable
+          onPress={() => (trainsToday ? router.push(`/day/${today}`) : router.navigate('/workout'))}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.emptyBtn, { backgroundColor: pressed ? colors.press : colors.accentFill }]}>
+          <UI size={16} weight={700} color={colors.accentInk}>
+            {trainsToday ? t("Start today's workout") : t("See this week's workouts")}
+          </UI>
+        </Pressable>
+      )}
+    </View>
+  );
+}

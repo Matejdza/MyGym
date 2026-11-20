@@ -15,6 +15,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 
+import { LoadErrorScreen } from '@/components/LoadScreen';
 import { DATABASE_NAME, migrate, type Db } from '@/data/db';
 import * as repo from '@/data/repo';
 import type { NewWorkout, ProfileFields } from '@/data/repo';
@@ -72,8 +73,12 @@ const INITIAL: State = { ready: false, order: [], byId: {}, activeId: null, hist
 
 /** Opens the database, runs migrations, then provides the store. */
 export function AppDataProvider({ children }: PropsWithChildren) {
+  // Opening the database can fail (or hang) on the web; then the app says so
+  // with "Try again" instead of staying an empty screen.
+  const [failed, setFailed] = useState(false);
+  if (failed) return <LoadErrorScreen />;
   return (
-    <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrate}>
+    <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrate} onError={() => setFailed(true)}>
       <StoreProvider>{children}</StoreProvider>
     </SQLiteProvider>
   );
@@ -102,8 +107,9 @@ function StoreProvider({ children }: PropsWithChildren) {
     }));
   }, [db, commit]);
 
+  const [loadFailed, setLoadFailed] = useState(false);
   useEffect(() => {
-    reload();
+    reload().catch(() => setLoadFailed(true));
   }, [reload]);
 
   // Every write goes through one queue so rapid taps never overlap transactions.
@@ -246,6 +252,7 @@ function StoreProvider({ children }: PropsWithChildren) {
     if (__DEV__) (globalThis as { __liftlog?: Store }).__liftlog = store;
   }, [store]);
 
+  if (loadFailed) return <LoadErrorScreen />;
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 

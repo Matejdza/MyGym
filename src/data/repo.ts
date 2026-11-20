@@ -17,6 +17,7 @@ import type {
   Setup,
   TimedItem,
 } from '@/domain/types';
+import { renameFullBodyDays } from '@/domain/generate';
 import { DEFAULT_SETTINGS } from '@/domain/types';
 
 import type { Db } from './db';
@@ -118,7 +119,7 @@ export async function loadProfiles(db: Db): Promise<LoadedProfile[]> {
         goal: p.goal,
         target: p.target,
         photoUri: p.photo_uri,
-        plan: { weekly: p.weekly, days: JSON.parse(p.days), routines: own },
+        plan: { weekly: p.weekly, days: JSON.parse(p.days), routines: renameFullBodyDays(own) },
         createdAt: p.created_at,
         setup: p.setup ? (JSON.parse(p.setup) as Setup) : null,
         avatar: p.avatar ?? null,

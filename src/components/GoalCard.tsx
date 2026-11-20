@@ -56,6 +56,8 @@ export function GoalCard({
   const [open, setOpen] = useState(false);
   const [kg, setKg] = useState(now);
   const shownToGo = useCountUp(toGo, 900);
+  // While counting, step by 0.1 kg (1.8, 1.9, 2), never odd values like 1.99.
+  const shownKg = Math.abs(shownToGo - toGo) < 0.05 ? toGo : Math.round(shownToGo * 10) / 10;
 
   // The bar fills from empty on first show and moves to each new value.
   const fill = useSharedValue(0);
@@ -122,7 +124,7 @@ export function GoalCard({
               {/* What is left, riding on the dot; kept inside the card near the ends. */}
               <View pointerEvents="none" style={[styles.bubble, pct < 20 ? styles.bubbleStart : pct > 80 ? styles.bubbleEnd : styles.bubbleMid]}>
                 <UI size={14} weight={700} color={reached ? colors.green : colors.accent} numberOfLines={1}>
-                  {reached ? t('Goal reached') : t('{kg} kg to go', { kg: fmt(r2(shownToGo)) })}
+                  {reached ? t('Goal reached') : t('{kg} kg to go', { kg: fmt(shownKg) })}
                 </UI>
               </View>
             </Animated.View>

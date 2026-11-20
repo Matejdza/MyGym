@@ -186,6 +186,12 @@ export default function Home() {
           </Display>
           <Mono size={14} color={colors.muted}>{t('{done} of {total} done', { done: doneCount, total: Math.max(doneCount, plannedFrom(plan, firstDay)) })}</Mono>
         </View>
+        {/* The first week counts only from the day the profile was made: say so, so "0 of 2" with a 4-day plan makes sense. */}
+        {firstDay > 0 && firstDay < 7 && (
+          <UI size={14} color={colors.muted} style={{ marginTop: 4 }}>
+            {t('Counted from the day your profile was made: {day}.', { day: DAYS_FULL[firstDay] })}
+          </UI>
+        )}
         <View style={{ marginTop: 16 }}>
           <WeekStrip
             cells={homeWeekCells(plan, done, today, weekStart, firstDay)}

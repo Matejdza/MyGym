@@ -61,7 +61,8 @@ function subscribe(f: () => void) {
 export const useLang = () => useSyncExternalStore(subscribe, getLang, getLang);
 
 /** Keys that need context in the code but read shorter in English. */
-const EN: Record<string, string> = { 'Back view': 'Back', 'Front view': 'Front' };
+// Keys that need a different Serbian word than the same English one (Back = Nazad vs Leđa).
+const EN: Record<string, string> = { 'Back view': 'Back', 'Front view': 'Front', 'Back (muscles)': 'Back' };
 
 /** The text in the current language; {name} placeholders are filled from `params`. */
 export function t(en: string, params?: Record<string, string | number>): string {

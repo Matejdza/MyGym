@@ -14,24 +14,26 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AvatarPicker } from '@/components/AvatarPicker';
+import { BodyMap } from '@/components/BodyMap';
 import { Segmented } from '@/components/Segmented';
 import { Display, Mono, UI } from '@/components/Txt';
 import { BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
 import { BODY_LIMITS } from '@/domain/numberEntry';
 import { fmt, plural, r2 } from '@/domain/format';
-import { FOCUS_OPTIONS, GOAL_OPTIONS, generatePlan, legacyGoal, suggestFocus } from '@/domain/generate';
+import { FOCUS_OPTIONS, GOAL_OPTIONS, generatePlan, legacyGoal, suggestFocus, weekDays } from '@/domain/generate';
 import { ownPlan, schemeText } from '@/domain/plan';
-import type { Equipment, Experience, Focus, MainGoal, Setup, Sex } from '@/domain/types';
-import { DAY_LETTERS } from '@/domain/week';
+import type { DayType, Equipment, Experience, Focus, MainGoal, Setup, Sex } from '@/domain/types';
+import { FOCUS_MUSCLES } from '@/domain/muscles';
+import { DAY_INITIALS, DAY_LETTERS } from '@/domain/week';
 import { useStore } from '@/state/store';
 import { useTop } from '@/theme/layout';
 import { PROFILE_COLORS, colors, fonts, plate } from '@/theme/tokens';
 import { LANGS, getLang, setLang, t, type Lang } from '@/i18n';
 
 /** Steps: making a plan asks about goals and training; building your own skips straight to the days. */
-type StepKey = 'about' | 'mode' | 'body' | 'goals' | 'focus' | 'experience' | 'equipment' | 'week' | 'plan' | 'days';
-const FLOW_SUGGESTED: StepKey[] = ['about', 'mode', 'body', 'goals', 'focus', 'experience', 'equipment', 'week', 'plan'];
+type StepKey = 'about' | 'mode' | 'body' | 'goals' | 'focus' | 'experience' | 'equipment' | 'week' | 'schedule' | 'plan' | 'days';
+const FLOW_SUGGESTED: StepKey[] = ['about', 'mode', 'body', 'goals', 'focus', 'experience', 'equipment', 'week', 'schedule', 'plan'];
 const FLOW_OWN: StepKey[] = ['about', 'mode', 'body', 'days'];
 
 const TITLES: Record<StepKey, string> = {
@@ -43,6 +45,7 @@ const TITLES: Record<StepKey, string> = {
   experience: 'Your experience',
   equipment: 'Where do you train?',
   week: 'Your training week',
+  schedule: 'Your days',
   plan: 'Your plan is ready',
   days: 'Your training days',
 };
@@ -54,7 +57,8 @@ const SUBS: Record<StepKey, string> = {
   focus: 'We suggest a focus; add anything else you want to work on.',
   experience: 'So the plan starts at the right level.',
   equipment: 'We only pick exercises you can do there.',
-  week: 'How often and how long you train. Rest days are part of the plan.',
+  week: 'How often you train. Rest days are part of the plan.',
+  schedule: 'When you train and for how long.',
   plan: 'Built from your answers. You can change anything later.',
   days: 'Pick the days you train. You add the exercises next.',
 };
@@ -82,6 +86,12 @@ const LENGTHS: { key: Setup['minutes']; label: string; description: string }[] =
   { key: 60, label: 'About an hour', description: '45 to 75 minutes' },
   { key: 90, label: 'Long', description: 'More than an hour' },
 ];
+type DayPick = 'auto' | 'own';
+const DAY_PICKS: [DayPick, string][] = [
+  ['auto', 'Spread them for me'],
+  ['own', 'I pick'],
+];
+
 const SEXES: [Sex, string][] = [
   ['female', 'Female'],
   ['male', 'Male'],
@@ -111,6 +121,8 @@ type Draft = {
   cardioDays: number;
   mode: Mode;
   ownDays: number[];
+  dayPick: DayPick;
+  pickedDays: DayType[];
   savedAt: number;
 };
 let draft: Draft | null = null;
@@ -150,12 +162,15 @@ export default function Onboarding() {
   const [cardioDays, setCardioDays] = useState(d0?.cardioDays ?? 1);
   const [mode, setMode] = useState<Mode>(d0?.mode ?? 'suggested');
   const [ownDays, setOwnDays] = useState<number[]>(d0?.ownDays ?? []);
+  // "Your days": the app spreads the days, or the user taps each day's type.
+  const [dayPick, setDayPick] = useState<DayPick>(d0?.dayPick ?? 'auto');
+  const [pickedDays, setPickedDays] = useState<DayType[]>(d0?.pickedDays ?? []);
   useEffect(() => {
     draft = {
       step, name, color, avatar, sex, weight, target, goal, goal2, focus, focusTouched,
-      experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays, savedAt: Date.now(),
+      experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays, dayPick, pickedDays, savedAt: Date.now(),
     };
-  }, [step, name, color, avatar, sex, weight, target, goal, goal2, focus, focusTouched, experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays]);
+  }, [step, name, color, avatar, sex, weight, target, goal, goal2, focus, focusTouched, experience, equipment, minutes, strengthDays, cardioDays, mode, ownDays, dayPick, pickedDays]);
   const [saving, setSaving] = useState(false);
   const scroller = useRef<ScrollViewInstance>(null);
   // Each step starts at the top.
@@ -182,11 +197,16 @@ export default function Onboarding() {
     minutes,
     strengthDays,
     cardioDays,
+    ...(dayPick === 'own' ? { days: pickedDays } : {}),
   };
   const plan = generatePlan(setup);
+  const pickedStrength = pickedDays.filter((d) => d === 'strength').length;
+  const pickedCardio = pickedDays.filter((d) => d === 'cardio').length;
 
   const canContinue =
-    (key !== 'about' || (name.trim().length > 0 && sex != null)) && (key !== 'days' || ownDays.length > 0);
+    (key !== 'about' || (name.trim().length > 0 && sex != null)) &&
+    (key !== 'days' || ownDays.length > 0) &&
+    (key !== 'schedule' || dayPick === 'auto' || pickedStrength > 0);
 
   const chooseSex = (s: Sex) => setSex(s);
 
@@ -194,6 +214,33 @@ export default function Onboarding() {
     const l = chosenFocus;
     setFocusTouched(true);
     setFocus(l.includes(f) ? l.filter((x) => x !== f) : [...l, f]);
+  };
+  // The app's spread for the chosen counts, as day types (starting point for "I pick").
+  const spread = (sCount: number, cCount: number): DayType[] => {
+    const w = weekDays(sCount, cCount);
+    return [0, 1, 2, 3, 4, 5, 6].map((i) => (w.strength.includes(i) ? 'strength' : w.cardio.includes(i) ? 'cardio' : null));
+  };
+  const choosePick = (p: DayPick) => {
+    if (p === 'own' && pickedDays.length !== 7) setPickedDays(spread(strengthDays, cardioDays));
+    setDayPick(p);
+  };
+  // Tap a day: strength → cardio → rest. At most 6 strength days; the counts follow.
+  const cycleDay = (i: number) => {
+    const order: DayType[] = ['strength', 'cardio', null];
+    const cur = pickedDays[i] ?? null;
+    let nextType = order[(order.indexOf(cur) + 1) % 3];
+    if (nextType === 'strength' && pickedStrength >= 6) nextType = 'cardio';
+    const days = pickedDays.map((d, j) => (j === i ? nextType : d));
+    setPickedDays(days);
+    const sN = days.filter((d) => d === 'strength').length;
+    if (sN > 0) setStrengthDays(sN);
+    setCardioDays(Math.min(4, days.filter((d) => d === 'cardio').length));
+  };
+  // Changing the counts on the week step starts the picked days over from the app's spread.
+  const setCounts = (sN: number, cN: number) => {
+    setStrengthDays(sN);
+    setCardioDays(cN);
+    if (dayPick === 'own') setPickedDays(spread(sN, cN));
   };
   const toggleDay = (i: number) => setOwnDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
 
@@ -331,7 +378,13 @@ export default function Onboarding() {
             </View>
             {/* Second goal: a closed row until opened, so the main choice stays the focus. */}
             <Pressable
-              onPress={() => setGoal2Open(!(goal2Open || goal2 != null))}
+              onPress={() => {
+                // Minus closes the list and clears a chosen second goal (owner, 2026-11-20).
+                if (goal2Open || goal2 != null) {
+                  setGoal2(null);
+                  setGoal2Open(false);
+                } else setGoal2Open(true);
+              }}
               accessibilityRole="button"
               accessibilityState={{ expanded: goal2Open || goal2 != null }}
               style={({ pressed }) => [styles.more, pressed && { opacity: 0.8 }]}>
@@ -354,16 +407,6 @@ export default function Onboarding() {
                 {GOAL_OPTIONS.filter((g) => g.key !== goal).map((g) => (
                   <Chip key={g.key} on={goal2 === g.key} label={g.label} onPress={() => setGoal2(goal2 === g.key ? null : g.key)} />
                 ))}
-                {goal2 != null && (
-                  <Chip
-                    on={false}
-                    label="No second goal"
-                    onPress={() => {
-                      setGoal2(null);
-                      setGoal2Open(false);
-                    }}
-                  />
-                )}
               </View>
             )}
           </>
@@ -371,6 +414,10 @@ export default function Onboarding() {
 
         {key === 'focus' && (
           <>
+            {/* The picked areas light up on the figure as they are tapped (owner, 2026-11-20). */}
+            <View style={styles.focusFigure} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <BodyMap primary={[...new Set(chosenFocus.flatMap((f) => FOCUS_MUSCLES[f] ?? []))]} secondary={[]} width={88} />
+            </View>
             <View style={[styles.chips, { marginTop: 24 }]}>
               {FOCUS_OPTIONS.map((f) => (
                 <Chip
@@ -413,11 +460,35 @@ export default function Onboarding() {
         {key === 'week' && (
           <>
                 <Label text="Strength workouts a week" />
-                <NumberRow values={[1, 2, 3, 4, 5, 6]} value={strengthDays} max={7 - cardioDays} onChange={setStrengthDays} />
+                <NumberRow values={[1, 2, 3, 4, 5, 6]} value={strengthDays} max={7 - cardioDays} onChange={(n) => setCounts(n, cardioDays)} />
                 <Label text="Cardio workouts a week" />
-                <NumberRow values={[0, 1, 2, 3, 4]} value={cardioDays} max={7 - strengthDays} onChange={setCardioDays} />
-                <Label text="How long do you usually train?" />
-<View style={styles.cards}>
+                <NumberRow values={[0, 1, 2, 3, 4]} value={cardioDays} max={7 - strengthDays} onChange={(n) => setCounts(strengthDays, n)} />
+          </>
+        )}
+
+        {key === 'schedule' && (
+          <>
+            <Label text="Training days" />
+            <Segmented<DayPick> options={DAY_PICKS.map(([k, l]) => [k, t(l)])} value={dayPick} onChange={choosePick} style={{ marginTop: 8 }} />
+            {dayPick === 'auto' ? (
+              <>
+                <PlanDays days={spread(strengthDays, cardioDays)} />
+                <UI size={14} color={colors.muted} style={{ marginTop: 16 }}>
+                  {t('We spread your workouts so muscles get a day to recover.')}
+                </UI>
+              </>
+            ) : (
+              <>
+                <PlanDays days={pickedDays} onPress={cycleDay} />
+                <UI size={14} weight={pickedStrength ? 400 : 600} color={pickedStrength ? colors.muted : colors.accent} style={{ marginTop: 16 }}>
+                  {pickedStrength
+                    ? t('{strength} strength · {cardio} cardio. Tap a day to change it.', { strength: pickedStrength, cardio: pickedCardio })
+                    : t('Pick at least one strength day. Tap a day to change it.')}
+                </UI>
+              </>
+            )}
+            <Label text="How long do you usually train?" />
+            <View style={styles.cards}>
               {LENGTHS.map((l) => (
                 <Choice key={l.key} on={l.key === minutes} onPress={() => setMinutes(l.key)} title={l.label} sub={l.description} />
               ))}
@@ -542,6 +613,55 @@ function NumberRow({ values, value, max, onChange }: { values: number[]; value: 
   );
 }
 
+/**
+ * Mon–Sun for "Your days": strength = filled accent, cardio = accent outline,
+ * rest = thin line. With `onPress` each day can be tapped; the legend says which is which.
+ */
+function PlanDays({ days, onPress }: { days: DayType[]; onPress?: (i: number) => void }) {
+  return (
+    <>
+      <View style={styles.week}>
+        {DAY_LETTERS.map((d, i) => {
+          const type = days[i] ?? null;
+          const label = `${DAYS_FULL[i]}, ${type === 'strength' ? t('Strength') : type === 'cardio' ? t('Cardio') : t('Rest')}`;
+          const circle = (
+            <View style={[styles.ownDay, { backgroundColor: type === 'strength' ? colors.accentFill : 'transparent' }]}>
+              {type === 'cardio' && <Ring width={2} color={colors.accent} radius={999} />}
+              {type == null && <Ring width={1} color={colors.line} radius={999} />}
+              <Mono size={16} weight={500} color={type === 'strength' ? colors.accentInk : type === 'cardio' ? colors.ink : colors.muted}>
+                {d}
+              </Mono>
+            </View>
+          );
+          return onPress ? (
+            <Pressable key={i} onPress={() => onPress(i)} accessibilityRole="button" accessibilityLabel={label} style={styles.weekCell}>
+              {circle}
+            </Pressable>
+          ) : (
+            <View key={i} accessibilityLabel={label} style={styles.weekCell}>
+              {circle}
+            </View>
+          );
+        })}
+      </View>
+      <View style={styles.legend}>
+        <View style={[styles.swatch, { backgroundColor: colors.accentFill }]} />
+        <UI size={14} color={colors.muted}>
+          {t('Strength')}
+        </UI>
+        <View style={[styles.swatch, { borderWidth: 2, borderColor: colors.accent, marginLeft: 16 }]} />
+        <UI size={14} color={colors.muted}>
+          {t('Cardio')}
+        </UI>
+        <View style={[styles.swatch, { borderWidth: 1, borderColor: colors.line, marginLeft: 16 }]} />
+        <UI size={14} color={colors.muted}>
+          {t('Rest')}
+        </UI>
+      </View>
+    </>
+  );
+}
+
 /** The generated week and each routine's exercises, warm-up and stretching. */
 function PlanPreview({ plan }: { plan: ReturnType<typeof generatePlan> }) {
   return (
@@ -550,7 +670,7 @@ function PlanPreview({ plan }: { plan: ReturnType<typeof generatePlan> }) {
         {plan.days.map((k, i) => (
           <View key={i} style={styles.weekCell}>
             <UI size={14} weight={600} color={colors.muted}>
-              {DAY_LETTERS[i]}
+              {DAY_INITIALS[i]}
             </UI>
             <View style={[styles.dayCircle, { backgroundColor: k ? plate(k) : 'transparent' }]}>
               {!k && <Ring width={1} color={colors.line} radius={999} />}
@@ -628,6 +748,8 @@ const styles = StyleSheet.create({
   weeklyRow: { flexDirection: 'row', gap: 8, marginTop: 32 },
   weeklyOpt: { flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  swatch: { width: 16, height: 16, borderRadius: 8 },
   weekCell: { flex: 1, alignItems: 'center', gap: 8 },
   ownDay: { width: 44, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   dayCircle: { width: 40, maxWidth: '100%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
@@ -637,6 +759,7 @@ const styles = StyleSheet.create({
   radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.accentFill },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  focusFigure: { marginTop: 24, paddingVertical: 16, borderRadius: 20, backgroundColor: colors.surface, alignItems: 'center' },
   more: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 24, padding: 16, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed' },
   plus: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 44, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5, borderColor: colors.border },

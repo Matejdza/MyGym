@@ -151,3 +151,17 @@ home screen). The owner writes in Serbian; answer in Serbian.
 ## Layout
 - `src/app/` routes (Expo Router), `src/screens/` larger screens, `src/components/` shared UI,
   `src/domain/` pure rules (tested in `tests/`), `src/data/` SQLite + catalog, `src/state/store.tsx` app state.
+
+## Loading, counts and empty states (owner, 2026-11-20)
+- Web build is one bundle: `asyncRoutes.web: false` in app.json (per-screen chunks left tabs empty on slow networks).
+- Before data is ready: LoadingScreen (name + spinner after 400 ms); DB open/load failure → LoadErrorScreen with "Try again"; still not ready after 12 s → the "taking too long" variant. A link opened before a profile is picked opens after picking.
+- First-week counts start on the day the profile was made, and Home/Progress say so ("Counted from the day your profile was made"). Workout tab: earlier days read "Before you started". Progress: "1 of 2 planned".
+- Day labels: one letter above every small circle; two letters (Po, Ut…) only inside the onboarding day picker.
+- Progress chart empty states: figure + what appears + "Start today's workout" (only when today has that kind of workout left) or "See this week's workouts". One body weight entry: "Weigh in again next week". The chart needs 2+ points.
+- Onboarding Focus step: BodyMap lights the picked areas (FOCUS_MUSCLES).
+- Several full-body days are named after their lead lift: Legs / Back / Chest (Noge / Leđa / Grudi), not "Full body A/B/C"; old plans are renamed on load when names stay unique (renameFullBodyDays).
+- Goal card count-up steps by 0.1 kg. Hidden tabs are `inert` on the web.
+- Focus chip "Back" uses the key 'Back (muscles)' so Serbian shows "Leđa", not "Nazad".
+- Second goal (onboarding): no "No second goal" chip; the minus on the card clears the chosen second goal and closes the list.
+- Onboarding step "Your days" (after "Your training week"): "Spread them for me" (default) or "I pick" — tap a day to cycle Strength → Cardio → Rest (max 6 strength, at least 1 to continue); the counts on the week step follow. Workout length moved here. Picked days go to the plan as `Setup.days`.
+- Split workouts are named by body part: Chest / Shoulders, Back / Arms, Legs, Chest / Back, Legs / Glutes (sr: Grudi / Ramena, Leđa / Ruke, Noge, Grudi / Leđa, Noge / Gluteus). Repeats keep the same name (the letter tells them apart). Older plans' Push/Pull/Upper/Lower names are renamed on load.

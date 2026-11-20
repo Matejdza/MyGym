@@ -2,14 +2,15 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, Stack, ThemeProvider, router, usePathname, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { setLang, useLang } from '@/i18n';
 import { AppDataProvider, useStore } from '@/state/store';
 import { fontAssets } from '@/theme/fonts';
 import { ConfirmHost } from '@/components/ConfirmHost';
+import { LoadErrorScreen, LoadingScreen } from '@/components/LoadScreen';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -34,7 +35,7 @@ const theme: Theme = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
-  if (!loaded && !error) return null;
+  if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -88,9 +89,27 @@ function RootStack() {
     } else path.current = pathname;
   }, [lang, pathname]);
 
-  if (!ready) return null;
-
+  // A link opened before a profile is picked (e.g. /MyGym/library after a refresh)
+  // opens once the profile is picked, instead of always landing on Home.
+  const wanted = useRef(START_PATHS.has(pathname) || pathname.startsWith('/onboarding') ? null : pathname);
   const signedIn = activeId !== null;
+  useEffect(() => {
+    if (!signedIn || !wanted.current) return;
+    const to = wanted.current;
+    wanted.current = null;
+    if (pathname !== to) requestAnimationFrame(() => router.navigate(to as never));
+  }, [signedIn, pathname]);
+
+  // Still opening after 12 s: say so, with "Try again".
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (ready) return;
+    const id = setTimeout(() => setSlow(true), 12_000);
+    return () => clearTimeout(id);
+  }, [ready]);
+
+  if (!ready) return slow ? <LoadErrorScreen slow /> : <LoadingScreen />;
+
   return (
     <Stack key={lang} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Protected guard={!signedIn}>

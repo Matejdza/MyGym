@@ -14,12 +14,12 @@
 //   (a conditioning finisher for fat loss or fitness, a heavier first lift for strength).
 // - Cardio days get one cardio routine; its minutes follow the goal.
 
-import { PATTERNS, exercise } from '@/data/catalog';
+import { GROUPS, PATTERNS, exercise } from '@/data/catalog';
 import { t } from '@/i18n';
 
 import { stretchFor, warmupFor } from './mobility';
 import { withWeeklyFromDays } from './plan';
-import type { CardioItem, Equipment, Experience, Focus, MainGoal, Plan, Routine, RoutineKey, Setup, Sex, StrengthItem } from './types';
+import type { CardioItem, DayType, Equipment, Experience, Focus, GroupKey, MainGoal, Plan, Routine, RoutineKey, Setup, Sex, StrengthItem } from './types';
 
 /** Main and second goals offered in onboarding (texts in English, shown with t()). */
 export const GOAL_OPTIONS: { key: MainGoal; label: string; description: string }[] = [
@@ -38,7 +38,7 @@ export const FOCUS_OPTIONS: { key: Focus; label: string }[] = [
   { key: 'glutes', label: 'Glutes' },
   { key: 'legs', label: 'Legs' },
   { key: 'chest', label: 'Chest' },
-  { key: 'back', label: 'Back' },
+  { key: 'back', label: 'Back (muscles)' },
   { key: 'shoulders', label: 'Shoulders' },
   { key: 'arms', label: 'Arms' },
   { key: 'core', label: 'Core' },
@@ -150,12 +150,13 @@ const DOSE: Record<MainGoal, { sets: number; reps: number; repsMax?: number; res
   fitness: { sets: 3, reps: 12, repsMax: 15, rest: 45 },
 };
 
+/** Workouts are named after the body parts they train (owner, 2026-11-20). */
 const NAMES: Record<Kind, string> = {
   full: 'Full body',
-  upper: 'Upper body',
-  lower: 'Lower body',
-  push: 'Push',
-  pull: 'Pull',
+  upper: 'Chest / Back',
+  lower: 'Legs / Glutes',
+  push: 'Chest / Shoulders',
+  pull: 'Back / Arms',
   legs: 'Legs',
 };
 
@@ -191,13 +192,23 @@ function pick(slot: Slot, s: Setup, used: Set<string>, inWorkout: Set<string>): 
   return pool.find((id) => !used.has(id)) ?? pool[0] ?? null;
 }
 
-/** One strength workout of the given kind; `variant` (0, 1…) makes the second A/B workout differ. */
-function strengthRoutine(kind: Kind, s: Setup, used: Set<string>, label: string): Routine {
+/**
+ * Several full-body days in a week each lead with a different main lift and are
+ * named after it: "Legs", "Back", "Chest" instead of "Full body A/B/C" (owner, 2026-11-20).
+ */
+const FULL_EMPHASIS: { group: GroupKey; lead: Slot }[] = [
+  { group: 'legs', lead: 'squat' },
+  { group: 'back', lead: 'backRow' },
+  { group: 'chest', lead: 'chestPress' },
+];
+
+/** One strength workout of the given kind; `lead` puts that main lift first. */
+function strengthRoutine(kind: Kind, s: Setup, used: Set<string>, label: string, lead?: Slot): Routine {
   const dose = DOSE[s.goal];
   // At most two extras for the focus areas, so the workout stays balanced.
   const focusSlots = s.focus.flatMap((f) => (FOCUS_SLOTS[f].kinds.includes(kind) ? FOCUS_SLOTS[f].slots : [])).slice(0, 2);
   // Main lifts first (a full-body workout keeps legs, push and pull), then focus extras, then the rest.
-  const template = TEMPLATES[kind];
+  const template = lead ? [lead, ...TEMPLATES[kind].filter((x) => x !== lead)] : TEMPLATES[kind];
   const head = kind === 'full' ? 3 : 2;
   const order: Slot[] = [...template.slice(0, head), ...focusSlots, ...template.slice(head)];
   const want = exerciseCount(s);
@@ -256,10 +267,16 @@ export function weekDays(strength: number, cardio: number): { strength: number[]
   return { strength: sDays, cardio: ranked.slice(0, Math.max(0, cardio)).sort((a, b) => a - b) };
 }
 
+const indicesOf = (days: DayType[], type: DayType) => days.flatMap((d, i) => (d === type ? [i] : []));
+
 /** The whole plan: up to 8 routines (A–H), cardio last. */
 export function generatePlan(s: Setup): Plan {
-  const kinds = split(s.strengthDays, s.experience, s.focus);
-  const { strength, cardio } = weekDays(kinds.length, s.cardioDays);
+  // Days the user picked win over the app's own spread (owner, 2026-11-20).
+  const picked = s.days && s.days.some((d) => d === 'strength') ? s.days : null;
+  const kinds = split(picked ? picked.filter((d) => d === 'strength').length : s.strengthDays, s.experience, s.focus);
+  const { strength, cardio } = picked
+    ? { strength: indicesOf(picked, 'strength').slice(0, kinds.length), cardio: indicesOf(picked, 'cardio') }
+    : weekDays(kinds.length, s.cardioDays);
   const used = new Set<string>();
   const routines: Record<RoutineKey, Routine> = {};
   const days: (RoutineKey | null)[] = [null, null, null, null, null, null, null];
@@ -271,9 +288,11 @@ export function generatePlan(s: Setup): Plan {
     const n = (seen.get(kind) ?? 0) + 1;
     seen.set(kind, n);
     const count = kinds.filter((k) => k === kind).length;
-    const label = count > 1 ? `${t(NAMES[kind])} ${String.fromCharCode(64 + n)}` : t(NAMES[kind]);
+    const emphasis = kind === 'full' && count > 1 ? FULL_EMPHASIS[(n - 1) % FULL_EMPHASIS.length] : undefined;
+    // A workout that repeats keeps the same name; the letter in its circle tells them apart.
+    const label = emphasis ? GROUPS.find((g) => g.key === emphasis.group)!.label : t(NAMES[kind]);
     const k = key();
-    routines[k] = strengthRoutine(kind, s, used, label);
+    routines[k] = strengthRoutine(kind, s, used, label, emphasis?.lead);
     days[strength[i]] = k;
   });
   if (cardio.length) {
@@ -283,3 +302,52 @@ export function generatePlan(s: Setup): Plan {
   }
   return withWeeklyFromDays({ weekly: 3, days, routines });
 }
+
+const GROUP_NAMES: Record<'en' | 'sr', Partial<Record<GroupKey, string>>> = {
+  en: { chest: 'Chest', back: 'Back', legs: 'Legs', shoulders: 'Shoulders', arms: 'Arms', core: 'Core' },
+  sr: { chest: 'Grudi', back: 'Leđa', legs: 'Noge', shoulders: 'Ramena', arms: 'Ruke', core: 'Trup' },
+};
+
+/**
+ * Plans made before 2026-11-20 call their full-body days "Full body A/B/C"
+ * ("Celo telo A/B/C"). They now take the name of the muscle group their first
+ * exercise works, like new plans. When two would end up with the same name, the
+ * old names stay. Names the user typed are never touched.
+ */
+export function renameFullBodyDays(input: Record<RoutineKey, Routine>): Record<RoutineKey, Routine> {
+  const routines = renameSplitDays(input);
+  const old = Object.entries(routines).filter(([, r]) => /^(Full body|Celo telo) [A-H]$/.test(r.name) && r.items.length > 0);
+  if (old.length < 2) return routines;
+  const names = old.map(([, r]) => {
+    const lang = r.name.startsWith('Celo') ? 'sr' : 'en';
+    const group = exercise(r.items[0].ex)?.group;
+    return group ? GROUP_NAMES[lang][group] : undefined;
+  });
+  if (names.some((n) => !n) || new Set(names).size !== names.length) return routines;
+  const out = { ...routines };
+  old.forEach(([k, r], i) => (out[k] = { ...r, name: names[i]! }));
+  return out;
+}
+
+/** Names older plans gave their workouts, in English and Serbian, and the new name. */
+const OLD_NAMES: [RegExp, Record<'en' | 'sr', string>][] = [
+  [/^Push( [A-H])?$|^Potisak( [A-H])?$/, { en: 'Chest / Shoulders', sr: 'Grudi / Ramena' }],
+  [/^Pull( [A-H])?$|^Povlačenje( [A-H])?$/, { en: 'Back / Arms', sr: 'Leđa / Ruke' }],
+  [/^Upper body( [A-H])?$|^Gornji deo tela( [A-H])?$/, { en: 'Chest / Back', sr: 'Grudi / Leđa' }],
+  [/^Lower body( [A-H])?$|^Donji deo tela( [A-H])?$/, { en: 'Legs / Glutes', sr: 'Noge / Gluteus' }],
+  [/^Legs [A-H]$|^Noge [A-H]$/, { en: 'Legs', sr: 'Noge' }],
+];
+const SR_OLD = /^(Potisak|Povlačenje|Gornji|Donji|Noge)/;
+
+/** "Push", "Pull B", "Gornji deo tela A"… from older plans take the body-part names. */
+function renameSplitDays(routines: Record<RoutineKey, Routine>): Record<RoutineKey, Routine> {
+  let out = routines;
+  for (const [k, r] of Object.entries(routines)) {
+    const hit = OLD_NAMES.find(([re]) => re.test(r.name));
+    if (!hit) continue;
+    if (out === routines) out = { ...routines };
+    out[k] = { ...r, name: hit[1][SR_OLD.test(r.name) ? 'sr' : 'en'] };
+  }
+  return out;
+}
+
