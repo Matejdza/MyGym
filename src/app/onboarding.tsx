@@ -206,7 +206,7 @@ export default function Onboarding() {
   const canContinue =
     (key !== 'about' || (name.trim().length > 0 && sex != null)) &&
     (key !== 'days' || ownDays.length > 0) &&
-    (key !== 'schedule' || dayPick === 'auto' || pickedStrength > 0);
+    (key !== 'schedule' || dayPick === 'auto' || (pickedStrength === strengthDays && pickedCardio === cardioDays));
 
   const chooseSex = (s: Sex) => setSex(s);
 
@@ -224,17 +224,22 @@ export default function Onboarding() {
     if (p === 'own' && pickedDays.length !== 7) setPickedDays(spread(strengthDays, cardioDays));
     setDayPick(p);
   };
-  // Tap a day: strength → cardio → rest. At most 6 strength days; the counts follow.
+  // Tap a day: strength → cardio → rest, skipping a type whose count from the
+  // week step is already used up (3 strength + 2 cardio means exactly that; owner, 2026-11-20).
   const cycleDay = (i: number) => {
     const order: DayType[] = ['strength', 'cardio', null];
     const cur = pickedDays[i] ?? null;
-    let nextType = order[(order.indexOf(cur) + 1) % 3];
-    if (nextType === 'strength' && pickedStrength >= 6) nextType = 'cardio';
-    const days = pickedDays.map((d, j) => (j === i ? nextType : d));
-    setPickedDays(days);
-    const sN = days.filter((d) => d === 'strength').length;
-    if (sN > 0) setStrengthDays(sN);
-    setCardioDays(Math.min(4, days.filter((d) => d === 'cardio').length));
+    const full = (type: DayType) =>
+      (type === 'strength' && pickedStrength >= strengthDays) || (type === 'cardio' && pickedCardio >= cardioDays);
+    let nextType: DayType = null;
+    for (let step = 1; step <= 3; step++) {
+      const cand = order[(order.indexOf(cur) + step) % 3];
+      if (cand === cur || !full(cand)) {
+        nextType = cand;
+        break;
+      }
+    }
+    setPickedDays(pickedDays.map((d, j) => (j === i ? nextType : d)));
   };
   // Changing the counts on the week step starts the picked days over from the app's spread.
   const setCounts = (sN: number, cN: number) => {
@@ -480,11 +485,19 @@ export default function Onboarding() {
             ) : (
               <>
                 <PlanDays days={pickedDays} onPress={cycleDay} />
-                <UI size={14} weight={pickedStrength ? 400 : 600} color={pickedStrength ? colors.muted : colors.accent} style={{ marginTop: 16 }}>
-                  {pickedStrength
-                    ? t('{strength} strength · {cardio} cardio. Tap a day to change it.', { strength: pickedStrength, cardio: pickedCardio })
-                    : t('Pick at least one strength day. Tap a day to change it.')}
-                </UI>
+                {(() => {
+                  const complete = pickedStrength === strengthDays && pickedCardio === cardioDays;
+                  return (
+                    <UI size={14} weight={complete ? 400 : 600} color={complete ? colors.muted : colors.accent} style={{ marginTop: 16 }}>
+                      {t('Strength {s} of {sMax} · cardio {c} of {cMax}. Tap a day to change it.', {
+                        s: pickedStrength,
+                        sMax: strengthDays,
+                        c: pickedCardio,
+                        cMax: cardioDays,
+                      })}
+                    </UI>
+                  );
+                })()}
               </>
             )}
             <Label text="How long do you usually train?" />

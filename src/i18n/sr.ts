@@ -451,6 +451,5 @@ export const SR: Record<string, string> = {
   'Spread them for me': 'Rasporedi za mene',
   'I pick': 'Biram sam',
   'We spread your workouts so muscles get a day to recover.': 'Treninge raspoređujemo tako da mišići imaju dan da se oporave.',
-  '{strength} strength · {cardio} cardio. Tap a day to change it.': '{strength} snaga · {cardio} kardio. Dodirni dan da ga promeniš.',
-  'Pick at least one strength day. Tap a day to change it.': 'Izaberi bar jedan dan za snagu. Dodirni dan da ga promeniš.',
+  'Strength {s} of {sMax} · cardio {c} of {cMax}. Tap a day to change it.': 'Snaga {s} od {sMax} · kardio {c} od {cMax}. Dodirni dan da ga promeniš.',
 };
