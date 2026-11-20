@@ -83,3 +83,14 @@ test('a workout starts with the warm-up, which runs on a timer and leads to the 
   assert.equal(x.mob?.cur, 0);
   assert.equal(M.mobilityList(x, 'stretch').length, plan.routines[plan.days[0]!].stretch!.length);
 });
+
+test('the suggested focus follows sex first, then the main goal', async () => {
+  const { suggestFocus } = await import('@/domain/generate');
+  assert.deepEqual(suggestFocus('male', 'muscle'), ['chest', 'back', 'arms']);
+  assert.deepEqual(suggestFocus('female', 'muscle'), ['glutes', 'legs']);
+  assert.deepEqual(suggestFocus('male', 'fat'), ['full']);
+  assert.deepEqual(suggestFocus('female', 'fitness'), ['full']);
+  assert.deepEqual(suggestFocus('male', 'strength'), ['legs', 'back', 'chest']);
+  assert.deepEqual(suggestFocus('female', 'tone'), ['glutes', 'legs', 'core']);
+  assert.ok(!suggestFocus('male', 'tone').includes('glutes'), 'no glutes suggested to men by default');
+});

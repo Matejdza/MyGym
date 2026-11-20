@@ -20,7 +20,7 @@ import { BackCircle, PrimaryButton, Ring, StepperCard } from '@/components/ui';
 import { DAYS_FULL, exercise } from '@/data/catalog';
 import { BODY_LIMITS } from '@/domain/numberEntry';
 import { fmt, plural, r2 } from '@/domain/format';
-import { FOCUS_OPTIONS, GOAL_OPTIONS, SUGGESTED_FOCUS, generatePlan, legacyGoal } from '@/domain/generate';
+import { FOCUS_OPTIONS, GOAL_OPTIONS, generatePlan, legacyGoal, suggestFocus } from '@/domain/generate';
 import { ownPlan, schemeText } from '@/domain/plan';
 import type { Equipment, Experience, Focus, MainGoal, Setup, Sex } from '@/domain/types';
 import { DAY_LETTERS } from '@/domain/week';
@@ -168,11 +168,15 @@ export default function Onboarding() {
   const key = flow[step - 1];
   // The second goal opens like a menu; it starts open when one is already chosen.
   const [goal2Open, setGoal2Open] = useState(false);
+  // The focus is suggested from sex and the main goal chosen before it; once the
+  // user changes it on the focus step it is theirs and stays.
+  const suggested = sex ? suggestFocus(sex, goal) : [];
+  const chosenFocus = focusTouched ? focus : suggested;
   const setup: Setup = {
     sex: sex ?? 'female',
     goal,
     goal2,
-    focus: focus.length ? focus : ['full'],
+    focus: chosenFocus.length ? chosenFocus : ['full'],
     experience,
     equipment,
     minutes,
@@ -184,13 +188,12 @@ export default function Onboarding() {
   const canContinue =
     (key !== 'about' || (name.trim().length > 0 && sex != null)) && (key !== 'days' || ownDays.length > 0);
 
-  const chooseSex = (s: Sex) => {
-    setSex(s);
-    if (!focusTouched) setFocus(SUGGESTED_FOCUS[s]);
-  };
+  const chooseSex = (s: Sex) => setSex(s);
+
   const toggleFocus = (f: Focus) => {
+    const l = chosenFocus;
     setFocusTouched(true);
-    setFocus((l) => (l.includes(f) ? l.filter((x) => x !== f) : [...l, f]));
+    setFocus(l.includes(f) ? l.filter((x) => x !== f) : [...l, f]);
   };
   const toggleDay = (i: number) => setOwnDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
 
@@ -241,7 +244,6 @@ export default function Onboarding() {
   };
 
   const initial = (name.trim()[0] || '?').toUpperCase();
-  const suggested = sex ? SUGGESTED_FOCUS[sex] : [];
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { paddingTop: top(50) }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -373,7 +375,7 @@ export default function Onboarding() {
               {FOCUS_OPTIONS.map((f) => (
                 <Chip
                   key={f.key}
-                  on={focus.includes(f.key)}
+                  on={chosenFocus.includes(f.key)}
                   label={f.label}
                   tag={suggested.includes(f.key) ? t('Suggested') : undefined}
                   onPress={() => toggleFocus(f.key)}
@@ -381,8 +383,8 @@ export default function Onboarding() {
               ))}
             </View>
             <UI size={16} lh={1.45} color={colors.muted} style={{ marginTop: 24 }}>
-              {focus.length
-                ? t('Extra exercises go to: {list}.', { list: focus.map((f) => t(FOCUS_OPTIONS.find((o) => o.key === f)!.label).toLowerCase()).join(', ') })
+              {chosenFocus.length
+                ? t('Extra exercises go to: {list}.', { list: chosenFocus.map((f) => t(FOCUS_OPTIONS.find((o) => o.key === f)!.label).toLowerCase()).join(', ') })
                 : t('Nothing picked: the plan works the whole body evenly.')}
             </UI>
           </>

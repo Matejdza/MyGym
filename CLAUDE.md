@@ -124,8 +124,9 @@ home screen). The owner writes in Serbian; answer in Serbian.
 - Plan builder (2026-11-19): onboarding = about you (incl. sex, language) → "Make my plan" or "Build my own"
   → body; own plan then only picks days (4 steps); a made plan continues (8 steps): main +
   optional second goal (a closed "+ Add a second goal" row), focus, experience + equipment, week:
-  strength/cardio days and minutes, plan preview. Sex only suggests a focus (women: glutes + legs, men:
-  chest, back, arms) that the user can change. `src/domain/generate.ts` builds the plan (tested in
+  strength/cardio days and minutes, plan preview. The focus is suggested from sex, then the main goal
+  (`suggestFocus`: fat loss / fitness → whole body; strength → legs, back (+ chest for men); tone → glutes, legs,
+  core / chest, arms, core; muscle → glutes + legs / chest, back, arms) and is the user's once they change it. `src/domain/generate.ts` builds the plan (tested in
   tests/generate.test.ts); answers are stored as `profiles.setup` (JSON, schema v4).
 - Every workout has a warm-up (1–3 moves) and stretching (2–4) as timed lists (`src/domain/mobility.ts`
   picks them from the routine's muscles unless the routine has its own, `routines.extra` JSON); the

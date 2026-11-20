@@ -50,6 +50,18 @@ export const SUGGESTED_FOCUS: Record<Sex, Focus[]> = {
   male: ['chest', 'back', 'arms'],
 };
 
+/**
+ * The focus suggested on the focus step, from sex and then the main goal
+ * (owner, 2026-11-20: sex first, then the goal, then the body parts).
+ * Fat loss and fitness work the whole body; strength leans on the big lifts.
+ */
+export function suggestFocus(sex: Sex, goal: MainGoal): Focus[] {
+  if (goal === 'fat' || goal === 'fitness') return ['full'];
+  if (goal === 'strength') return sex === 'female' ? ['legs', 'back'] : ['legs', 'back', 'chest'];
+  if (goal === 'tone') return sex === 'female' ? ['glutes', 'legs', 'core'] : ['chest', 'arms', 'core'];
+  return SUGGESTED_FOCUS[sex];
+}
+
 /** What an exercise needs: nothing, dumbbells (and a bench) or a gym. */
 export function needs(id: string): Equipment {
   const e = exercise(id);
