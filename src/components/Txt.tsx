@@ -34,9 +34,11 @@ function render(family: string, props: Base, scale: number, extra?: TextStyle) {
 }
 
 /** Big Shoulders Display, always uppercase. Weights 700/800/900. */
-export function Display({ weight = 900, ...props }: Base & { weight?: 700 | 800 | 900 }) {
+export function Display({ weight = 900, lh, ...props }: Base & { weight?: 700 | 800 | 900 }) {
   const family = weight === 700 ? fonts.display700 : weight === 800 ? fonts.display800 : fonts.display900;
-  return render(family, props, useScale().s, { textTransform: 'uppercase' });
+  // Never tighter than 1.15: the tall caps leave no room otherwise, and the marks
+  // on Č, Ć, Š, Ž, Đ run into the line above (owner, 2026-11-20).
+  return render(family, { ...props, lh: lh != null ? Math.max(1.15, lh) : undefined }, useScale().s, { textTransform: 'uppercase' });
 }
 
 /** Archivo, all UI text. Weights 400–700. */

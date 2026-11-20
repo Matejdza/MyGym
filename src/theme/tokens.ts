@@ -98,13 +98,13 @@ export const ZONE_COLORS = ['', '#c7c2b8', '#3ddc84', '#ffc531', '#ff9f43', '#ff
 /**
  * Type scale (owner, 2026-11-20): every text uses one of these sizes, with its
  * line height. Display is the screen title (Big Shoulders needs size to read
- * as a headline); headings in caps sit tight (1.0); text is 1.5. Exceptions:
+ * as a headline); headings leave room above the caps for Č, Ć, Š, Ž, Đ (about 1.15–1.2); text is 1.5. Exceptions:
  * the big typed numbers of the set and body inputs, and chart tick labels.
  */
 export const TYPE = { display: 56, h1: 40, h2: 32, h3: 24, h4: 20, body: 16, mini: 14 } as const;
 export const TYPE_SIZES: number[] = Object.values(TYPE);
 /** Line height (px) for each size on the scale. */
-export const TYPE_LINE: Record<number, number> = { 56: 56, 40: 40, 32: 40, 24: 32, 20: 28, 16: 24, 14: 20 };
+export const TYPE_LINE: Record<number, number> = { 56: 64, 40: 48, 32: 40, 24: 32, 20: 28, 16: 24, 14: 20 };
 
 /**
  * Font families. Each weight is registered as its own family because custom

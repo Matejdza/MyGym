@@ -102,13 +102,15 @@ home screen). The owner writes in Serbian; answer in Serbian.
   Every routine plate is one neutral shade (`plate()`); planned days a neutral ring. Week strips (Home, Progress)
   show the day's initial on top (`DAY_INITIALS`) and the date in the circle; done days are green with a check
   (also the Workout timeline).
-- Type scale (owner, 2026-11-20): 56 display / 40 / 32 / 24 / 20 / 16 / 14 with line heights 56/40/40/32/28/24/20
+- Type scale (owner, 2026-11-20): 56 display / 40 / 32 / 24 / 20 / 16 / 14 with line heights 64/48/40/32/28/24/20 (Display never under 1.15, so Č etc. fit)
   (`TYPE`, `TYPE_LINE` in tokens.ts; Txt components use the scale's line height unless `lh` is set). Only
   exceptions: big typed numbers (Mono ≥ 66) and chart ticks (LineChart). `tests/typescale.test.ts` guards it.
 - Onboarding keeps its answers in a module-level draft (`draft` in onboarding.tsx) so a language change
   (which remounts the screens) loses nothing; cleared when the profile is made or onboarding is left.
   Changing sex only re-suggests the focus until the user picks one. On the web the remount keeps the open
   screen, so it is not pushed again (no stale copy underneath).
+- Welcome follows the phone's theme from the first screen (owner, 2026-11-20): dark = full-screen photo,
+  light = photo card on the light page with the cobalt button.
 - Language (2026-11-19): English (default) or Serbian in Latin script, chosen per profile in
   onboarding step 1 and in Profile → Settings → Language (`settings.language`, schema v3). Texts are
   written in English and wrapped in `t()` from `src/i18n`; Serbian is in `src/i18n/sr.ts` and
